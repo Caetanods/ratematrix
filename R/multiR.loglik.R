@@ -43,12 +43,12 @@ multiR.loglik <- function(X, root, R.m, C.m, D, n, r, p, method=c("rpf","sparse"
         ## k <- r
         ## This is the relevant part. The calculation using C.
         error <- NULL
-        cholres <- .Call("Chol_RPF", V, D, X, as.integer(r), as.integer(ntot), mserr=error, ismserr=as.integer(ms))
+        cholres <- .Call(mvMORPH:::Chol_RPF, V, D, X, as.integer(r), as.integer(ntot), mserr=error, ismserr=as.integer(ms))
         det <- cholres[[2]]
         ## Adjusting the format of the data.
         Xvec <- as.vector(as.matrix(X))
         residus <- D %*% root - Xvec
-        quad <- .Call("Chol_RPF_quadprod", cholres[[1]], residus, as.integer(ntot))
+        quad <- .Call(mvMORPH:::Chol_RPF_quadprod, cholres[[1]], residus, as.integer(ntot))
         logl <- -.5*quad-.5*as.numeric(det)-.5*(ntot*log(2*pi))
     }
     if(method=="sparse"){

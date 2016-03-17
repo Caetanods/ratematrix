@@ -40,12 +40,14 @@ singleR.loglik <- function(X, root, R, C, D, n, r, method=c("rpf","sparse")){
         ms <- 0 ## Here we do not allow for measurement error. Need to implement in the future.
         ## This is the relevant part. The calculation using C.
         error <- NULL
-        cholres <- .Call("Chol_RPF", V, D, X, as.integer(r), as.integer(ntot), mserr=error, ismserr=as.integer(ms))
+        #cholres <- mvMORPH:::.Call("Chol_RPF", V, D, X, as.integer(r), as.integer(ntot), mserr=error, ismserr=as.integer(ms))
+        cholres <- .Call(mvMORPH:::Chol_RPF, V, D, X, as.integer(r), as.integer(ntot), mserr=error, ismserr=as.integer(ms))
         det <- cholres[[2]]
         ## Adjusting the format of the data.
         Xvec <- as.vector(as.matrix(X))        
         residus <- D %*% root - Xvec
-        quad <- .Call("Chol_RPF_quadprod", cholres[[1]], residus, as.integer(ntot))
+        quad <- .Call(mvMORPH:::Chol_RPF_quadprod, cholres[[1]], residus, as.integer(ntot))
+        #quad <- mvMORPH:::.Call("Chol_RPF_quadprod", cholres[[1]], residus, as.integer(ntot))
         logl <- -.5*quad-.5*as.numeric(det)-.5*(ntot*log(2*pi))
     }
     if(method=="sparse"){
