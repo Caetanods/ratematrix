@@ -26,7 +26,7 @@
 ##' @param alphaOff2 numeric. Same as 'alphaOff1'. Set the transparency of the plots relative of 'mat2'.
 ##' @param leg string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.
 ##' @param l.cex numeric. 'cex' parameter for 'leg'. See 'help(par)' for more information on 'cex'.
-##' @param hpd numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95% HPD will be highlighted in the plot. Default value does not show highlighted region.
+##' @param hpd numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95\% HPD will be highlighted in the plot. Default value does not show highlighted region.
 ##' @param show.zero logical. Whether to plot a 'blue' vertical line at 0.
 ##' @param set.xlim numeric. Two elements vector to set the 'xlim' [see 'help(hist)'] for the density plots manually. If 'NULL', the default value, then the limits are calculated from the data.
 ##' @param n.lines numeric. Number of lines to be displayed in the ellipsed plots.

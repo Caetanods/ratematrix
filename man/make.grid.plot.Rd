@@ -30,7 +30,7 @@ make.grid.plot(mat1, mat2 = NULL, mle1 = NULL, mle2 = NULL,
 
 \item{l.cex}{numeric. 'cex' parameter for 'leg'. See 'help(par)' for more information on 'cex'.}
 
-\item{hpd}{numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95% HPD will be highlighted in the plot. Default value does not show highlighted region.}
+\item{hpd}{numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95\% HPD will be highlighted in the plot. Default value does not show highlighted region.}
 
 \item{show.zero}{logical. Whether to plot a 'blue' vertical line at 0.}
 
