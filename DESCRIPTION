@@ -1,0 +1,64 @@
+Package: ratematrix
+Title: Bayesian estimation of the evolutionary rate matrix
+Description: Estimate the Evolutionary rate matrix (R) using Markov chain Monte
+    Carlo (MCMC). The package has functions to plot the results and to summarize the
+    MCMC chains.
+URL: https://github.com/Caetanods/ratematrix
+Version: 0.1
+License: MIT + file LICENSE
+Author: Daniel S. Caetano, Luke J. Harmon
+Maintainer: Daniel S. Caetano <caetanods1@gmail.com>
+Imports:
+    ape (>= 3.0-6),
+    phytools (>= 0.5.10),
+    geiger(>= 2.0),
+    coda (>= 0.18.1),
+    corpcor (>= 1.6.8)
+Suggests:
+VignetteBuilder: 
+LinkingTo: 
+Collate:
+    "check.hpd.R"
+    "dic.mcmc.R"
+    "dinvchisq.R"
+    "eff.chart.R"
+    "effective.dep.R"
+    "effective.var.R"
+    "ellipse.chart.R"
+    "get.vcv.ellipse.all.matrix.R"
+    "get.vcv.ellipse.matrix.R"
+    "h.density.R"
+    "hist.rate.R"
+    "log.diwish.R"
+    "log.dmvnorm.R"
+    "make.grid.plot.R"
+    "make.prior.barnard.R"
+    "make.prior.diwish.R"
+    "make.prop.iwish.R"
+    "multi.phylo.mean.step.fast.R"
+    "multi.R.iwish.mcmc.R"
+    "multiR.loglik.R"
+    "multiR.matrix.step.fast.R"
+    "parseResultsMCMC.R"
+    "parseResults.R"
+    "passed.heidel.R"
+    "phylo.mean.step.fast.R"
+    "prior.vcv.barnard.R"
+    "rate.chart.R"
+    "read.multi.R.iwish.R"
+    "read.single.R.iwish.R"
+    "rinvchisq.R"
+    "R.matrix.step.fast.R"
+    "roundoff.R"
+    "sample.tree.R"
+    "sample.vcv.barnard.R"
+    "sd.and.corr.R"
+    "sim.corrs.new.R"
+    "single.R.iwish.mcmc.R"
+    "singleR.loglik.R"
+    "sliding.window.R"
+    "vcv.ellipse.R"
+    "vcv.proposal.plate.R"
+    "write.to.file.R"
+    "write.to.multfile.R"
+RoxygenNote: 5.0.1.9000
