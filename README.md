@@ -1,4 +1,4 @@
-## ratematrx
+## R package 'ratematrix'
 This an R package for the estimation of the evolutionary rate matrix (R) using a Bayesian approach.
 
 Please note that the package is under development. However, if you want to give it a try you can use the following lines of code to install the package via github:
