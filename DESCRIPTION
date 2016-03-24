@@ -64,4 +64,6 @@ Collate:
     "write.to.file.R"
     "write.to.multfile.R"
     "riwish.R"
+    "checkConvergence.R"
+    "testRateMatrix.R"
 RoxygenNote: 5.0.1.9000
