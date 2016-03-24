@@ -1,6 +1,7 @@
 ##' Function to read and parse the results from the simulations.
 ##'
-##' Function to read and parse the results from the simulations.
+##' Function to read and parse the results from the simulations. At this point the function will only work
+##'   when there is two chains. This need to be extended and fixed for it to run with one or two chains.
 ##' @title Parse simulations results.
 ##' @param out.one.matrix Output from MCMC
 ##' @param out.two.matrix Output from MCMC
