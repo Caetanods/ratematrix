@@ -24,6 +24,7 @@ Plots and etc.
 Function to read and parse the results from the simulations.
 }
 \details{
-Function to read and parse the results from the simulations.
+Function to read and parse the results from the simulations. At this point the function will only work
+  when there is two chains. This need to be extended and fixed for it to run with one or two chains.
 }
 
