@@ -8,6 +8,7 @@
 ##' @param thin numeric. The thinning of the posterior distribution. Same format as the argument 'by' of the function 'seq'.
 ##' @param dir string. Directory where output files from the MCMC run are stored. If 'NULL', then function tries to read the files from the current directory. This can be set to a directory different from the 'dir' argument of the 'multi.R.iwish.mcmc' function.
 ##' @return List with the MCMC chain for the phylogenetic mean (root value) and evolutionary rate matrices (R). 'root' are the values for the phylogenetic mean; 'matrix' is a list of length equal to the number of matrices fitted to the tree, each of those are lists with the chain of respective R matrices; 'log.lik' is the log likelihood (not posterior) for the chain.
+##' @export
 read.multi.R.iwish <- function(out, burn = 0.5, thin = 1, dir=NULL){
     ## Function to read the files written by iwish fast.
     ## Depends on the package 'readr'.
