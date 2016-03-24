@@ -1,7 +1,10 @@
 ## R package 'ratematrix'
-This an R package for the estimation of the evolutionary rate matrix (R) using a Bayesian approach.
 
-Please note that the package is under development. However, if you want to give it a try you can use the following lines of code to install the package via github:
+R package for the estimation of the evolutionary rate matrix (R) using a Bayesian approach.
+
+See biological background in "Revell, L. J., and L. J. Harmon. 2008. Testing quantitative genetic hypotheses about the evolutionary rate matrix for continuous characters. Evolutionary Ecology Research 10:311."
+
+Please note that the package is under development. Contact the author (caetanods1[at]gmail.com) if you are interested in using this package. However, if you want to give it a try you can use the following lines of code to install the package via github:
 ```
 install.packages("devtools")
 library(devtools)
@@ -22,11 +25,11 @@ library(readr)
 
 ## Simulate data and phylogeny:
 phy <- compute.brlen( rtree(100) )
-rate <- matrix(c(0.5,0.3,0.3,1), nrow = 2)
+rate <- matrix( c(0.5,0.3,0.3,1), nrow = 2 )
 data <- sim.char(phy = phy, par = rate, nsim = 1, model = "BM")[,,1]
 
 ## Set priors:
-## (I use arbitrary prior parameters just as an example)
+## (I will use arbitrary prior parameters just as an example.)
 prior <- make.prior.barnard(mu=2, sd=3, min=0, max=100)
 
 ## Sample starting values:
@@ -43,3 +46,7 @@ rate.mcmc <- ratematrix:::read.single.R.iwish(rate.chain, burn = 0.8, thin = 10)
 names(rate.mcmc)
 make.grid.plot(mat1=rate.mcmc$matrix, colDiag1="blue")
 ```
+
+![alt text](example.png)
+
+Figure shows the posterior distribution of rates in the diagonal and posterior distribution of covariated evolution in the upper right. Lower left plot show an ellipse that describes the covariation structure. The vertical red lines and the red ellipse lines are the true values used to simulated data.
