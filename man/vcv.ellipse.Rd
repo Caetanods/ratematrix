@@ -4,7 +4,7 @@
 \alias{vcv.ellipse}
 \title{Ellipse plots.}
 \usage{
-vcv.ellipse(mat, mu, traits = c(1, 2), burn = 0.5, thin = 1,
+\method{vcv}{ellipse}(mat, mu, traits = c(1, 2), burn = 0.5, thin = 1,
   sample.line = 50, n.points = 200)
 }
 \arguments{

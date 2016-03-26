@@ -7,7 +7,7 @@
 checkConvergence(mcmc.chain, out)
 }
 \arguments{
-\item{mcmc.chain}{The MCMC chain. Output of the function to read the chain.}
+\item{mcmc.chain}{The MCMC chain. Output of the function to read the chain. It works both with any number of matrices fitted to the tree.}
 
 \item{out}{The MCMC result output. This is a list with several details about the MCMC run.}
 }
