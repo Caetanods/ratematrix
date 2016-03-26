@@ -4,7 +4,7 @@
 \alias{testRateMatrix}
 \title{Test different of posterior distributions of R matrices.}
 \usage{
-testRateMatrix(mcmc.chain, out, plot = FALSE, file = "plot_test.pdf")
+testRateMatrix(mcmc.chain, out, plot = FALSE, file = "plot_test")
 }
 \arguments{
 \item{mcmc.chain}{The MCMC chain produced by the read function.}
@@ -13,7 +13,7 @@ testRateMatrix(mcmc.chain, out, plot = FALSE, file = "plot_test.pdf")
 
 \item{plot}{logical. Whether plots should be saved as .pdf files in the current directory. The number of the plot increases in function of the number of matrices fitted to the tree. All plots will have a pattern like "post_diff_mat_test_X.pdf", where X is a single digit number.}
 
-\item{file}{string. The name of the file to save the plot. This is always a pdf format file.}
+\item{file}{string. The name of the file to save the plot. This is going to be used as a the start of the string. The number of plots is equal to the combination 2 by 2 of the number of the matrices fitted to the phylogentic tree.}
 }
 \value{
 Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
