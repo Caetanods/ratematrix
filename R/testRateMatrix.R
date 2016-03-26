@@ -15,7 +15,7 @@
 ##' @return Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
 ##' @export
 testRateMatrix <- function(mcmc.chain, out, plot = FALSE){
-    comb <- combn(1:out$k, 2)
+    comb <- combn(1:out$p, 2)
     mean.diff <- list()
     for(i in ncol(comb)){
         mat1 <- t( sapply(mcmc.chain[[2]][[comb[1,i]]], function(x) c(x) ) )
