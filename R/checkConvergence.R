@@ -10,7 +10,7 @@
 ##'    of matrices. This approach is most likely more conservative than would be looking to the matrix as
 ##'    a whole.
 ##' @title Convergence test.
-##' @param mcmc.chain The MCMC chain. Output of the function to read the chain. 
+##' @param mcmc.chain The MCMC chain. Output of the function to read the chain. It works both with any number of matrices fitted to the tree.
 ##' @param out The MCMC result output. This is a list with several details about the MCMC run.
 ##' @return A matrix with colums varying dependent of the number of matrices fitted to the tree. The matrix
 ##'    has two lines, each is a component of the Heidel diagnostic. TRUE is when the convergence test passed and
@@ -19,7 +19,7 @@
 checkConvergence <- function(mcmc.chain, out){
     ## mcmc.chain = A MCMC chain read by the read function.
     ## out = The correspondent chain description. Output of the MCMC function.
-    if(out$k == 1){
+    if(out$p == 1){
         root.mcmc <- coda::mcmc( mcmc.chain[[1]] )
         matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]], c) ) )
         ## Using the Heidelberger and Welch diagnostic for convergence.
@@ -30,19 +30,19 @@ checkConvergence <- function(mcmc.chain, out){
         colnames(diag) <- c("root","matrix")
         return(diag)
     }
-    if(out$k > 1){
+    if(out$p > 1){
         root.mcmc <- coda::mcmc( mcmc.chain[[1]] )
         hei.root <- ratematrix:::passed.heidel(root.mcmc)
         hei.root <- data.frame(hei.root)
         diag <- list()
-        for(i in 1:out$k){            
+        for(i in 1:out$p){
             matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]][[i]], c) ) )
             hei.matrix <- ratematrix:::passed.heidel(matrix.mcmc)
             diag[[i]] <- data.frame(hei.matrix)
         }
         res.mat <- do.call(cbind, diag)
         diag.res <- cbind(hei.root, res.mat)
-        colnames(diag.res) <- c("root", paste("matrix_", 1:out$k, sep="") )
+        colnames(diag.res) <- c("root", paste("matrix_", 1:out$p, sep="") )
         return(diag.res)
     }
 }
