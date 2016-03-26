@@ -11,10 +11,11 @@
 ##' @title Test different of posterior distributions of R matrices.
 ##' @param mcmc.chain The MCMC chain produced by the read function.
 ##' @param out The output of the MCMC chain. This is a list with a series of important informations about the MCMC chain.
-##' @param plot Whether plots should be saved as .pdf files in the current directory. The number of the plot increases in function of the number of matrices fitted to the tree. All plots will have a pattern like "post_diff_mat_test_X.pdf", where X is a single digit number.
+##' @param plot logical. Whether plots should be saved as .pdf files in the current directory. The number of the plot increases in function of the number of matrices fitted to the tree. All plots will have a pattern like "post_diff_mat_test_X.pdf", where X is a single digit number.
+##' @param file string. The name of the file to save the plot. This is always a pdf format file.
 ##' @return Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
 ##' @export
-testRateMatrix <- function(mcmc.chain, out, plot = FALSE){
+testRateMatrix <- function(mcmc.chain, out, plot = FALSE, file = "plot_test.pdf"){
     comb <- combn(1:out$p, 2)
     mean.diff <- list()
     for(i in ncol(comb)){
