@@ -4,8 +4,8 @@
 \alias{vcv.proposal.plate}
 \title{Unclear}
 \usage{
-vcv.proposal.plate(mat, mu, burn = 0, thin, sample.line, n.points = 200,
-  start = NULL, true.vcv = NULL, true.mu = NULL)
+\method{vcv}{proposal.plate}(mat, mu, burn = 0, thin, sample.line,
+  n.points = 200, start = NULL, true.vcv = NULL, true.mu = NULL)
 }
 \arguments{
 \item{mat}{list of covariance matrices.}

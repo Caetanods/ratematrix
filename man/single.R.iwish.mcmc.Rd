@@ -40,9 +40,6 @@ Runs a Markov chain Monte Carlo (MCMC) chain to estimate the posterior distribut
    evolutionary rate matrix (R) fitted to the phylogeny.
 }
 \details{
-MCMC using the inverse-Wishart as a proposal distribution for the covariance matrix and a simple sliding
-   window for the phylogenetic mean in the random walk Metropolis-Hastings algorithm. At the moment the
-   function only applies the 'rpf' method for calculation of the log likelihood implemented in the
-   package 'mvMORPH'. Future versions should offer different log likelihood methods for the user.
+MCMC using the inverse-Wishart as a proposal distribution for the covariance matrix and a simple sliding window for the phylogenetic mean in the random walk Metropolis-Hastings algorithm. Function writes to file. Creates an unique identifier for the files to prevent the user to append one MCMC with other working in the same directory. A future version will be able to incorporate measument error originated from population-level data.
 }
 

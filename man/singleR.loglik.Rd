@@ -4,7 +4,7 @@
 \alias{singleR.loglik}
 \title{Log likelihood for one evolutionary rate matrix fitted to the data and tree.}
 \usage{
-singleR.loglik(X, root, R, C, D, n, r, method = c("rpf", "sparse"))
+singleR.loglik(X, root, R, C.prime, det.C, D, n, r)
 }
 \arguments{
 \item{X}{matrix. The matrix of trait data.}
@@ -13,7 +13,9 @@ singleR.loglik(X, root, R, C, D, n, r, method = c("rpf", "sparse"))
 
 \item{R}{matrix. The covariance matrix fitted to the tree and data.}
 
-\item{C}{matrix. The phylogenetic covariance matrix. This is a fixed term.}
+\item{C.prime}{matrix. The inverse of the phylogenetic covariance matrix. This is a fixed term.}
+
+\item{det.C}{numeric. The determinant (log scale) of the phylogenetic covariance matrix. This is a fixed term.}
 
 \item{D}{matrix. The design matrix. This is a fixed term, dependent on the phylogeny.}
 
@@ -27,12 +29,14 @@ singleR.loglik(X, root, R, C, D, n, r, method = c("rpf", "sparse"))
 numeric. The log likelhood.
 }
 \description{
-Log likelihood function for one evolutionary rate matrices.
+Log likelihood function for one evolutionary rate matrix.
 }
 \details{
-Internal function to be used by the MCMC.
+This function applies a math shortcut to avoid inverting the kronecker product of matrices. The trick is based on an equality described in Ho and Ané (2014). A similar equality also make the calculation of the determinant of the kronecker product faster. Thus, one need to provide the inverse of the phylogenetic covariance matrix as the argument 'C.prime' and the determinant of this same matrix as the argument 'det.C'.
 }
 \references{
 Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
+
+Ho, L. si T., and C. Ané. 2014. A Linear-Time Algorithm for Gaussian and Non-Gaussian Trait Evolution Models. Syst Biol 63:397–408.
 }
 

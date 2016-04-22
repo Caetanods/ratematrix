@@ -25,7 +25,7 @@ phylo.mean.step.fast(cache.data, cache.chain, prior, w, v, iter, count)
 Updated version of the cache.chain.
 }
 \description{
-make the proposal and accept/reject for the phylogenetic mean.
+Make the proposal and accept/reject for the phylogenetic mean.
 }
 \details{
 Internal function to be used with the MCMC.
