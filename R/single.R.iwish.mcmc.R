@@ -33,12 +33,12 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     C <- vcv(phy) ## Phylogenetic covariance matrix (temporary object).
     cache.data$C.prime <- chol2inv( chol( C ) ) ## The inverse of the phylogenetic covariance matrix.
     cache.data$det.C <- determinant(C, logarithm=TRUE)$modulus[1]
+    cache.data$X <- X[rownames(cache.data$C),] ## Matching rownames of X and C.
     rm( C ) ## Remove this large matrix to save memory.
+    cache.data$traits <- colnames(X) ## Get names for the traits.
     ## This version will need to design matrix (D).
     cache.data$D <- matrix(0, nrow = cache.data$n*cache.data$k, ncol = cache.data$k)
     for(i in 1:cache.data$k) cache.data$D[((cache.data$n*(i-1))+1):(cache.data$n*i),i] <- 1
-    cache.data$X <- X[rownames(cache.data$C),] ## Matching rownames of X and C.
-    cache.data$traits <- colnames(X) ## Get names for the traits.
     #cache.data$y <- matrix( c( as.matrix(cache.data$X) ) ) ## Column vector format.
 
     ## Creates MCMC chain cache:
