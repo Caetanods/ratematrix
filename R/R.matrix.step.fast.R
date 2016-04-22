@@ -11,14 +11,6 @@
 ##' @param count Keep track of the accept reject.
 ##' @return Updated cache.chain.
 R.matrix.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, count){
-    ## Makes the proposal and acceptance step for the R matrix.
-    ## cache.data = cache with data for analysis.
-    ## cache.chain = cache with chain objects.
-    ## prior = prior functions.
-    ## w = sliding window width parameter.
-    ## v = degree of freedom parameter of the inverse-Wishart.
-    ## iter = the state of the MCMC chain. This is used to access data in the cache.chain
-    ##        objects.
 
     ## make.prop.vcv is a function to make a Barnard separation proposal for vcv.
     prop.vcv <- make.prop.iwish(cache.chain$chain[[iter-1]][[2]], k=cache.data$k, v=v)
@@ -29,11 +21,11 @@ R.matrix.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, count
     prop.vcv.prior <- prior[[2]](prop.vcv)
     pp <- prop.vcv.prior - cache.chain$curr.vcv.prior
     ## Get log likelihood ratio.
+
     prop.vcv.lik <- singleR.loglik(X=cache.data$X, root=as.vector(cache.chain$chain[[iter-1]][[1]])
-                                       , R=prop.vcv, C=cache.data$C, D=cache.data$D
-                                       , n=cache.data$n, r=cache.data$k, method="rpf")
-    ## prop.vcv.lik <- singleR.loglik(R=prop.vcv, C=cache.data$C, y=cache.data$y, b=cache.chain$b.curr
-    ##                              , n=cache.data$n, r=cache.data$k)
+                                 , R=prop.vcv, C.prime=cache.data$C.prime, det.C=cache.data$det.C
+                                 , D=cache.data$D, n=cache.data$n, r=cache.data$k) ## Lik start value.
+
     ll <-  prop.vcv.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.
     r <- ll + pp + hh
