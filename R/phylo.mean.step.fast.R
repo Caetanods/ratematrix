@@ -1,4 +1,4 @@
-##' make the proposal and accept/reject for the phylogenetic mean.
+##' Make the proposal and accept/reject for the phylogenetic mean.
 ##'
 ##' Internal function to be used with the MCMC.
 ##' @title Phylogenetic mean proposal and accept/reject.
@@ -11,14 +11,6 @@
 ##' @param count Used to track the accept and reject steps of the MCMC.
 ##' @return Updated version of the cache.chain.
 phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, count){
-    ## Make the proposal and accept step for the phylogenetic mean.
-    ## cache.data = cache with data for analysis.
-    ## cache.chain = cache with chain objects.
-    ## prior = prior functions.
-    ## w = sliding window width parameter.
-    ## v = degree of freedom parameter of the inverse-Wishart.
-    ## iter = the state of the MCMC chain. This is used to access data in the cache.chain
-    ##        objects.
 
     ## make.prop.mean is a function to make sliding window proposal moves.
     prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w) )
@@ -29,10 +21,8 @@ phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, cou
     #b.prop <- matrix( sapply(as.vector(prop.root), function(x) rep(x, cache.data$n) ) )
     ## Get log likelihood ratio.
     prop.root.lik <- singleR.loglik(X=cache.data$X, root=as.vector(prop.root)
-                                       , R=cache.chain$chain[[iter-1]][[2]], C=cache.data$C, D=cache.data$D
-                                       , n=cache.data$n, r=cache.data$k, method="rpf")
-    ## prop.root.lik <- singleR.loglik(R=cache.chain$chain[[iter-1]][[2]], C=cache.data$C, y=cache.data$y
-    ##                               , b=b.prop, n=cache.data$n, r=cache.data$k)
+                                  , R=cache.chain$chain[[iter-1]][[2]], C.prime=cache.data$C.prime
+                                  , det.C=cache.data$det.C, D=cache.data$D, n=cache.data$n, r=cache.data$k)
     ll <-  prop.root.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.
     r <- ll + pp
