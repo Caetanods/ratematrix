@@ -17,8 +17,6 @@ singleR.loglik <- function(X, phy, root, R, r, n){
     ## This standardize the data. So we can apply the 'three.point.compute'.
     X.c <- sapply(1:ncol(X), function(x) X[,x] - root[x])
     P <- data.frame(X.c)
-    ## Need to make sure that tree and data matches.
-    rownames(P) <- phy$tip.label
     comp <- three.point.compute(phy, P=P, Q=NULL)
     xiVx <- sum( comp$PP * chol2inv(chol(R)) )
     detV <- r * comp$logd + n * determinant(R)$modulus[1]
