@@ -22,9 +22,9 @@ R.matrix.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, count
     pp <- prop.vcv.prior - cache.chain$curr.vcv.prior
     ## Get log likelihood ratio.
 
-    prop.vcv.lik <- singleR.loglik(X=cache.data$X, root=as.vector(cache.chain$chain[[iter-1]][[1]])
-                                 , R=prop.vcv, C.prime=cache.data$C.prime, det.C=cache.data$det.C
-                                 , D=cache.data$D, n=cache.data$n, r=cache.data$k) ## Lik start value.
+    prop.vcv.lik <- singleR.loglik(X=cache.data$X, phy=cache.data$phy
+                                 , root=as.vector(cache.chain$chain[[iter-1]][[1]])
+                                 , R=prop.vcv, n=cache.data$n, r=cache.data$k)
 
     ll <-  prop.vcv.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.
