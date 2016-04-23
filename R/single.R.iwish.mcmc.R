@@ -30,16 +30,13 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     cache.data <- list()
     cache.data$n <- length(phy$tip.label) ## Number of tips.
     cache.data$k <- dim(start[[2]])[2] ## Number of traits.
-    C <- vcv(phy) ## Phylogenetic covariance matrix (temporary object).
-    cache.data$C.prime <- chol2inv( chol( C ) ) ## The inverse of the phylogenetic covariance matrix.
-    cache.data$det.C <- determinant(C, logarithm=TRUE)$modulus[1]
-    cache.data$X <- X[rownames(cache.data$C),] ## Matching rownames of X and C.
-    rm( C ) ## Remove this large matrix to save memory.
+    dat <- treedata(phy, X, sort=TRUE, warnings=TRUE) ## Match data and tree.
+    cache.data$X <- dat$data
+    cache.data$phy <- dat$phy
     cache.data$traits <- colnames(X) ## Get names for the traits.
-    ## This version will need to design matrix (D).
-    cache.data$D <- matrix(0, nrow = cache.data$n*cache.data$k, ncol = cache.data$k)
-    for(i in 1:cache.data$k) cache.data$D[((cache.data$n*(i-1))+1):(cache.data$n*i),i] <- 1
-    #cache.data$y <- matrix( c( as.matrix(cache.data$X) ) ) ## Column vector format.
+    ## When using 'phylolm' to compute the likelihood we do not need the D matrix.
+    ## cache.data$D <- matrix(0, nrow = cache.data$n*cache.data$k, ncol = cache.data$k)
+    ## for(i in 1:cache.data$k) cache.data$D[((cache.data$n*(i-1))+1):(cache.data$n*i),i] <- 1
 
     ## Creates MCMC chain cache:
     ## Here trying to initialize the chain cache with the correct number of elements in the list.
@@ -55,9 +52,9 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     #cache.chain$root.curr <- as.vector(cache.chain$chain[[1]][[1]])
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
 
-    cache.chain$lik[1] <- singleR.loglik(X=cache.data$X, root=as.vector(cache.chain$chain[[1]][[1]])
-                                       , R=cache.chain$chain[[1]][[2]], C.prime=cache.data$C.prime
-                                       , det.C=cache.data$det.C, D=cache.data$D, n=cache.data$n
+    cache.chain$lik[1] <- singleR.loglik(X=cache.data$X, phy=cache.data$phy
+                                       , root=as.vector(cache.chain$chain[[1]][[1]])
+                                       , R=cache.chain$chain[[1]][[2]], n=cache.data$n
                                        , r=cache.data$k) ## Lik start value.
 
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
