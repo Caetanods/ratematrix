@@ -30,7 +30,7 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, ite
     ## Get log likelihood ratio.
     prop.root.lik <- multiR.loglik(X=cache.data$X, root=as.vector(prop.root)
                                 , R.m=cache.chain$chain[[iter-1]][[2]], C.m=cache.data$C.m, D=cache.data$D
-                                , n=cache.data$n, r=cache.data$k, p=cache.data$p, method="rpf")
+                                , n=cache.data$n, r=cache.data$k, p=cache.data$p)
     ##prop.root.lik <- multiR.loglik(R.m=cache.chain$chain[[iter-1]][[2]], C.m=cache.data$C.m, y=cache.data$y
     ##                              , b=b.prop, n=cache.data$n, r=cache.data$k, p=cache.data$p)
     ll <-  prop.root.lik - cache.chain$lik[iter-1]

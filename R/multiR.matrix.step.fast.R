@@ -45,7 +45,7 @@ multiR.matrix.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, 
                                   #, n=cache.data$n, r=cache.data$k, p=cache.data$p)
     prop.vcv.lik <- multiR.loglik(X=cache.data$X, root=as.vector(cache.chain$chain[[iter-1]][[1]])
                                 , R.m=prop.vcv.list, C.m=cache.data$C.m, D=cache.data$D
-                                , n=cache.data$n, r=cache.data$k, p=cache.data$p, method="rpf")
+                                , n=cache.data$n, r=cache.data$k, p=cache.data$p)
     ll <-  prop.vcv.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.
     r <- ll + pp + hh

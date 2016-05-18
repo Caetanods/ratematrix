@@ -90,7 +90,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
     cache.chain$lik[1] <- multiR.loglik(X=cache.data$X, root=as.vector(cache.chain$chain[[1]][[1]])
                                 , R.m=cache.chain$chain[[1]][[2]], C.m=cache.data$C.m, D=cache.data$D
-                                , n=cache.data$n, r=cache.data$k, p=cache.data$p, method="rpf")
+                                , n=cache.data$n, r=cache.data$k, p=cache.data$p)
     ##cache.chain$lik[1] <- multiR.loglik(R.m=cache.chain$chain[[1]][[2]], C.m=cache.data$C.m, y=cache.data$y
     ##                                   , b=cache.chain$b.curr, n=cache.data$n, r=cache.data$k
     ##                                    , p=cache.data$p) ## Lik start value.

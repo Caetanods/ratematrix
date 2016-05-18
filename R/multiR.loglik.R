@@ -15,7 +15,6 @@
 ##' @references Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
 multiR.loglik <- function(X, root, R.m, C.m, D, n, r, p){
     ## Default method is "rpf"
-    method <- method[1]
     V.m <- lapply(1:p, function(x) kronecker(R.m[[x]], C.m[[x]]) )
     V <- Reduce("+", V.m)
     ntot <- n*r
