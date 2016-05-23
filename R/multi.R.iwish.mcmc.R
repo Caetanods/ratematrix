@@ -63,6 +63,9 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
         dir.create(file.path(dir), showWarnings = FALSE)
     }
 
+    ## Change the data to matrix:
+    if( class(X) == "data.frame" ) X <- as.matrix( X )
+
     ## Creates data cache:
     cache.data <- list()
     cache.data$n <- length(phy$tip.label) ## Number of tips.
