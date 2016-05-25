@@ -4,30 +4,27 @@
 \alias{checkConvergence}
 \title{Convergence test.}
 \usage{
-checkConvergence(mcmc.chain, out)
+checkConvergence(mcmc.chain, p, method = c("heidel", "gelman"),
+  multivariate = TRUE)
 }
 \arguments{
-\item{mcmc.chain}{The MCMC chain. Output of the function to read the chain. It works both with any number of matrices fitted to the tree.}
+\item{mcmc.chain}{The MCMC chain. Output of the function to read the chain. It works with any number of matrices fitted to the tree. If 'method="gelman"' the argument need to be a list of the MCMC chain results. Each element of the list will be the result of an independent MCMC run starting from a different starting position.}
 
-\item{out}{The MCMC result output. This is a list with several details about the MCMC run.}
+\item{p}{numeric. The number of evolutionary rate matrices fitted to the tree.}
+
+\item{method}{The method to be used to check convergence. If 'method="heidel"' then the Heidelberger and Welch diagnostic for convergence will be conducted. This test requires a single MCMC chain. If 'method="gelman"' then the potential scale reduction factor will be calculated. This method requires at least two MCMC chains for the same model starting from different starting points. The later is recommended.}
+
+\item{multivariate}{logical. Whether the 'gelman.diag' function from the package 'coda' should perform the diagnostics using the multivariate version. The default value is TRUE. However, for some matrix configurations the function can return an error that the '(...) leading (...) of order (...) is not positive definite'. Then, setting this argument as FALSE will solve the issue.}
 }
 \value{
-A matrix with colums varying dependent of the number of matrices fitted to the tree. The matrix
-   has two lines, each is a component of the Heidel diagnostic. TRUE is when the convergence test passed and
-   FALSE is when it falied.
+Function returns a list with two elements. If the 'method="heidel"' the first element of the list is a matrix with colums varying dependent of the number of matrices fitted to the tree. This matrix has two lines, each is a component of the Heidel diagnostic. TRUE is when the convergence test passed and FALSE is when it falied. If the 'method="gelman"' the first element of the list is another list with the results of the 'gelman.diag' function. This list will have length equal to 1+p: first element is the result for the root value and the following elements are results for the fitted R matrices. The second element of the list returned by the function is a matrix with the effective sample sizes for the root and each cell of the fitted R matrices.
 }
 \description{
 Make convergence test for the MCMC chain.
 }
 \details{
-This function makes convergence test for the MCMC chains. It uses the Heidel test from the package 'coda'.
-   A better test of convergence is the Gelman's R, but this test requires more than one MCMC chain,
-   recommended to start for distinct start values of the chain for better accessing the convergence.
-   This other test will be implemented soon.
+This function makes convergence test for the MCMC chains. It uses the Heidel test or the potential scale reduction factor (Gelman's R), both from the package 'coda'.
 To calculate the convergence this function will check if each value of each cell of the matrices have
-   converged. It is hard to find a better way to check for convergence. This is the same approach used by
-   MCMCglmm and the function to test the significance of the difference between two posterior distributions
-   of matrices. This approach is most likely more conservative than would be looking to the matrix as
-   a whole.
+   converged.
 }
 
