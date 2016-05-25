@@ -4,7 +4,7 @@
 \alias{multiR.loglik}
 \title{Log likelihood for multiple matrices.}
 \usage{
-multiR.loglik(X, root, R.m, C.m, D, n, r, p, method = c("rpf", "sparse"))
+multiR.loglik(X, root, R.m, C.m, D, n, r, p)
 }
 \arguments{
 \item{X}{matrix. The matrix of trait data.}
@@ -32,7 +32,7 @@ numeric. The log likelhood.
 Log likelihood function for two or more evolutionary rate matrices.
 }
 \details{
-Internal function to be used by the MCMC.
+Internal function to be used by the MCMC. This function uses the 'rpf' method to calculate the approximation of the inverse of matrices as impplemented in mvMORPH.
 }
 \references{
 Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
