@@ -4,26 +4,20 @@
 \alias{singleR.loglik}
 \title{Log likelihood for one evolutionary rate matrix fitted to the data and tree.}
 \usage{
-singleR.loglik(X, root, R, C.prime, det.C, D, n, r)
+singleR.loglik(X, phy, root, R, r, n)
 }
 \arguments{
 \item{X}{matrix. The matrix of trait data.}
+
+\item{phy}{ape phylo. The phylogenetic tree with branch lengths.}
 
 \item{root}{numeric. The phylogenetic mean.}
 
 \item{R}{matrix. The covariance matrix fitted to the tree and data.}
 
-\item{C.prime}{matrix. The inverse of the phylogenetic covariance matrix. This is a fixed term.}
-
-\item{det.C}{numeric. The determinant (log scale) of the phylogenetic covariance matrix. This is a fixed term.}
-
-\item{D}{matrix. The design matrix. This is a fixed term, dependent on the phylogeny.}
-
-\item{n}{numeric. Number of tips in the phylogeny.}
-
 \item{r}{numeric. Number of traits, the dimension of the R matrix.}
 
-\item{method}{string. Method to be used to calculate the likelihood. Right now only the option 'rpf' is working. More options will be implemented in the future.}
+\item{n}{numeric. Number of tips in the phylogeny.}
 }
 \value{
 numeric. The log likelhood.
