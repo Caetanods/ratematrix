@@ -20,6 +20,7 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "makeMLEmap.R"
     "check.hpd.R"
     "dic.mcmc.R"
     "dinvchisq.R"
