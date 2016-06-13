@@ -9,17 +9,20 @@ License: MIT + file LICENSE
 Author: Daniel S. Caetano, Luke J. Harmon
 Maintainer: Daniel S. Caetano <caetanods1@gmail.com>
 Imports:
-    ape (>= 3.0-6),
-    phytools (>= 0.5.10),
-    geiger(>= 2.0),
-    coda (>= 0.18.1),
-    corpcor (>= 1.6.8),
-    mvMORPH (>= 1.0.6),
-    MASS
+    ape,
+    phytools,
+    geiger,
+    coda,
+    corpcor,
+    mvMORPH,
+    MASS,
+    phylolm,
+    readr
 Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "postPredicSims.R"
     "makeMLEmap.R"
     "check.hpd.R"
     "dic.mcmc.R"

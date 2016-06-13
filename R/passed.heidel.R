@@ -4,6 +4,7 @@
 ##' @title Heigel diagnostic of convergence.
 ##' @param mcmc An 'mcmc' class object as defined in the 'coda' package.
 ##' @return A vector of length 2 with TRUE or FALSE dependent if the test passed.
+##' @importFrom coda heidel.diag
 passed.heidel <- function(mcmc){
     ## Check if the variables in the mcmc passed the convergence test.
 	## Convergence test for only one chain. For more than one chain use

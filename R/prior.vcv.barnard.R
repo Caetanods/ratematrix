@@ -6,6 +6,7 @@
 ##' @param min Minimum of the uniform prior on the variance component.
 ##' @param max Maximum of the uniform prior on the variance component.
 ##' @return The log density of the matrix S under the prior.
+##' @importFrom corpcor decompose.cov
 prior.vcv.barnard <- function(S, min=0, max=100){
     ## Function to calculate the prior density using the Barnard separation.
     ## Here both the variance and the correlations are uniform. The iwish for the

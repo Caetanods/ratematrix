@@ -9,6 +9,7 @@
 ##' @param dir string. Directory where output files from the MCMC run are stored. If 'NULL', then function tries to read the files from the current directory. This can be set to a directory different from the 'dir' argument of the 'single.R.iwish.mcmc' function.
 ##' @return List with the MCMC chain for the phylogenetic mean (root value) and evolutionary rate matrices (R). 'root' are the values for the phylogenetic mean; 'matrix' is a list with the chain of R matrices; 'log.lik' is the log likelihood (not posterior) for the chain.
 ##' @export
+##' @importFrom readr read_lines
 read.single.R.iwish <- function(out, burn = 0.5, thin = 1, dir=NULL){
     ## Function to read the files written by iwish fast.
     ## Depends on the package 'readr'.
