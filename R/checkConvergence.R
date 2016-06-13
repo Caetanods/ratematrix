@@ -10,6 +10,7 @@
 ##' @param multivariate logical. Whether the 'gelman.diag' function from the package 'coda' should perform the diagnostics using the multivariate version. The default value is TRUE. However, for some matrix configurations the function can return an error that the '(...) leading (...) of order (...) is not positive definite'. Then, setting this argument as FALSE will solve the issue.
 ##' @return Function returns a list with two elements. If the 'method="heidel"' the first element of the list is a matrix with colums varying dependent of the number of matrices fitted to the tree. This matrix has two lines, each is a component of the Heidel diagnostic. TRUE is when the convergence test passed and FALSE is when it falied. If the 'method="gelman"' the first element of the list is another list with the results of the 'gelman.diag' function. This list will have length equal to 1+p: first element is the result for the root value and the following elements are results for the fitted R matrices. The second element of the list returned by the function is a matrix with the effective sample sizes for the root and each cell of the fitted R matrices.
 ##' @export
+##' @importFrom coda mcmc effectiveSize mcmc.list gelman.diag
 checkConvergence <- function(mcmc.chain, p, method=c("heidel","gelman"), multivariate=TRUE){
 
     if(p == 1){
@@ -18,9 +19,9 @@ checkConvergence <- function(mcmc.chain, p, method=c("heidel","gelman"), multiva
             matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]], c) ) )
             ## Using the Heidelberger and Welch diagnostic for convergence.
             ## Note that better would be to use Gelman's R. But we only have one chain.
-            hei.root <- ratematrix:::passed.heidel(root.mcmc)
+            hei.root <- .passed.heidel(root.mcmc)
             ess.root <- coda::effectiveSize(root.mcmc)
-            hei.matrix <- ratematrix:::passed.heidel(matrix.mcmc)
+            hei.matrix <- .passed.heidel(matrix.mcmc)
             ess.matrix <- coda::effectiveSize(matrix.mcmc)
             ess <- c(ess.root, ess.matrix)
             names(ess) <- c( paste("root_",1:length(ess.root),sep=""), paste("matrix_cel_",1:length(ess.matrix),sep=""))
@@ -47,14 +48,14 @@ checkConvergence <- function(mcmc.chain, p, method=c("heidel","gelman"), multiva
     if(p > 1){
         if(method == "heidel"){
             root.mcmc <- coda::mcmc( mcmc.chain[[1]] )
-            hei.root <- ratematrix:::passed.heidel(root.mcmc)
+            hei.root <- .passed.heidel(root.mcmc)
             ess.root <- coda::effectiveSize(root.mcmc)
             hei.root <- data.frame(hei.root)
             diag <- list()
             ess.matrix <- list()
             for(i in 1:p){
                 matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]][[i]], c) ) )
-                hei.matrix <- ratematrix:::passed.heidel(matrix.mcmc)
+                hei.matrix <- .passed.heidel(matrix.mcmc)
                 ess.matrix[[i]] <- coda::effectiveSize(matrix.mcmc)
                 diag[[i]] <- data.frame(hei.matrix)
             }
