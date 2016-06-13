@@ -15,18 +15,18 @@ dic.mcmc(out, post)
 numeric. Return the DIC value.
 }
 \description{
-Deviance information criterion DIC for mcmcsamples.
+Deviance information criterion (DIC) for MCMC models.
 }
 \details{
 Function works with the samples from the R matrix MCMC estimate functions.
-Future implementations will have the DIC calculated alongside the MCMC chain.\cr
 \cr
-Issue: DIC is prone to missbehave and reject the model with two or more matrixes even when there is
-     clearly a better estimate of the parameters. We recommend to use DIC with caution. One can instead
-     interpret the posterior distribution of matrices and check whether the matrices significantly
-     overlap.
+\cr
+Important issue: DIC is prone to missbehave and reject the model with two or more matrixes even when there is clearly a better estimate of the parameters. The posterior distribution for the R matrix is not normally distributed and this might be the reason why the DIC is not a good statistics to test the models comparing different numbers of R matrices. We recommend caution while using DIC.
+}
+\references{
+Gelman, A., J. Hwang, and A. Vehtari. 2013. Understanding predictive information criteria for Bayesian models. Stat Comput. 24:997–1016.
 }
 \seealso{
-\code{\link{multi.R.iwish.mcmc.R,single.R.iwish.mcmc.R}}
+\code{\link{multi.R.iwish.mcmc.R single.R.iwish.mcmc.R}}
 }
 
