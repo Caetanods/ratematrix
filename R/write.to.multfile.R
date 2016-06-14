@@ -20,7 +20,7 @@ write.to.multfile <- function(files, cache.chain, p, chunk){
     sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[1]]),"\n",sep=";",file=files[[2]], append=TRUE))
     for(i in 1:p){
         ## Note that 1st position of files is the posteior of the root.
-        sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[2]][[i]]),"\n",sep=";"
+        sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[4]][[i]]),"\n",sep=";"
                                     , file=files[[i+2]], append=TRUE))
     }
 

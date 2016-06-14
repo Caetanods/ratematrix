@@ -4,20 +4,16 @@
 \alias{singleR.loglik}
 \title{Log likelihood for one evolutionary rate matrix fitted to the data and tree.}
 \usage{
-singleR.loglik(X, phy, root, R, r, n)
+singleR.loglik(data, chain, root, R)
 }
 \arguments{
-\item{X}{matrix. The matrix of trait data.}
+\item{data}{the data cache.}
 
-\item{phy}{ape phylo. The phylogenetic tree with branch lengths.}
+\item{chain}{the chain cache.}
 
 \item{root}{numeric. The phylogenetic mean.}
 
 \item{R}{matrix. The covariance matrix fitted to the tree and data.}
-
-\item{r}{numeric. Number of traits, the dimension of the R matrix.}
-
-\item{n}{numeric. Number of tips in the phylogeny.}
 }
 \value{
 numeric. The log likelhood.

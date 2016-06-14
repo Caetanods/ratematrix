@@ -20,6 +20,7 @@
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 indicates that the evolutionary rate matrix was updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree. This value will always be 1 for this function, by see 'multi.R.iwish.mcmc'; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
 ##' @export
 ##' @importFrom geiger treedata
+##' @importFrom corpcor decompose.cov
 single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
 
     ## Verify the directory:
@@ -51,21 +52,31 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     cache.chain <- list()
     cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
     cache.chain$chain[[1]] <- start ## Starting value for the chain.
+    cache.chain$chain[[1]][[4]] <- corpcor::rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
     cache.chain$acc <- vector(mode="integer", length=gen) ## Vector for acceptance ratio.
     ## Acceptance ratio is not recycled at each 'chunk'.
     cache.chain$acc[1] <- 1 ## Represents the starting value.
     ## The loglik function from mvMORPH does not need the b vector, but the root value.
-    #cache.chain$root.curr <- as.vector(cache.chain$chain[[1]][[1]])
+                                        #cache.chain$root.curr <- as.vector(cache.chain$chain[[1]][[1]])
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
 
-    cache.chain$lik[1] <- singleR.loglik(X=cache.data$X, phy=cache.data$phy
+    cache.chain$lik[1] <- singleR.loglik(data=cache.data, chain=cache.chain
                                        , root=as.vector(cache.chain$chain[[1]][[1]])
-                                       , R=cache.chain$chain[[1]][[2]], n=cache.data$n
-                                       , r=cache.data$k) ## Lik start value.
+                                       , R=cache.chain$chain[[1]][[2]]) ## Lik start value.
+    
+    ## cache.chain$lik[1] <- singleR.loglik(X=cache.data$X, phy=cache.data$phy
+    ##                                    , root=as.vector(cache.chain$chain[[1]][[1]])
+    ##                                    , R=cache.chain$chain[[1]][[2]], n=cache.data$n
+    ##                                    , r=cache.data$k) ## Lik start value.
 
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
-    cache.chain$curr.vcv.prior <- prior[[2]](cache.chain$chain[[1]][[2]]) ## Prior log lik starting value.
+    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[2]]) ## Prior log lik starting value.
 
+    ## Will need to keep track of the Jacobian for the correlation matrix.
+    decom <- decompose.cov( cache.chain$chain[[1]][[2]] )
+    cache.chain$curr.r.jacobian <- sum( sapply(1:cache.data$k, function(x) log( decom$v[x]) ) ) * log( (cache.data$k-1)/2 )
+    
+    cache.chain$curr.sd.prior <- prior[[3]](cache.chain$chain[[1]][[3]]) ## Prior log lik starting value.
     ## Generate identifier:
     ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
 
@@ -76,7 +87,7 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
                   )
 
     ## Build the update.function list:
-    update.function <- list(phylo.mean.step.fast, R.matrix.step.fast)
+    update.function <- list(phylo.mean.step.fast, sigma.step.zhang)
 
     ## Calculate chunks and create write point.
     block <- gen/chunk
@@ -120,12 +131,12 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     lapply(files, close)
     
     ## Create table of acceptance ratio.
-    acc.mat <- matrix(table(cache.chain$acc), nrow=1)
-    colnames(acc.mat) <- c("reject","root","R")
+    ## acc.mat <- matrix(table(cache.chain$acc), nrow=1)
+    ## colnames(acc.mat) <- c("reject","root","R")
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    return( list(acc_ratio = acc.mat, k = cache.data$k, p = 1
+    return( list(acc_vector = cache.chain$acc, k = cache.data$k, p = 1
                , ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
                , phy = phy, prior = prior, start = start, gen = gen) )
 }

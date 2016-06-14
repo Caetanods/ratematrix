@@ -4,26 +4,16 @@
 \alias{multiR.loglik}
 \title{Log likelihood for multiple matrices.}
 \usage{
-multiR.loglik(X, root, R.m, C.m, D, n, r, p)
+multiR.loglik(data, chain, root, R)
 }
 \arguments{
-\item{X}{matrix. The matrix of trait data.}
+\item{data}{cache data.}
 
-\item{root}{numeric. The phylogenetic mean.}
+\item{chain}{cache chain}
 
-\item{R.m}{list. List of matrices fitted to the tree with length equal to 'cache.data$p'.}
+\item{root}{phylogenetic mean}
 
-\item{C.m}{list. List of C matrices with length equal to 'cache.data$p'. This is calculated by the function 'multiC' of the 'phytools' package.}
-
-\item{D}{matrix. The design matrix. This is a fixed term, dependent on the phylogeny.}
-
-\item{n}{numeric. Number of tips in the phylogeny.}
-
-\item{r}{numeric. Number of traits, the dimension of the R matrix.}
-
-\item{p}{numeric. Number of R matrices fitted to the tree.}
-
-\item{method}{string. Method to be used to calculate the likelihood. Right now only the option 'rpf' is working. More options will be implemented in the future.}
+\item{R}{list. List of the R matrices.}
 }
 \value{
 numeric. The log likelhood.

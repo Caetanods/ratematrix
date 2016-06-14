@@ -22,6 +22,9 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "multiR.matrix.step.zhang.R"
+    "R.matrix.step.zhang.R"
+    "sliding.window.positive.R"
     "postPredicSims.R"
     "makeMLEmap.R"
     "check.hpd.R"

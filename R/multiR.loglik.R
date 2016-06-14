@@ -2,20 +2,21 @@
 ##'
 ##' Internal function to be used by the MCMC. This function uses the 'rpf' method to calculate the approximation of the inverse of matrices as impplemented in mvMORPH.
 ##' @title Log likelihood for multiple matrices.
-##' @param X matrix. The matrix of trait data.
-##' @param root numeric. The phylogenetic mean.
-##' @param R.m list. List of matrices fitted to the tree with length equal to 'cache.data$p'.
-##' @param C.m list. List of C matrices with length equal to 'cache.data$p'. This is calculated by the function 'multiC' of the 'phytools' package.
-##' @param D matrix. The design matrix. This is a fixed term, dependent on the phylogeny.
-##' @param n numeric. Number of tips in the phylogeny.
-##' @param r numeric. Number of traits, the dimension of the R matrix.
-##' @param p numeric. Number of R matrices fitted to the tree.
-##' @param method string. Method to be used to calculate the likelihood. Right now only the option 'rpf' is working. More options will be implemented in the future.
+##' @param data cache data.
+##' @param chain cache chain
+##' @param root phylogenetic mean
+##' @param R list. List of the R matrices.
 ##' @return numeric. The log likelhood.
 ##' @references Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
-multiR.loglik <- function(X, root, R.m, C.m, D, n, r, p){
+multiR.loglik <- function(data, chain, root, R){
     ## Default method is "rpf"
-    V.m <- lapply(1:p, function(x) kronecker(R.m[[x]], C.m[[x]]) )
+    C.m <- data$C.m
+    X <- data$X
+    D <- data$D
+    n <- data$n
+    r <- data$k
+    p <- data$p
+    V.m <- lapply(1:p, function(x) kronecker(R[[x]], C.m[[x]]) )
     V <- Reduce("+", V.m)
     ntot <- n*r
     ## This method will not accept matrices with elements equal to zero.

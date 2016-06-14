@@ -20,8 +20,8 @@ phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, cou
     ## Create column vector format of b (phylo mean).
     #b.prop <- matrix( sapply(as.vector(prop.root), function(x) rep(x, cache.data$n) ) )
     ## Get log likelihood ratio.
-    prop.root.lik <- singleR.loglik(X=cache.data$X, phy=cache.data$phy, root=as.vector(prop.root)
-                                  , R=cache.chain$chain[[iter-1]][[2]], n=cache.data$n, r=cache.data$k)
+    prop.root.lik <- singleR.loglik(data=cache.data, chain=cache.chain, root=as.vector(prop.root)
+                                  , R=cache.chain$chain[[iter-1]][[2]] )
     ll <-  prop.root.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.
     r <- ll + pp

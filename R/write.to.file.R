@@ -13,7 +13,7 @@ write.to.file <- function(files, cache.chain, chunk){
     ## Never write the first element. Keep the last element.
     sapply(2:ll, function(x) cat(cache.chain$lik[x],"\n",sep=";",file=files$log.lik, append=TRUE))
     sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[1]]),"\n",sep=";",file=files$root, append=TRUE))
-    sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[2]]),"\n",sep=";",file=files$matrix, append=TRUE))
+    sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[4]]),"\n",sep=";",file=files$matrix, append=TRUE))
 
     ## Keep the last element and clear the rest for memory saving.
     keep.chain <- cache.chain$chain[[ll]]
