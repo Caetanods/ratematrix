@@ -21,7 +21,7 @@ Deviance information criterion (DIC) for MCMC models.
 Function works with the samples from the R matrix MCMC estimate functions.
 \cr
 \cr
-Important issue: DIC is prone to missbehave and reject the model with two or more matrixes even when there is clearly a better estimate of the parameters. The posterior distribution for the R matrix is not normally distributed and this might be the reason why the DIC is not a good statistics to test the models comparing different numbers of R matrices. We recommend caution while using DIC.
+Important note: DIC uses the mean of the posterior as a summary statistics for the test. If the posterior of parameter estimates is not well summarized by the mean, then the results of the DIC test will have no meaning.
 }
 \references{
 Gelman, A., J. Hwang, and A. Vehtari. 2013. Understanding predictive information criteria for Bayesian models. Stat Comput. 24:997–1016.
