@@ -10,6 +10,7 @@
 ##' @param Sigma 
 ##' @param nu 
 ##' @return List of density functions to be used as the prior for MCMC functions.
+##' @export
 make.prior.zhang <- function(den.mu="unif", par.mu=c(-100,100), den.sd="unif", par.sd=c(0,100), unif.corr=TRUE, Sigma=NULL, nu=NULL){
     ## This should be a much more general prior function than the current implemmented. The point is that for the phylogenetic root and for the vector of standard deviations there are many possibilities for prior distributions. At the moment, two distributions seems good enough. The uniform for both parameters, then the log normal for the vector of standard deviations and the normal for the vector of phylogenetic means.
     ## The parameters for the uniform and the normal are different.
