@@ -46,5 +46,6 @@ MCMC using the inverse-Wishart as a proposal distribution for the covariance mat
    window for the phylogenetic mean in the random walk Metropolis-Hastings algorithm. At the moment the
    function only applies the 'rpf' method for calculation of the log likelihood implemented in the
    package 'mvMORPH'. Future versions should offer different log likelihood methods for the user.
+This version is using the pruning algoritm to c
 }
 
