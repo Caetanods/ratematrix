@@ -39,7 +39,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
 
     ## Make the precalculation based on the tree.
     cache.data <- list()
-    cache.data$X
+    cache.data$X <- X
     cache.data$k <- ncol(X) ## Number of traits.
     ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
     cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
@@ -49,15 +49,15 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
     cache.data$nodes <- unique(anc) ## The internal nodes we will traverse.
 
     ## Set the types for each of the nodes that are going to be visited.
-    node.to.tip <- which( tabulate( anc[which(des <= length(phy$tip.label))] ) == 2 )
-    node.to.node <- which( tabulate( anc[which(des > length(phy$tip.label))] ) == 2 )
+    node.to.tip <- which( tabulate( anc[which(cache.data$des <= length(phy$tip.label))] ) == 2 )
+    node.to.node <- which( tabulate( anc[which(cache.data$des > length(phy$tip.label))] ) == 2 )
     node.to.tip.node <- unique( anc )[!unique( anc ) %in% c(node.to.node, node.to.tip)]
     ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
     names(anc) <- rep(1, times=length(anc))
     names(anc)[which(anc %in% node.to.node)] <- 2
     names(anc)[which(anc %in% node.to.tip.node)] <- 3
     cache.data$anc <- anc ## This need to come with the names.
-    cache.data$p <- length(R) ## Number of R matrices to be fitted. Do I need this?
+    cache.data$p <- length( start[[2]] ) ## Number of R matrices to be fitted. Do I need this?
 
     ## Creates MCMC chain cache:
     cache.chain <- list()
