@@ -62,6 +62,7 @@ calc_node_to_tip_node <- function(X, k, des, anc, mapped.edge, R, node.id, cache
     cache$V0[,,length(cache$key)] <- chol2inv(chol( chol2inv(chol(Rs1)) + chol2inv(chol(Rs2)) ))
     return( cache )
 }
+
 ##' Calculates the log likelihood of a tree, rates and phylogenetic mean. Applies to both a single and multiple regimes. Right now it only works with a constant regime or with a regime with two rate matrices.
 ##'
 ##' This function uses the pruning algorithm. This avoids the calculation of the inverse and the determinant of large matrices. Also it makes calculation much more stable, so the likelihood can be calculated even for very large matrices. This function is to be used outside of the MCMC, since one can precaulculate some quantities that are constant given the tree and the data.
