@@ -37,8 +37,8 @@ multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, w, v, iter, c
         ## Only work with the one defined here.
         Rlik <- cache.chain$chain[[iter-1]][[4]] ## This log lik need both matrices.
         Rlik[[Rp]] <- prop.vcv
-        prop.sd.lik <- multiR.loglik(data=cache.data, chain=cache.chain, root=as.vector( cache.chain$chain[[iter-1]][[1]] )
-                                    , R=Rlik)
+        prop.sd.lik <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+                                , R=Rlik, mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
         ## prop.sd.lik <- log.dmvnorm(cache.data$X, mu=cache.chain$chain[[iter-1]][[1]], sigma=prop.vcv)
         ll <-  prop.sd.lik - cache.chain$lik[iter-1]
         
@@ -75,8 +75,8 @@ multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, w, v, iter, c
         prop.vcv <- rebuild.cov( r=decom$r, v=cache.chain$chain[[iter-1]][[3]][[Rp]]^2 )
         Rlik <- cache.chain$chain[[iter-1]][[4]] ## This log lik need both matrices.
         Rlik[[Rp]] <- prop.vcv
-        prop.r.lik <- multiR.loglik(data=cache.data, chain=cache.chain, root=as.vector( cache.chain$chain[[iter-1]][[1]] )
-                                   , R=Rlik)
+        prop.r.lik <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+                               , R=Rlik, mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
         ll <- prop.r.lik - cache.chain$lik[iter-1]
         ## The hastings ratio.
         hh <- h.density(curr.vcv=cache.chain$chain[[iter-1]][[2]][[Rp]], prop.vcv=prop.r, p=cache.data$k, v=v)

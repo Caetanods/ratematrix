@@ -5,6 +5,7 @@
 ##'    window for the phylogenetic mean in the random walk Metropolis-Hastings algorithm. At the moment the
 ##'    function only applies the 'rpf' method for calculation of the log likelihood implemented in the
 ##'    package 'mvMORPH'. Future versions should offer different log likelihood methods for the user.
+##' This version is using the pruning algoritm to c
 ##' @title MCMC for two or more evolutionary rate matrices.
 ##' @param X matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.
 ##' @param phy simmap phylo. A phylogeny of the class "simmap" from the package 'phytools'. Function uses the location information for a number of traits equal to the number of fitted matrices.
@@ -25,40 +26,6 @@
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor rebuild.cov
 multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
-    ## Version of the function to handle more than one matrix fitted to the tree.
-    ## The base is the same of the 'singleR_iwish_fast'.
-    ## Function writes to file. Creates an unique identifier for the files to prevent the user to
-    ##      append one MCMC with other working in the same directory.
-    ## MCMC using the inverse-Wishart as a proposal for the random walk Metropolis-Hastings.
-    ## The MCMC also make proposals for the phylogenetic mean.
-    ## ISSUE: This function need to have a 'method' argument to be able to use a different method for
-    ##      the log lik. Right now it is stuck with the 'rpf' method that came from the mvMORPH implementation.
-    ## X = A matrix with the data. rownames == phy$tip.label.
-    ## phy = A phylogeny of the type "simmap" from 'phytools'. Need to use the mapping to fit the
-    ##      matrix.
-    ## start = List with [[1]] for the phylogenetic mean and [[2]] for the R matrices.
-    ##       [[2]] is also a list with length equal to the number of matrices to be fitted to the data.
-    ## prior = List with [[1]] a function for the phylogenetic mean and [[2]] a function for the R matrix.
-    ##       The prior can be the same for each of the matrix or a different prior for each matrix.
-    ##       At the moment the function only implements a shared prior among all the matrices.
-    ##       This feature will be added soonish.
-    ## gen = number of generations.
-    ## v = tunning parameter for the inverse-Wishart proposal density.
-    ## w = width parameter for the uniform sliding window proposal density.
-    ## prop = vector with two floating points numbers. First is the probability that the phylogenetic
-    ##        mean will be sampled for a proposal step, second is the evolutionary matrix (R) chance.
-    ##        First the function sample whether the root value or the matrix should be updated.
-    ##        If the matrix is selected for an update than one matrix among the group of matrices fitted
-    ##        is selected at random with the same probability.
-    ## chunk = number of generations that chain will be in memory before writing to file.
-    ##        Each of the matrices will have its own file. Therefore one need to use a different reading
-    ##        function to read the results of this function.
-    ## dir = directory to write the files. Optional argument. If empty then output is written to the
-    ##       directory where R is running. If a directory path is given, then test if the directory
-    ##       exists and use it. If directiory does not exists the function creates it.
-    ## outname = idetifier name of the run. files are goint to start with this string.
-    ## IDlen = lenght of the unique identifier added to the name of the files. This prevent that two runs
-    ##       of the MCMC will append results to the same files. Something between 5 and 10 is good enough.
 
     ## Verify the directory:
     if( is.null(dir) ){
@@ -70,21 +37,27 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
     ## Change the data to matrix:
     if( class(X) == "data.frame" ) X <- as.matrix( X )
 
-    ## Creates data cache:
+    ## Make the precalculation based on the tree.
     cache.data <- list()
-    cache.data$n <- length(phy$tip.label) ## Number of tips.
-    cache.data$k <- dim(X)[2] ## Number of traits.
-    cache.data$C <- vcv(phy) ## The phylogenetic covariance matrix.
-    ## This version will need to design matrix (D).
-    cache.data$D <- matrix(0, nrow = cache.data$n*cache.data$k, ncol = cache.data$k)
-    for(i in 1:cache.data$k) cache.data$D[((cache.data$n*(i-1))+1):(cache.data$n*i),i] <- 1
-    cache.data$X <- X[rownames(cache.data$C),] ## Matching rownames of X and C.
-    cache.data$traits <- colnames(X) ## Get names for the traits.
-    ##cache.data$y <- matrix( c( as.matrix(cache.data$X) ) ) ## Column vector format.
-    ##   -- For the multiR case only:
-    cache.data$C.m <- multiC(phy) ## phy vcv matrix for multiple R matrices.
-    names(cache.data$C.m) <- colnames(phy$mapped.edge) ## Give names to each matrix.
-    cache.data$p <- length(cache.data$C.m) ## Number of R matrices to be fitted.    
+    cache.data$X
+    cache.data$k <- ncol(X) ## Number of traits.
+    ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
+    cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
+    ## Need to take care how to match the regimes and the R matrices.
+    anc <- phy$edge[ord.id,1] ## Ancestral edges.
+    cache.data$des <- phy$edge[ord.id,2] ## Descendent edges.
+    cache.data$nodes <- unique(anc) ## The internal nodes we will traverse.
+
+    ## Set the types for each of the nodes that are going to be visited.
+    node.to.tip <- which( tabulate( anc[which(des <= length(phy$tip.label))] ) == 2 )
+    node.to.node <- which( tabulate( anc[which(des > length(phy$tip.label))] ) == 2 )
+    node.to.tip.node <- unique( anc )[!unique( anc ) %in% c(node.to.node, node.to.tip)]
+    ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
+    names(anc) <- rep(1, times=length(anc))
+    names(anc)[which(anc %in% node.to.node)] <- 2
+    names(anc)[which(anc %in% node.to.tip.node)] <- 3
+    cache.data$anc <- anc ## This need to come with the names.
+    cache.data$p <- length(R) ## Number of R matrices to be fitted. Do I need this?
 
     ## Creates MCMC chain cache:
     cache.chain <- list()
@@ -97,15 +70,11 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
     ## Create column vector format for start state of b (phylo mean).
     ##cache.chain$b.curr <- matrix( sapply(as.vector(cache.chain$chain[[1]][[1]]), function(x) rep(x, cache.data$n) ) )
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
-    cache.chain$lik[1] <- multiR.loglik(data=cache.data, chain=cache.chain, root=as.vector(cache.chain$chain[[1]][[1]])
-                                      , R=cache.chain$chain[[1]][[2]])
-    ## cache.chain$lik[1] <- multiR.loglik(X=cache.data$X, root=as.vector(cache.chain$chain[[1]][[1]])
-    ##                             , R.m=cache.chain$chain[[1]][[2]], C.m=cache.data$C.m, D=cache.data$D
-    ##                             , n=cache.data$n, r=cache.data$k, p=cache.data$p)
+    cache.chain$lik[1] <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+                                   , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
     ## Prior log lik starting value for each of the matrices.
-    cache.chain$curr.r.prior <- lapply(1:cache.data$p,
-                                         function(x) prior[[2]](cache.chain$chain[[1]][[2]][[x]]) )
+    cache.chain$curr.r.prior <- lapply(1:cache.data$p, function(x) prior[[2]](cache.chain$chain[[1]][[2]][[x]]) )
 
     ## Will need to keep track of the Jacobian for the correlation matrix.
     decom <- lapply(1:cache.data$p, function(x) decompose.cov( cache.chain$chain[[1]][[2]][[x]] ) )
@@ -127,11 +96,8 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
         files[[i]] <- file(file.path(dir, paste(outname,".",ID,".",(i-2),".matrix",sep="")),open="a")
     }
 
-    ## Build the update.function list:
+    ## Build the update.function list. This functions do the updated AND calculate the likelihood.
     update.function <- list(multi.phylo.mean.step.fast, multi.sigma.step.zhang)
-
-    ## Starts the clock for the MCMC loop:
-    ## ptm <- proc.time()
 
     ## Calculate chunks and create write point.
     block <- gen/chunk
