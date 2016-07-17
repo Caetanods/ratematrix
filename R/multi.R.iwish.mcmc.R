@@ -25,7 +25,7 @@
 ##' @export
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor rebuild.cov
-multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
+multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
 
     ## Verify the directory:
     if( is.null(dir) ){
@@ -122,7 +122,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7),
 
             ###########################################
             ## Update and accept reject steps:
-            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w, v, iter=i, count)
+            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, v, w_sd, w_mu, iter=i, count)
             ## Update counter.
             count <- count+1
             ###########################################

@@ -11,20 +11,21 @@
 ##' @return The chain cache.
 ##' @author daniel
 ##' @importFrom corpcor decompose.cov rebuild.cov
-multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, w, v, iter, count) {
+multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count) {
     ## This is going to be the step for the correlation matrix and the vector of standard deviations.
     ## The moves for the correlation matrix now are independent of the moves for the standard deviations.
     ## Thus, I need to sample which move to make at each call of the function.
     ## In a second implementation, would be better to separate this function into two independent update functions maybe.
 
-    up <- sample(1:2, size=1)
+    up <- sample(1:2, size=1) ## Updates the standard deviations or the correlation structure.
     ## Random draw one of the p R matrices to update:
     Rp <- sample(1:cache.data$p, size=1)
 
     if( up == 1 ){
         
         ## Update the vector of standard deviations.
-        prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]][[Rp]], function(x) sliding.window.positive(x, w) )
+        ## The width of the standard deviation updates is the same of the mean.
+        prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]][[Rp]], function(x) sliding.window.positive(x, w_mu) )
         prop.sd.prior <- prior[[3]](prop.sd) ## The third prior function.
         pp <- prop.sd.prior - cache.chain$curr.sd.prior[[Rp]]
 

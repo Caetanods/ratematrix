@@ -10,7 +10,7 @@
 ##' @param iter numeric. The state of the MCMC chain. This is used to access elements in the MCMC caches.
 ##' @param count numeric. Keep the count of the chain to record accepted and rejected steps.
 ##' @return Return a modified 'cache.chain'.
-multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, count){
+multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count){
     ## Make the proposal and accept step for the phylogenetic mean.
     ## cache.data = cache with data for analysis.
     ## cache.chain = cache with chain objects.
@@ -21,7 +21,7 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, ite
     ##        objects.
 
     ## make.prop.mean is a function to make sliding window proposal moves.
-    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w) )
+    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w_mu) )
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
     prop.root.prior <- prior[[1]](prop.root)
     pp <- prop.root.prior - cache.chain$curr.root.prior
