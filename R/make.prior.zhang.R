@@ -2,13 +2,13 @@
 ##'
 ##' For a model with two or more rate matrices fitted to the phylogeny different priors can be set for each R matrix. To do this first create a list of 'p' priors created with this function and pass the list to the MCMC sampler. The MCMC will set the prior for the phylogenetic mean (den.mu) as the prior in the first element of the list. The vector of standard deviations and the prior on the correlation will be defined as the other elements of the list in the same order as the R matrices fitted to the data.
 ##' @title Prior for the MCMC sampler.
-##' @param den.mu Set the density type for the phylogenetic mean. One of "unif" or "norm".
-##' @param par.mu Numeric vector with length 2. The parameters for the density of phylogenetic means.
+##' @param den.mu Set the density type for the phylogenetic mean. One of "unif" (default) or "norm".
+##' @param par.mu Numeric vector with length 2. The parameters for the density of phylogenetic means. When the density is "unif" then par.mu[1] is the minimum and par.mu[2] is the maximum. When the density is "norm̉" then par.mu[1] is the mean and par.mu[2] is the standard deviation of a normal distribution around the phylogenetic mean.
 ##' @param den.sd Set the density type for the vector of standard deviations. One of "unif" or "lnorm".
-##' @param par.sd Numeric vector with length 2. The parameters for the density of standard deviations. When set to "unif", then 'par.sd[1]' (the min) need to be a positive value.
-##' @param unif.corr Whether the 
-##' @param Sigma 
-##' @param nu 
+##' @param par.sd Numeric vector with length 2. The parameters for the density of standard deviations. When set to "unif", then 'par.sd[1]' (the min) need to be a positive value and 'par.sd[2]' is the maximum. When set to "lnorm" then par.sd[1] is the log(mean) of the density and par.sd[2] is the log(sd) of the distribution.
+##' @param unif.corr Whether the correlation structure of the prior distribution on the Sigma matrix is flat. 
+##' @param Sigma The scale matrix for the inverse Wishart distribution used to sample the evolutionary correlation among traits. This is the parameter to center the prior distribution of the correlations in a given value.
+##' @param nu The degrees of freedom parameter of the inverse Wishart distribution. Larger values will make the distribution more tight around the scale matrix.
 ##' @return List of density functions to be used as the prior for MCMC functions.
 ##' @export
 make.prior.zhang <- function(den.mu="unif", par.mu=c(-100,100), den.sd="unif", par.sd=c(0,100), unif.corr=TRUE, Sigma=NULL, nu=NULL){

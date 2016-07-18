@@ -8,19 +8,19 @@ make.prior.zhang(den.mu = "unif", par.mu = c(-100, 100), den.sd = "unif",
   par.sd = c(0, 100), unif.corr = TRUE, Sigma = NULL, nu = NULL)
 }
 \arguments{
-\item{den.mu}{Set the density type for the phylogenetic mean. One of "unif" or "norm".}
+\item{den.mu}{Set the density type for the phylogenetic mean. One of "unif" (default) or "norm".}
 
-\item{par.mu}{Numeric vector with length 2. The parameters for the density of phylogenetic means.}
+\item{par.mu}{Numeric vector with length 2. The parameters for the density of phylogenetic means. When the density is "unif" then par.mu[1] is the minimum and par.mu[2] is the maximum. When the density is "norm̉" then par.mu[1] is the mean and par.mu[2] is the standard deviation of a normal distribution around the phylogenetic mean.}
 
 \item{den.sd}{Set the density type for the vector of standard deviations. One of "unif" or "lnorm".}
 
-\item{par.sd}{Numeric vector with length 2. The parameters for the density of standard deviations. When set to "unif", then 'par.sd[1]' (the min) need to be a positive value.}
+\item{par.sd}{Numeric vector with length 2. The parameters for the density of standard deviations. When set to "unif", then 'par.sd[1]' (the min) need to be a positive value and 'par.sd[2]' is the maximum. When set to "lnorm" then par.sd[1] is the log(mean) of the density and par.sd[2] is the log(sd) of the distribution.}
 
-\item{unif.corr}{Whether the}
+\item{unif.corr}{Whether the correlation structure of the prior distribution on the Sigma matrix is flat.}
 
-\item{Sigma}{}
+\item{Sigma}{The scale matrix for the inverse Wishart distribution used to sample the evolutionary correlation among traits. This is the parameter to center the prior distribution of the correlations in a given value.}
 
-\item{nu}{}
+\item{nu}{The degrees of freedom parameter of the inverse Wishart distribution. Larger values will make the distribution more tight around the scale matrix.}
 }
 \value{
 List of density functions to be used as the prior for MCMC functions.
