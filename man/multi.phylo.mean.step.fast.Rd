@@ -4,7 +4,8 @@
 \alias{multi.phylo.mean.step.fast}
 \title{Proposal and accept/reject for the phylogenetic mean.}
 \usage{
-multi.phylo.mean.step.fast(cache.data, cache.chain, prior, w, v, iter, count)
+multi.phylo.mean.step.fast(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
+  count)
 }
 \arguments{
 \item{cache.data}{list. The cache with the data.}
@@ -13,13 +14,13 @@ multi.phylo.mean.step.fast(cache.data, cache.chain, prior, w, v, iter, count)
 
 \item{prior}{list. A list with the prior functions.}
 
-\item{w}{numeric. The sliding window width parameter.}
-
 \item{v}{numeric. Degrees of freedom for the inverse-wishart distribution.}
 
 \item{iter}{numeric. The state of the MCMC chain. This is used to access elements in the MCMC caches.}
 
 \item{count}{numeric. Keep the count of the chain to record accepted and rejected steps.}
+
+\item{w}{numeric. The sliding window width parameter.}
 }
 \value{
 Return a modified 'cache.chain'.

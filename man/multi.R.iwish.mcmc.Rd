@@ -4,8 +4,8 @@
 \alias{multi.R.iwish.mcmc}
 \title{MCMC for two or more evolutionary rate matrices.}
 \usage{
-multi.R.iwish.mcmc(X, phy, start, prior, gen, v, w, prop = c(0.3, 0.7), chunk,
-  dir = NULL, outname = "single_R_fast", IDlen = 5)
+multi.R.iwish.mcmc(X, phy, start, prior, gen, v, w_sd, w_mu, prop = c(0.3,
+  0.7), chunk, dir = NULL, outname = "single_R_fast", IDlen = 5)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}
@@ -20,8 +20,6 @@ multi.R.iwish.mcmc(X, phy, start, prior, gen, v, w, prop = c(0.3, 0.7), chunk,
 
 \item{v}{numeric. Degrees of freedom parameter for the inverse-Wishart proposal distribution for the evolutionary rate matrix.}
 
-\item{w}{numeric. Width of the sliding window proposal step for the phylogenetic mean.}
-
 \item{prop}{vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each genetarion, second is the probability that the evolutionary rate matrix will be updated instead. First the function sample whether the root value or the matrix should be updated. If the matrix is selected for an update, then one of the matrices fitted to the phylogeny is selected to be updated at random with the same probability.}
 
 \item{chunk}{numeric. Number of generations that the MCMC chain will be stored in memory before writing to file. At each 'chunk' generations the function will write the block stored in memory to a file and erase all but the last generation, which is used to continue the MCMC chain. Each of the covariance matrices is saved to its own file.}
@@ -31,6 +29,8 @@ multi.R.iwish.mcmc(X, phy, start, prior, gen, v, w, prop = c(0.3, 0.7), chunk,
 \item{outname}{string. Name pasted to the files. Name of the output files will start with 'outname'.}
 
 \item{IDlen}{numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.}
+
+\item{w}{numeric. Width of the sliding window proposal step for the phylogenetic mean.}
 }
 \value{
 Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr

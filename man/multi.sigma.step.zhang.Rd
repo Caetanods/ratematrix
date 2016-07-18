@@ -4,7 +4,8 @@
 \alias{multi.sigma.step.zhang}
 \title{Sigma step using Zhang strategy}
 \usage{
-multi.sigma.step.zhang(cache.data, cache.chain, prior, w, v, iter, count)
+multi.sigma.step.zhang(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
+  count)
 }
 \arguments{
 \item{cache.data}{}
@@ -13,11 +14,11 @@ multi.sigma.step.zhang(cache.data, cache.chain, prior, w, v, iter, count)
 
 \item{prior}{}
 
-\item{w}{}
-
 \item{iter}{}
 
 \item{count}{}
+
+\item{w}{}
 }
 \value{
 The chain cache.
