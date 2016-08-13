@@ -4,29 +4,33 @@
 \alias{make.prior.zhang}
 \title{Prior for the MCMC sampler.}
 \usage{
-make.prior.zhang(den.mu = "unif", par.mu = c(-100, 100), den.sd = "unif",
-  par.sd = c(0, 100), unif.corr = TRUE, Sigma = NULL, nu = NULL)
+make.prior.zhang(r, p, den.mu = "unif", par.mu, den.sd = "unif", par.sd,
+  unif.corr = TRUE, Sigma = NULL, nu = NULL)
 }
 \arguments{
+\item{r}{Number of traits in the model.}
+
+\item{p}{Number of evolutionary rate matrices fitted to the phylogeny.}
+
 \item{den.mu}{Set the density type for the phylogenetic mean. One of "unif" (default) or "norm".}
 
-\item{par.mu}{Numeric vector with length 2. The parameters for the density of phylogenetic means. When the density is "unif" then par.mu[1] is the minimum and par.mu[2] is the maximum. When the density is "norm̉" then par.mu[1] is the mean and par.mu[2] is the standard deviation of a normal distribution around the phylogenetic mean.}
+\item{par.mu}{The parameters for the prior density on the vector of phylogenetic means. Matrix with number of rows equal 'r'. When the density is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm̉" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.}
 
 \item{den.sd}{Set the density type for the vector of standard deviations. One of "unif" or "lnorm".}
 
-\item{par.sd}{Numeric vector with length 2. The parameters for the density of standard deviations. When set to "unif", then 'par.sd[1]' (the min) need to be a positive value and 'par.sd[2]' is the maximum. When set to "lnorm" then par.sd[1] is the log(mean) of the density and par.sd[2] is the log(sd) of the distribution.}
+\item{par.sd}{The parameters for the density of standard deviations. Matrix with number of rows equal to 'p'. When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "de.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(sd) for the distributions.}
 
 \item{unif.corr}{Whether the correlation structure of the prior distribution on the Sigma matrix is flat.}
 
-\item{Sigma}{The scale matrix for the inverse Wishart distribution used to sample the evolutionary correlation among traits. This is the parameter to center the prior distribution of the correlations in a given value.}
+\item{Sigma}{The scale matrix for the inverse Wishart distribution used to sample the evolutionary correlation among traits. This is the parameter to center the prior distribution of the correlations in a given value. Need to be a list with length equal to 'p'. When 'p==1' then is needs to be a matrix.}
 
-\item{nu}{The degrees of freedom parameter of the inverse Wishart distribution. Larger values will make the distribution more tight around the scale matrix.}
+\item{nu}{The degrees of freedom parameter of the inverse Wishart distribution. Larger values will make the distribution more tight around the scale matrix. Need to be a vector of length equal to 'p'.}
 }
 \value{
 List of density functions to be used as the prior for MCMC functions.
 }
 \description{
-Generates prior densities for the MCMC sampler. Independent priors are defined for the phylogenetic mean, the vector of standard deviations and the structure of correlation. Thus allowing for a wide range of configurations. Priors for the phylogenetic mean and the standard deviations can be uniform of normal (lognormal in the case of the standard deviations). Prior on the matrix of correlations is distributed as a inverse Wishart and can be set to a marginally uniform prior or to be centered is some custom matrix.
+Generates prior densities for the MCMC sampler. Independent priors are defined for the phylogenetic mean, the vector of standard deviations and the structure of correlation. Thus allowing for a wide range of configurations. Priors for the phylogenetic mean and the standard deviations can be uniform or normal (lognormal in the case of the standard deviations). Prior on the matrix of correlations is distributed as an inverse Wishart and can be set to a marginally uniform prior or to be centered is some custom matrix.
 }
 \details{
 For a model with two or more rate matrices fitted to the phylogeny different priors can be set for each R matrix. To do this first create a list of 'p' priors created with this function and pass the list to the MCMC sampler. The MCMC will set the prior for the phylogenetic mean (den.mu) as the prior in the first element of the list. The vector of standard deviations and the prior on the correlation will be defined as the other elements of the list in the same order as the R matrices fitted to the data.
