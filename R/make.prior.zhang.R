@@ -23,13 +23,16 @@ make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd,
     ## Check the number of parameters sent to the function. Those need to match.
     lpmu <- nrow(par.mu)
     if(!r == lpmu) stop("number of rows of 'par.mu' need to be equal to the number of traits in the model (r).")
-    lpsd <- nrow(par.sd)
-    if(!p == lpsd) stop("number of rows of 'par.sd' need to be equal to the number of R matrices fitted to the data (p).")
+    if( is.vector(par.sd) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree.")
+    if( is.matrix(par.sd) && !p == nrow(par.sd) ) stop("p need to be equal to the regimes fitted to the tree. So p == nrow(par.sd).")    
+    ## lpsd <- nrow(par.sd)
+    ## if(!p == lpsd) stop("number of rows of 'par.sd' need to be equal to the number of R matrices fitted to the data (p).")
     if( unif.corr == FALSE ){
-        lsig <- length(Sigma)
+        if( is.matrix(Sigma) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree.")
+        if( is.list(Sigma) && !p == length(Sigma) ) stop("length of 'Sigma' need to be equal to the length of 'nu'. So length(Sigma) == length(nu).")
+        ## lsig <- length(Sigma)
         lnu <- length(nu)
-        if(!lsig == lnu) stop("length of 'Sigma' need to be equal to the length of 'nu'.")
-        if(!p == lnu) stop("length of 'Sigma' and 'nu' need to be equal to the number of R matrices fitted to the data (p).")
+        if(!p == lnu) stop("length of 'Sigma' and 'nu' need to be equal to the number of R matrices fitted to the data (p). So length(Sigma) == length(nu) == p.")
     }
 
     ## Maybe add test for the correct parameter values? Would improve user experience.
@@ -62,9 +65,9 @@ make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd,
         }
     }
     if( p == 1 ){
-            sd <- function(x) sum( sd_regime[[1]](x) )
+        sd <- function(x) sum( dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
     } else{
-            sd <- function(x) sum( sapply(1:p, function(i) sd_regime[[i]](x[[i]]) ) )
+        sd <- function(x) sum( sapply(1:p, function(i) sd_regime[[i]](x[[i]]) ) )
     }
 
     if(unif.corr == TRUE){
@@ -72,13 +75,13 @@ make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd,
         corr <- function(x) sum( sapply(x, function(y) log.diwish(y, v=ncol(y)+1, diag(nrow=ncol(y)) ) ) )
     } else{
         if(p == 1){
-            if(!is.matrix(Sigma)) stop(" 'Sigma' need to be a matrix. ")
+            if(!is.matrix(Sigma)) stop(" 'Sigma' needs to be a matrix when p == 1. ")
             if(!is.numeric(nu) || nu < r) stop(" 'nu' need to be a numeric value larger than the dimension of 'Sigma'. ")
             center <- (nu - ncol(Sigma) -1) * Sigma
-            corr <- function(x) sum( sapply(x, function(y) log.diwish(y, v=nu, center) ) )
+            corr <- function(x) log.diwish(x, v=nu, center)
         } else{
-            if(!all(sapply(Sigma, is.matrix))) stop(" 'Sigma' need to be a matrix. ")
-            if(!all(sapply(nu, is.numeric)) || all(nu < r) ) stop(" 'nu' need to be a numeric value larger than the dimension of 'Sigma'. ")
+            if(!all(sapply(Sigma, is.matrix))) stop(" 'Sigma' needs to be a list of matrices with length == p. ")
+            if(!all(sapply(nu, is.numeric)) || all(nu < r) ) stop(" 'nu' needs to be a vector with numeric values larger than r. ")
             corr_regime <- list()
             center <- list()
             for( i in 1:p){
