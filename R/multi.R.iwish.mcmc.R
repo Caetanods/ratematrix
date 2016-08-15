@@ -24,6 +24,7 @@
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
 ##' @export
 ##' @importFrom geiger treedata
+##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
 multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
 
@@ -74,15 +75,17 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
                                    , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
     ## Prior log lik starting value for each of the matrices.
-    cache.chain$curr.r.prior <- lapply(1:cache.data$p, function(x) prior[[2]](cache.chain$chain[[1]][[2]][[x]]) )
+    ## cache.chain$curr.r.prior <- lapply(1:cache.data$p, function(x) prior[[2]](cache.chain$chain[[1]][[2]][[x]]) )
+    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[2]]) ## Takes a list of R and returns a numeric.
 
     ## Will need to keep track of the Jacobian for the correlation matrix.
     decom <- lapply(1:cache.data$p, function(x) decompose.cov( cache.chain$chain[[1]][[2]][[x]] ) )
     cache.chain$curr.r.jacobian <- lapply(1:cache.data$p,
                                           function(y) sum( sapply(1:cache.data$k, function(x) log( decom[[y]]$v[x]) ) ) * log( (cache.data$k-1)/2 ) )
     
-    cache.chain$curr.sd.prior <- lapply(1:cache.data$p, function(x) prior[[3]](cache.chain$chain[[1]][[3]][[x]]) ) ## Prior log lik starting value.
-
+    ## cache.chain$curr.sd.prior <- lapply(1:cache.data$p, function(x) prior[[3]](cache.chain$chain[[1]][[3]][[x]]) ) ## Prior log lik starting value.
+    cache.chain$curr.sd.prior <- prior[[3]](cache.chain$chain[[1]][[3]]) ## Takes a list of sd vectors and returns a numeric.
+    
     ## Generate identifier:
     ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
 

@@ -26,8 +26,11 @@ multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, v, w_sd, w_mu
         ## Update the vector of standard deviations.
         ## The width of the standard deviation updates is the same of the mean.
         prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]][[Rp]], function(x) sliding.window.positive(x, w_mu) )
-        prop.sd.prior <- prior[[3]](prop.sd) ## The third prior function.
-        pp <- prop.sd.prior - cache.chain$curr.sd.prior[[Rp]]
+        ## Need to put the parameters together for the prior.
+        prop.sd.full <- cache.chain$chain[[iter-1]][[3]]
+        prop.sd.full[[Rp]] <- prop.sd
+        prop.sd.prior <- prior[[3]](prop.sd.full) ## The third prior function.
+        pp <- prop.sd.prior - cache.chain$curr.sd.prior ## Two numeric quantities.
 
         ## Rebuild the matrix to calculate the likelihood.
         ## No need for the Jacobian in this move.
@@ -52,7 +55,7 @@ multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, v, w_sd, w_mu
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[3]][[Rp]] <- prop.sd
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
-            cache.chain$curr.sd.prior[[Rp]] <- prop.sd.prior
+            cache.chain$curr.sd.prior <- prop.sd.prior
             cache.chain$acc[count] <- Rp+cache.data$p+1 ## sd vector are the larger numbers.
             cache.chain$lik[iter] <- prop.sd.lik
         } else{                ## Reject.
@@ -66,8 +69,10 @@ multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, v, w_sd, w_mu
     if( up == 2 ){
         ## Update the correlation matrix.
         prop.r <- make.prop.iwish(cache.chain$chain[[iter-1]][[2]][[Rp]], k=cache.data$k, v=v)
-        prop.r.prior <- prior[[2]](prop.r) ## The second prior function. On the expanded parameters, the covariance matrix.
-        pp <- prop.r.prior - cache.chain$curr.r.prior[[Rp]]
+        prop.r.full <- cache.chain$chain[[iter-1]][[2]]
+        prop.r.full[[Rp]] <- prop.r
+        prop.r.prior <- prior[[2]](prop.r.full) ## The second prior function. On the expanded parameters, the covariance matrix.
+        pp <- prop.r.prior - cache.chain$curr.r.prior
 
         ## Rebuild the matrix to calculate the likelihood:
         decom <- decompose.cov( prop.r )
@@ -94,7 +99,7 @@ multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, v, w_sd, w_mu
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[2]][[Rp]] <- prop.r
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
-            cache.chain$curr.r.prior[[Rp]] <- prop.r.prior
+            cache.chain$curr.r.prior <- prop.r.prior
             cache.chain$curr.r.jacobian[[Rp]] <- prop.r.jacobian
             cache.chain$acc[count] <- Rp+1
             cache.chain$lik[iter] <- prop.r.lik
