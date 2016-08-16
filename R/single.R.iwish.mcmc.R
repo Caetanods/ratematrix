@@ -21,6 +21,7 @@
 ##' @export
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor decompose.cov
+##' @importFrom corpcor rebuild.cov
 single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
 
     ## Verify the directory:
@@ -52,7 +53,7 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     cache.chain <- list()
     cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
     cache.chain$chain[[1]] <- start ## Starting value for the chain.
-    cache.chain$chain[[1]][[4]] <- corpcor::rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
+    cache.chain$chain[[1]][[4]] <- rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
     cache.chain$acc <- vector(mode="integer", length=gen) ## Vector for acceptance ratio.
     ## Acceptance ratio is not recycled at each 'chunk'.
     cache.chain$acc[1] <- 1 ## Represents the starting value.
@@ -70,7 +71,7 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     ##                                    , r=cache.data$k) ## Lik start value.
 
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
-    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[2]]) ## Prior log lik starting value.
+    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][2]) ## Prior log lik starting value.
 
     ## Will need to keep track of the Jacobian for the correlation matrix.
     decom <- decompose.cov( cache.chain$chain[[1]][[2]] )
