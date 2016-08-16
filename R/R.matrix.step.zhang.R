@@ -22,7 +22,7 @@ sigma.step.zhang <- function(cache.data, cache.chain, prior, w, v, iter, count) 
     if( up == 1 ){
         ## Update the vector of standard deviations.
         prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]], function(x) sliding.window.positive(x, w) )
-        prop.sd.prior <- prior[[3]](prop.sd) ## The third prior function.
+        prop.sd.prior <- prior[[3]]( list(prop.sd) ) ## The third prior function. New prior works on list format.
         pp <- prop.sd.prior - cache.chain$curr.sd.prior
 
         ## Rebuild the matrix to calculate the likelihood.

@@ -52,21 +52,27 @@ make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd,
     }
     mn <- function(x) sum( sapply(1:r, function(i) mn_trait[[i]](x[i]) ) )
 
-    if(den.sd == "unif"){
-        sd_regime <- list()
-        for(i in 1:p){
-            sd_regime[[i]] <- function(x) sapply(x, function(y) dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE))
-        }
-    }
-    if(den.sd == "lnorm"){
-        sd_regime <- list()
-        for(i in 1:p){
-            sd_regime[[i]] <- function(x) sapply(x, function(y) dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE))
-        }
-    }
     if( p == 1 ){
-        sd <- function(x) sum( dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
+        if(den.sd == "unif"){
+            sd <- function(x) sum( dunif(x, min=par.sd[1], max=par.sd[2], log=TRUE) )
+        }
+        if(den.sd == "lnorm"){
+            sd <- function(x) sum( dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
+        }
     } else{
+
+        if(den.sd == "unif"){
+            sd_regime <- list()
+            for(i in 1:p){
+                sd_regime[[i]] <- function(x) sapply(x, function(y) dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE))
+            }
+        }
+        if(den.sd == "lnorm"){
+            sd_regime <- list()
+            for(i in 1:p){
+                sd_regime[[i]] <- function(x) sapply(x, function(y) dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE))
+            }
+        }
         sd <- function(x) sum( sapply(1:p, function(i) sd_regime[[i]](x[[i]]) ) )
     }
 
