@@ -18,7 +18,7 @@ make.prior.zhang(r, p, den.mu = "unif", par.mu, den.sd = "unif", par.sd,
 
 \item{den.sd}{Set the density type for the vector of standard deviations. One of "unif" or "lnorm".}
 
-\item{par.sd}{The parameters for the density of standard deviations. Matrix with number of rows equal to 'p'. When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "de.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(sd) for the distributions.}
+\item{par.sd}{The parameters for the density of standard deviations. Matrix with number of rows equal to 'p'. When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "den.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(sd) for the distributions. If there is only one regime fitted to the tree ('p' == 1), then 'par.sd' is a vector with length 2.}
 
 \item{unif.corr}{Whether the correlation structure of the prior distribution on the Sigma matrix is flat.}
 
