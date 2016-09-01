@@ -22,6 +22,7 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "sample.prior.zhang.R"
     "dataset_anoles.R"
     "dataset_centrarchidae.R"
     "mvPruningLogLik.R"
