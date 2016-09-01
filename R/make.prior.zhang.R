@@ -7,13 +7,25 @@
 ##' @param den.mu Set the density type for the phylogenetic mean. One of "unif" (default) or "norm".
 ##' @param par.mu The parameters for the prior density on the vector of phylogenetic means. Matrix with number of rows equal 'r'. When the density is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm̉" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.
 ##' @param den.sd Set the density type for the vector of standard deviations. One of "unif" or "lnorm".
-##' @param par.sd The parameters for the density of standard deviations. Matrix with number of rows equal to 'p'. When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "den.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(sd) for the distributions.
+##' @param par.sd The parameters for the density of standard deviations. Matrix with number of rows equal to 'p'. When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "den.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(sd) for the distributions. If there is only one regime fitted to the tree ('p' == 1), then 'par.sd' is a vector with length 2.
 ##' @param unif.corr Whether the correlation structure of the prior distribution on the Sigma matrix is flat.
 ##' @param Sigma The scale matrix for the inverse Wishart distribution used to sample the evolutionary correlation among traits. This is the parameter to center the prior distribution of the correlations in a given value. Need to be a list with length equal to 'p'. When 'p==1' then is needs to be a matrix.
 ##' @param nu The degrees of freedom parameter of the inverse Wishart distribution. Larger values will make the distribution more tight around the scale matrix. Need to be a vector of length equal to 'p'.
 ##' @return List of density functions to be used as the prior for MCMC functions.
 ##' @export
 make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.corr=TRUE, Sigma=NULL, nu=NULL){
+
+    ## Save all parameters to use in subsequent functions.
+    pars <- list()
+    pars$r <- r
+    pars$p <- p
+    pars$den.mu <- den.mu
+    pars$par.mu <- par.mu
+    pars$den.sd <- den.sd
+    pars$par.sd <- par.sd
+    pars$unif.corr <- unif.corr
+    pars$Sigma <- Sigma
+    pars$nu <- nu
 
     ## Check if the distributions are known. This assumes all priors for the same parameter shares a distribution (with different parameters).
     ## Could extend this in the future.
@@ -99,5 +111,5 @@ make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd,
         }
     }
     
-    return( list(mn, corr, sd) )
+    return( list(mean.prior=mn, corr.prior=corr, sd.prior=sd, pars=pars) )
 }
