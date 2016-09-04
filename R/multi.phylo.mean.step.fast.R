@@ -1,6 +1,6 @@
 ##' Make the proposal and acceptance steps for the phylogenetic mean.
 ##'
-##' Internal function to be used in the MCMC. This functions uses a simple sliding window strategy to perform the updates.
+##' Internal function to be used in the MCMC. This functions uses a simple sliding window strategy to perform the updates. This version will make independent updates for each of the phylogenetic means. This might improve the mixing.
 ##' @title Proposal and accept/reject for the phylogenetic mean.
 ##' @param cache.data list. The cache with the data.
 ##' @param cache.chain list. The cache with the MCMC chain.
@@ -11,22 +11,16 @@
 ##' @param count numeric. Keep the count of the chain to record accepted and rejected steps.
 ##' @return Return a modified 'cache.chain'.
 multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count){
-    ## Make the proposal and accept step for the phylogenetic mean.
-    ## cache.data = cache with data for analysis.
-    ## cache.chain = cache with chain objects.
-    ## prior = prior functions.
-    ## w = sliding window width parameter.
-    ## v = degree of freedom parameter of the inverse-Wishart.
-    ## iter = the state of the MCMC chain. This is used to access data in the cache.chain
-    ##        objects.
 
+    select <- sample(1:cache.data$k, size=1) ## Select one of the traits to be updated.
     ## make.prop.mean is a function to make sliding window proposal moves.
-    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w_mu) )
+    prop.root <- cache.chain$chain[[iter-1]][[1]]
+    prop.root[select] <- sliding.window(prop.root[select], w_mu)
+
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
     prop.root.prior <- prior[[1]](prop.root)
     pp <- prop.root.prior - cache.chain$curr.root.prior
-    ## Create column vector format of b (phylo mean).
-    ##b.prop <- matrix( sapply(as.vector(prop.root), function(x) rep(x, cache.data$n) ) )
+
     ## Get log likelihood ratio.
     prop.root.lik <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
                               , R=cache.chain$chain[[iter-1]][[2]], mu=as.vector(prop.root) )
@@ -38,7 +32,6 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, 
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
     if(exp(r) > runif(1)){ ## Accept.
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-        ## cache.chain$b.curr <- b.prop
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
         cache.chain$acc[count] <- 1

@@ -29,6 +29,6 @@ Return a modified 'cache.chain'.
 Make the proposal and acceptance steps for the phylogenetic mean.
 }
 \details{
-Internal function to be used in the MCMC. This functions uses a simple sliding window strategy to perform the updates.
+Internal function to be used in the MCMC. This functions uses a simple sliding window strategy to perform the updates. This version will make independent updates for each of the phylogenetic means. This might improve the mixing.
 }
 
