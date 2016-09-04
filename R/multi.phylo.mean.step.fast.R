@@ -31,12 +31,16 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, 
     ## Acceptance step.
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
     if(exp(r) > runif(1)){ ## Accept.
+        print( paste0("Generation: ", iter) )
+        print( paste0("ACCEPTED. Proposal for trait ", select, "from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select]) )
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
         cache.chain$acc[count] <- 1
         cache.chain$lik[iter] <- prop.root.lik
     } else{                ## Reject.
+        print( paste0("Generation: ", iter) )
+        print( paste0("REJECTED. Proposal for trait ", select, "from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select]) )
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$acc[count] <- 0
         cache.chain$lik[iter] <- cache.chain$lik[iter-1]
