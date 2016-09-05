@@ -32,7 +32,7 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, 
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
     if(exp(r) > runif(1)){ ## Accept.
         print( "*** Root step ***" )
-        print( paste0("ACCEPTED. Proposal for trait ", select, " from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select], "; r =", r, "; log_lik=", ll, "; log_prior= ", pp, ".") )
+        print( paste0("ACCEPTED. Proposal for trait ", select, " from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select], "; r =", round(exp(r), 4), "; log_lik=", ll, "; log_prior= ", pp, ".") )
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
@@ -40,7 +40,7 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, 
         cache.chain$lik[iter] <- prop.root.lik
     } else{                ## Reject.
         print( "*** Root step ***" )
-        print( paste0("REJECTED. Proposal for trait ", select, " from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select], "; r =", r, "; log_lik=", ll, "; log_prior= ", pp, ".") )
+        print( paste0("REJECTED. Proposal for trait ", select, " from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select], "; r =", round(exp(r), 4), "; log_lik=", ll, "; log_prior= ", pp, ".") )
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$acc[count] <- 0
         cache.chain$lik[iter] <- cache.chain$lik[iter-1]
