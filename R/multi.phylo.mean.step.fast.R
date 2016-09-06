@@ -5,17 +5,27 @@
 ##' @param cache.data list. The cache with the data.
 ##' @param cache.chain list. The cache with the MCMC chain.
 ##' @param prior list. A list with the prior functions.
-##' @param w numeric. The sliding window width parameter.
 ##' @param v numeric. Degrees of freedom for the inverse-wishart distribution.
+##' @param w_sd For standard use for the proposal of rate matrices. No use here.
+##' @param w_mu Width of the proposal for the phylogenetic mean.
 ##' @param iter numeric. The state of the MCMC chain. This is used to access elements in the MCMC caches.
 ##' @param count numeric. Keep the count of the chain to record accepted and rejected steps.
+##' @param traitwise Whether the proposal for the phylogenetic mean is made for all the traits or trait-by-trait.
+##' @param w numeric. The sliding window width parameter.
 ##' @return Return a modified 'cache.chain'.
-multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count){
+multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, traitwise=TRUE){
 
-    select <- sample(1:cache.data$k, size=1) ## Select one of the traits to be updated.
-    ## make.prop.mean is a function to make sliding window proposal moves.
-    prop.root <- cache.chain$chain[[iter-1]][[1]]
-    prop.root[select] <- sliding.window(prop.root[select], w_mu)
+    if(traitwise == TRUE){
+        select <- sample(1:cache.data$k, size=1) ## Select one of the traits to be updated.
+        ## make.prop.mean is a function to make sliding window proposal moves.
+        prop.root <- cache.chain$chain[[iter-1]][[1]]
+        prop.root[select] <- sliding.window(prop.root[select], w_mu)
+    }
+    if( traitwise == FALSE){
+        ## make.prop.mean is a function to make sliding window proposal moves.
+        prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w_mu) )
+        select <- "both (ignore NAs)"
+    }
 
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
     prop.root.prior <- prior[[1]](prop.root)

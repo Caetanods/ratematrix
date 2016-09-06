@@ -5,7 +5,7 @@
 \title{Proposal and accept/reject for the phylogenetic mean.}
 \usage{
 multi.phylo.mean.step.fast(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
-  count)
+  count, traitwise = TRUE)
 }
 \arguments{
 \item{cache.data}{list. The cache with the data.}
@@ -16,9 +16,15 @@ multi.phylo.mean.step.fast(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
 
 \item{v}{numeric. Degrees of freedom for the inverse-wishart distribution.}
 
+\item{w_sd}{For standard use for the proposal of rate matrices. No use here.}
+
+\item{w_mu}{Width of the proposal for the phylogenetic mean.}
+
 \item{iter}{numeric. The state of the MCMC chain. This is used to access elements in the MCMC caches.}
 
 \item{count}{numeric. Keep the count of the chain to record accepted and rejected steps.}
+
+\item{traitwise}{Whether the proposal for the phylogenetic mean is made for all the traits or trait-by-trait.}
 
 \item{w}{numeric. The sliding window width parameter.}
 }
