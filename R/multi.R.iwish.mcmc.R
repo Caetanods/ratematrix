@@ -13,12 +13,14 @@
 ##' @param prior list. Produced by the output of the function 'make.prior.barnard' or 'make.prior.diwish'. First element of the list [[1]] is a prior function for the log density of the phylogenetic mean and the second element [[2]] is a prior function for the evolutionary rate matrix (R). The prior can be shared among the rate matrices or be set a different prior for each matrix. At the moment the function only produces a shared prior among the fitted matrices. Future versions will implement independent priors for each of the fitted matrices.
 ##' @param gen numeric. Number of generations of the MCMC.
 ##' @param v numeric. Degrees of freedom parameter for the inverse-Wishart proposal distribution for the evolutionary rate matrix.
-##' @param w numeric. Width of the sliding window proposal step for the phylogenetic mean.
+##' @param w_sd numeric. Width of the uniform sliding window proposal for the vector of standard deviations.
+##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means. Please note that the proposal can be made for all the traits at the same time or trait by trait. Check the argument "traitwise".
 ##' @param prop vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each genetarion, second is the probability that the evolutionary rate matrix will be updated instead. First the function sample whether the root value or the matrix should be updated. If the matrix is selected for an update, then one of the matrices fitted to the phylogeny is selected to be updated at random with the same probability.
 ##' @param chunk numeric. Number of generations that the MCMC chain will be stored in memory before writing to file. At each 'chunk' generations the function will write the block stored in memory to a file and erase all but the last generation, which is used to continue the MCMC chain. Each of the covariance matrices is saved to its own file.
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
+##' @param traitwise Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
@@ -26,7 +28,7 @@
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
-multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
+multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traitwise=TRUE){
 
     ## Verify the directory:
     if( is.null(dir) ){
@@ -100,7 +102,14 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     }
 
     ## Build the update.function list. This functions do the updated AND calculate the likelihood.
-    update.function <- list(multi.phylo.mean.step.fast, multi.sigma.step.zhang)
+    if(traitwise == TRUE){
+        prop.traitwise <- function(..., traitwise=TRUE) multi.phylo.mean.step.fast(..., traitwise=traitwise)
+        update.function <- list(prop.traitwise, multi.sigma.step.zhang)
+    }
+    if(traitwise == FALSE){
+        prop.not.traitwise <- function(..., traitwise=FALSE) multi.phylo.mean.step.fast(..., traitwise=traitwise)
+        update.function <- list(prop.not.traitwise, multi.sigma.step.zhang)
+    }
 
     ## Calculate chunks and create write point.
     block <- gen/chunk
@@ -125,7 +134,8 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
 
             ###########################################
             ## Update and accept reject steps:
-            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, v, w_sd, w_mu, iter=i, count)
+            ## Did a small modification to the prop of the phylogenetic mean that now requires the function to be called with its explicit argnames.
+            cache.chain <- update.function[[up]](cache.data=cache.data, cache.chain=cache.chain, prior=prior, v=v, w_sd=w_sd, w_mu=w_mu, iter=i, count=count)
             ## Update counter.
             count <- count+1
             ###########################################
