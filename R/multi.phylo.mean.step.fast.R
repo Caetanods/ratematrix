@@ -11,9 +11,11 @@
 ##' @param iter numeric. The state of the MCMC chain. This is used to access elements in the MCMC caches.
 ##' @param count numeric. Keep the count of the chain to record accepted and rejected steps.
 ##' @param traitwise Whether the proposal for the phylogenetic mean is made for all the traits or trait-by-trait.
+##' @param use_corr Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.
 ##' @param w numeric. The sliding window width parameter.
 ##' @return Return a modified 'cache.chain'.
-multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, traitwise=TRUE){
+##' @importFrom MASS mvrnorm
+multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, traitwise=FALSE, use_corr=TRUE){
 
     if(traitwise == TRUE){
         select <- sample(1:cache.data$k, size=1) ## Select one of the traits to be updated.
@@ -21,10 +23,15 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, 
         prop.root <- cache.chain$chain[[iter-1]][[1]]
         prop.root[select] <- sliding.window(prop.root[select], w_mu)
     }
-    if( traitwise == FALSE){
+    if(traitwise == FALSE){
         ## make.prop.mean is a function to make sliding window proposal moves.
         prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w_mu) )
         select <- "both (ignore NAs)"
+    }
+    if(use_corr == TRUE){
+        ## This will use a multivariate normal with correlation estimated from the data, the variance will scale with 'w_mu'.
+        prop.root <- mvrnorm(1, mu=rep(0, times=cache.data$k), Sigma = cache.data$data_cor * w_mu) + cache.chain$chain[[iter-1]][[1]]
+        select <- "both (using cor from tip data; ignore NAs)"
     }
 
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
@@ -41,16 +48,14 @@ multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, 
     ## Acceptance step.
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
     if(exp(r) > runif(1)){ ## Accept.
-        print( "*** Root step ***" )
-        print( paste0("ACCEPTED. Proposal for trait ", select, " from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select], "; r =", round(exp(r), 4), "; log_lik=", ll, "; log_prior= ", pp, ".") )
+        print( paste0("ACCEPTED. Proposal for trait ", select, " from ", round(cache.chain$chain[[iter-1]][[1]][select], 4), " to ", round(prop.root[select], 4), "; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
         cache.chain$acc[count] <- 1
         cache.chain$lik[iter] <- prop.root.lik
     } else{                ## Reject.
-        print( "*** Root step ***" )
-        print( paste0("REJECTED. Proposal for trait ", select, " from ", cache.chain$chain[[iter-1]][[1]][select], " to ", prop.root[select], "; r =", round(exp(r), 4), "; log_lik=", ll, "; log_prior= ", pp, ".") )
+        print( paste0("REJECTED. Proposal for trait ", select, " from ", round(cache.chain$chain[[iter-1]][[1]][select], 4), " to ", round(prop.root[select], 4), "; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$acc[count] <- 0
         cache.chain$lik[iter] <- cache.chain$lik[iter-1]

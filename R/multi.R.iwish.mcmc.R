@@ -21,6 +21,7 @@
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
 ##' @param traitwise Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.
+##' @param use_corr Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
@@ -28,7 +29,7 @@
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
-multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traitwise=TRUE){
+multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traitwise=TRUE, use_corr=TRUE){
 
     ## Verify the directory:
     if( is.null(dir) ){
@@ -43,6 +44,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     ## Make the precalculation based on the tree.
     cache.data <- list()
     cache.data$X <- X
+    cache.data$data_cor <- cov2cor( var( X ) )
     cache.data$k <- ncol(X) ## Number of traits.
     ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
     cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
@@ -102,13 +104,22 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     }
 
     ## Build the update.function list. This functions do the updated AND calculate the likelihood.
-    if(traitwise == TRUE){
-        prop.traitwise <- function(..., traitwise=TRUE) multi.phylo.mean.step.fast(..., traitwise=traitwise)
-        update.function <- list(prop.traitwise, multi.sigma.step.zhang)
-    }
-    if(traitwise == FALSE){
-        prop.not.traitwise <- function(..., traitwise=FALSE) multi.phylo.mean.step.fast(..., traitwise=traitwise)
-        update.function <- list(prop.not.traitwise, multi.sigma.step.zhang)
+    if(use_corr == TRUE){
+        print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'tratiwise' ignored.")
+        prop.data.cor <- function(..., traitwise=FALSE) multi.phylo.mean.step.fast(..., traitwise=FALSE, use_corr=TRUE)
+        update.function <- list(prop.data.cor, multi.sigma.step.zhang)
+    } else{
+        if(traitwise == TRUE){
+            print("Using an independent proposal distribution for the root value of each trait.")
+            prop.traitwise <- function(..., traitwise=TRUE) multi.phylo.mean.step.fast(..., traitwise=TRUE, use_corr=FALSE)
+            update.function <- list(prop.traitwise, multi.sigma.step.zhang)
+        }
+        if(traitwise == FALSE){
+            print("Using a naive joint proposal distribution for the phylogenetic mean.")
+            prop.not.traitwise <- function(..., traitwise=FALSE) multi.phylo.mean.step.fast(..., traitwise=FALSE, use_corr=FALSE)
+            update.function <- list(prop.not.traitwise, multi.sigma.step.zhang)
+        }
+
     }
 
     ## Calculate chunks and create write point.

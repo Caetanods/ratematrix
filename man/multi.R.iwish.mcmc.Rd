@@ -6,7 +6,7 @@
 \usage{
 multi.R.iwish.mcmc(X, phy, start, prior, gen, v, w_sd, w_mu, prop = c(0.3,
   0.7), chunk, dir = NULL, outname = "single_R_fast", IDlen = 5,
-  traitwise = TRUE)
+  traitwise = TRUE, use_corr = TRUE)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}
@@ -36,6 +36,8 @@ multi.R.iwish.mcmc(X, phy, start, prior, gen, v, w_sd, w_mu, prop = c(0.3,
 \item{IDlen}{numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.}
 
 \item{traitwise}{Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.}
+
+\item{use_corr}{Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.}
 }
 \value{
 Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
