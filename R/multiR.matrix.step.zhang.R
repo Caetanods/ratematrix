@@ -107,7 +107,7 @@ multi.sigma.step.zhang <- function(cache.data, cache.chain, prior, v, w_sd, w_mu
             cache.chain$acc[count] <- Rp+1
             cache.chain$lik[iter] <- prop.r.lik
         } else{                ## Reject.
-            print( paste0("ACCEPTED. Proposal for corr; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
+            print( paste0("REJECT. Proposal for corr; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$acc[count] <- 0
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
