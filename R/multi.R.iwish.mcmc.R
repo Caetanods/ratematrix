@@ -105,7 +105,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
 
     ## Build the update.function list. This functions do the updated AND calculate the likelihood.
     if(use_corr == TRUE){
-        print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'tratiwise' ignored.")
+        print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
         prop.data.cor <- function(..., traitwise=FALSE) multi.phylo.mean.step.fast(..., traitwise=FALSE, use_corr=TRUE)
         update.function <- list(prop.data.cor, multi.sigma.step.zhang)
     } else{
@@ -127,6 +127,9 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
 
     ## Start counter for the acceptance ratio and loglik.
     count <- 2
+
+    ## Save a log file with the accept and reject information:
+    sink( file.path(dir, paste(outname,".",ID,".mcmc.log", sep="") ) )
 
     ## Make loop equal to the number of blocks:
     for(jj in 1:block){
@@ -160,6 +163,9 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
         ###########################################
         
     }
+
+    ## Close the connection to the log:
+    sink()
 
     ## Stops the clock.
     ## time <- proc.time() - ptm
