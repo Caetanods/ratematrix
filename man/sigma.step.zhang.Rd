@@ -4,20 +4,25 @@
 \alias{sigma.step.zhang}
 \title{Sigma step using Zhang strategy}
 \usage{
-\method{sigma}{step.zhang}(cache.data, cache.chain, prior, w, v, iter, count)
+\method{sigma}{step.zhang}(cache.data, cache.chain, prior, w_sd, w_mu, v, iter,
+  count)
 }
 \arguments{
-\item{cache.data}{}
+\item{cache.data}{Description}
 
-\item{cache.chain}{}
+\item{cache.chain}{Description}
 
-\item{prior}{}
+\item{prior}{Description}
 
-\item{w}{}
+\item{w_sd}{Description}
 
-\item{iter}{}
+\item{w_mu}{Description}
 
-\item{count}{}
+\item{v}{Description}
+
+\item{iter}{Description}
+
+\item{count}{Description}
 }
 \value{
 The chain cache.
@@ -27,8 +32,5 @@ Description!
 }
 \details{
 Details!
-}
-\author{
-daniel
 }
 

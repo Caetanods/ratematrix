@@ -1,6 +1,6 @@
 ##' Generates prior densities for the MCMC sampler. Independent priors are defined for the phylogenetic mean, the vector of standard deviations and the structure of correlation. Thus allowing for a wide range of configurations. Priors for the phylogenetic mean and the standard deviations can be uniform or normal (lognormal in the case of the standard deviations). Prior on the matrix of correlations is distributed as an inverse Wishart and can be set to a marginally uniform prior or to be centered is some custom matrix.
 ##'
-##' For a model with two or more rate matrices fitted to the phylogeny different priors can be set for each R matrix. To do this first create a list of 'p' priors created with this function and pass the list to the MCMC sampler. The MCMC will set the prior for the phylogenetic mean (den.mu) as the prior in the first element of the list. The vector of standard deviations and the prior on the correlation will be defined as the other elements of the list in the same order as the R matrices fitted to the data.
+##' For a model with two or more rate matrices fitted to the phylogeny different priors can be set for each R matrix. To do this first create a list of 'p' priors created with this function and pass the list to the MCMC sampler. The MCMC will set the prior for the phylogenetic mean (den.mu) as the prior in the first element of the list. The vector of standard deviations and the prior on the correlation will be defined as the other elements of the list in the same order as the R matrices fitted to the data. To use the same prior across all fitted regimes just feed the output of this function to the MCMC.
 ##' @title Prior for the MCMC sampler.
 ##' @param r Number of traits in the model.
 ##' @param p Number of evolutionary rate matrices fitted to the phylogeny.
@@ -17,8 +17,8 @@ make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd,
 
     ## Save all parameters to use in subsequent functions.
     pars <- list()
-    pars$r <- r
-    pars$p <- p
+    pars$r <- r ## Number of traits
+    pars$p <- p ## Number of rate regimes.
     pars$den.mu <- den.mu
     pars$par.mu <- par.mu
     pars$den.sd <- den.sd
@@ -89,8 +89,13 @@ make.prior.zhang <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd,
     }
 
     if(unif.corr == TRUE){
-        ## When the prior on the correlation is set to uniform then all rate matrices will have the same prior.
-        corr <- function(x) sum( sapply(x, function(y) log.diwish(y, v=ncol(y)+1, diag(nrow=ncol(y)) ) ) )
+        if(p == 1){
+            ## Only one matrix to work with.
+            corr <- function(x) log.diwish(x, v=ncol(x)+1, diag(nrow=ncol(x)) )
+        } else{
+            ## When the prior on the correlation is set to uniform then all rate matrices will have the same prior.
+            corr <- function(x) sum( sapply(x, function(y) log.diwish(y, v=ncol(y)+1, diag(nrow=ncol(y)) ) ) )
+        }
     } else{
         if(p == 1){
             if(!is.matrix(Sigma)) stop(" 'Sigma' needs to be a matrix when p == 1. ")

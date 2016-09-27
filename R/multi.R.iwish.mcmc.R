@@ -80,7 +80,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
     ## Prior log lik starting value for each of the matrices.
     ## cache.chain$curr.r.prior <- lapply(1:cache.data$p, function(x) prior[[2]](cache.chain$chain[[1]][[2]][[x]]) )
-    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[2]]) ## Takes a list of R and returns a numeric.
+    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[4]]) ## Takes a list of R and returns a numeric.
 
     ## Will need to keep track of the Jacobian for the correlation matrix.
     decom <- lapply(1:cache.data$p, function(x) decompose.cov( cache.chain$chain[[1]][[2]][[x]] ) )

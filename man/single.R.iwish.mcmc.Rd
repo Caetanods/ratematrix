@@ -4,8 +4,9 @@
 \alias{single.R.iwish.mcmc}
 \title{MCMC for a single evolutionary rate matrix.}
 \usage{
-single.R.iwish.mcmc(X, phy, start, prior, gen, v, w, prop = c(0.3, 0.7),
-  chunk, dir = NULL, outname = "single_R_fast", IDlen = 5)
+single.R.iwish.mcmc(X, phy, start, prior, gen, v, w_sd, w_mu, prop = c(0.3,
+  0.7), chunk, dir = NULL, outname = "single_R_fast", IDlen = 5,
+  traitwise = TRUE)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}
@@ -20,7 +21,9 @@ single.R.iwish.mcmc(X, phy, start, prior, gen, v, w, prop = c(0.3, 0.7),
 
 \item{v}{numeric. Degrees of freedom parameter for the inverse-Wishart proposal distribution for the evolutionary rate matrix.}
 
-\item{w}{numeric. Width of the sliding window proposal step for the phylogenetic mean.}
+\item{w_sd}{numeric. Width of the uniform sliding window proposal for the vector of standard deviations.}
+
+\item{w_mu}{numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means. Please note that the proposal can be made for all the traits at the same time or trait by trait. Check the argument "traitwise".}
 
 \item{prop}{vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each generation, second is the probability that the evolutionary rate matrix will be updated instead.}
 
@@ -31,6 +34,10 @@ single.R.iwish.mcmc(X, phy, start, prior, gen, v, w, prop = c(0.3, 0.7),
 \item{outname}{string. Name pasted to the files. Name of the output files will start with 'outname'.}
 
 \item{IDlen}{numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.}
+
+\item{traitwise}{Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.}
+
+\item{w}{numeric. Width of the sliding window proposal step for the phylogenetic mean.}
 }
 \value{
 Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.matrix': the evolutionary rate matrix, one per line, 'outname.ID.root': the root value, one per line. \cr

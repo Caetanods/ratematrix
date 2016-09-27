@@ -9,12 +9,15 @@
 ##' @param prior list. Produced by the output of the function 'make.prior.barnard' or 'make.prior.diwish'. First element of the list [[1]] is a prior function for the log density of the phylogenetic mean and the second element [[2]] is a prior function for the evolutionary rate matrix (R).
 ##' @param gen numeric. Number of generations of the MCMC.
 ##' @param v numeric. Degrees of freedom parameter for the inverse-Wishart proposal distribution for the evolutionary rate matrix.
-##' @param w numeric. Width of the sliding window proposal step for the phylogenetic mean.
+##' @param w_sd numeric. Width of the uniform sliding window proposal for the vector of standard deviations.
+##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means. Please note that the proposal can be made for all the traits at the same time or trait by trait. Check the argument "traitwise".
 ##' @param prop vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each generation, second is the probability that the evolutionary rate matrix will be updated instead.
 ##' @param chunk numeric. Number of generations that the MCMC chain will be stored in memory before writing to file. At each 'chunk' generations the function will write the block stored in memory to a file and erase all but the last generation, which is used to continue the MCMC chain.
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
+##' @param traitwise Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.
+##' @param w numeric. Width of the sliding window proposal step for the phylogenetic mean.
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.matrix': the evolutionary rate matrix, one per line, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 indicates that the evolutionary rate matrix was updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree. This value will always be 1 for this function, by see 'multi.R.iwish.mcmc'; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
@@ -22,7 +25,7 @@
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
-single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
+single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traitwise=TRUE){
 
     ## Verify the directory:
     if( is.null(dir) ){
@@ -37,10 +40,9 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
     ## Creates data cache:
     cache.data <- list()
     cache.data$n <- length(phy$tip.label) ## Number of tips.
-    cache.data$k <- dim(start[[2]])[2] ## Number of traits.
-    dat <- treedata(phy, X, sort=TRUE, warnings=TRUE) ## Match data and tree.
-    cache.data$X <- dat$data
-    cache.data$phy <- dat$phy
+    cache.data$k <- ncol(X) ## Number of traits.
+    cache.data$X <- X
+    cache.data$phy <- phy
     cache.data$traits <- colnames(X) ## Get names for the traits.
     ## When using 'phylolm' to compute the likelihood we do not need the D matrix.
     ## cache.data$D <- matrix(0, nrow = cache.data$n*cache.data$k, ncol = cache.data$k)
@@ -63,15 +65,16 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
 
     cache.chain$lik[1] <- singleR.loglik(data=cache.data, chain=cache.chain
                                        , root=as.vector(cache.chain$chain[[1]][[1]])
-                                       , R=cache.chain$chain[[1]][[2]]) ## Lik start value.
+                                       , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
     
     ## cache.chain$lik[1] <- singleR.loglik(X=cache.data$X, phy=cache.data$phy
     ##                                    , root=as.vector(cache.chain$chain[[1]][[1]])
     ##                                    , R=cache.chain$chain[[1]][[2]], n=cache.data$n
     ##                                    , r=cache.data$k) ## Lik start value.
 
+    ## I might need to create a function to make a prior for the case of a single matrix fitted to the tree.
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
-    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][2]) ## Prior log lik starting value.
+    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[4]]) ## Prior log lik starting value.
 
     ## Will need to keep track of the Jacobian for the correlation matrix.
     decom <- decompose.cov( cache.chain$chain[[1]][[2]] )
@@ -88,7 +91,20 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
                   )
 
     ## Build the update.function list:
-    update.function <- list(phylo.mean.step.fast, sigma.step.zhang)
+    ## Now this will have two options. This is the part that the function needs to be updated.
+    ## Need to make sure that the proposal distributions will be tunned by the w_sd and w_mu parameters.
+    if(traitwise == TRUE){
+        print("Using independent proposal distribution for the root value of each trait.")
+        prop.traitwise <- function(..., traitwise=TRUE) phylo.mean.step.fast(..., traitwise=TRUE)
+        update.function <- list(prop.traitwise, sigma.step.zhang)
+    }
+    if(traitwise == FALSE){
+        print("Using joint proposal distribution for the phylogenetic mean (root value) of all traits.")
+        prop.not.traitwise <- function(..., traitwise=FALSE) phylo.mean.step.fast(..., traitwise=FALSE)
+        update.function <- list(prop.not.traitwise, sigma.step.zhang)
+    }
+    
+    ## update.function <- list(phylo.mean.step.fast, sigma.step.zhang)
 
     ## Calculate chunks and create write point.
     block <- gen/chunk
@@ -114,7 +130,7 @@ single.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w, prop=c(0.3,0.7)
 
             ###########################################
             ## Update and accept reject steps:
-            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w, v, iter=i, count)
+            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w_sd, w_mu, v, iter=i, count)
             ## Update counter.
             count <- count+1
             ###########################################

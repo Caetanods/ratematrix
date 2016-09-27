@@ -2,16 +2,17 @@
 ##'
 ##' Details!
 ##' @title Sigma step using Zhang strategy
-##' @param cache.data 
-##' @param cache.chain 
-##' @param prior 
-##' @param w 
-##' @param iter 
-##' @param count 
+##' @param cache.data Description
+##' @param cache.chain Description
+##' @param prior Description
+##' @param w_sd Description
+##' @param w_mu Description
+##' @param v Description
+##' @param iter Description
+##' @param count Description
 ##' @return The chain cache.
-##' @author daniel
 ##' @importFrom corpcor decompose.cov rebuild.cov
-sigma.step.zhang <- function(cache.data, cache.chain, prior, w, v, iter, count) {
+sigma.step.zhang <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count) {
     ## This is going to be the step for the correlation matrix and the vector of standard deviations.
     ## The moves for the correlation matrix now are independent of the moves for the standard deviations.
     ## Thus, I need to sample which move to make at each call of the function.
@@ -21,8 +22,8 @@ sigma.step.zhang <- function(cache.data, cache.chain, prior, w, v, iter, count) 
 
     if( up == 1 ){
         ## Update the vector of standard deviations.
-        prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]], function(x) sliding.window.positive(x, w) )
-        prop.sd.prior <- prior[[3]]( list(prop.sd) ) ## The third prior function. New prior works on list format.
+        prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]], function(x) sliding.window.positive(x, w_sd) )
+        prop.sd.prior <- prior[[3]]( prop.sd ) ## The third prior function. New prior works on list format.
         pp <- prop.sd.prior - cache.chain$curr.sd.prior
 
         ## Rebuild the matrix to calculate the likelihood.
@@ -60,7 +61,7 @@ sigma.step.zhang <- function(cache.data, cache.chain, prior, w, v, iter, count) 
     if( up == 2 ){
         ## Update the correlation matrix.
         prop.r <- make.prop.iwish(cache.chain$chain[[iter-1]][[2]], k=cache.data$k, v=v)
-        prop.r.prior <- prior[[2]](prop.r) ## The second prior function. On the expanded parameters, the covariance matrix.
+        prop.r.prior <- prior[[2]]( prop.r ) ## The second prior function. On the expanded parameters, the covariance matrix.
         pp <- prop.r.prior - cache.chain$curr.r.prior
 
         ## Rebuild the matrix to calculate the likelihood:

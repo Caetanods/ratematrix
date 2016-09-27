@@ -5,15 +5,30 @@
 ##' @param cache.data The cache for the data.
 ##' @param cache.chain The cache with the MCMC chain.
 ##' @param prior List with prior functions.
-##' @param w The width parameter for the sliding-window proposal step of the phylogenetic mean.
+##' @param w_sd 
+##' @param w_mu 
 ##' @param v The degrees of freedom parameter for the inverted-wishart distribution.
 ##' @param iter Tracks the current generation of the MCMC chain.
 ##' @param count Used to track the accept and reject steps of the MCMC.
+##' @param traitwise 
+##' @param w The width parameter for the sliding-window proposal step of the phylogenetic mean.
 ##' @return Updated version of the cache.chain.
-phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, count){
+phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count, traitwise){
+
+    if(traitwise == TRUE){
+        select <- sample(1:cache.data$k, size=1) ## Select one of the traits to be updated.
+        ## make.prop.mean is a function to make sliding window proposal moves.
+        prop.root <- cache.chain$chain[[iter-1]][[1]]
+        prop.root[select] <- sliding.window(prop.root[select], w_mu)
+    }
+    if(traitwise == FALSE){
+        ## make.prop.mean is a function to make sliding window proposal moves.
+        prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w_mu) )
+        ## select <- "both (ignore NAs)" ## This is to write the accept reject to the log. Not implemented for the single matrix case.
+    }
 
     ## make.prop.mean is a function to make sliding window proposal moves.
-    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w) )
+    ## prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) sliding.window(x, w_mu) )
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
     prop.root.prior <- prior[[1]](prop.root)
     pp <- prop.root.prior - cache.chain$curr.root.prior
@@ -21,7 +36,7 @@ phylo.mean.step.fast <- function(cache.data, cache.chain, prior, w, v, iter, cou
     #b.prop <- matrix( sapply(as.vector(prop.root), function(x) rep(x, cache.data$n) ) )
     ## Get log likelihood ratio.
     prop.root.lik <- singleR.loglik(data=cache.data, chain=cache.chain, root=as.vector(prop.root)
-                                  , R=cache.chain$chain[[iter-1]][[2]] )
+                                  , R=cache.chain$chain[[iter-1]][[4]] )
     ll <-  prop.root.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.
     r <- ll + pp
