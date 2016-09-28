@@ -41,31 +41,62 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     ## Change the data to matrix:
     if( class(X) == "data.frame" ) X <- as.matrix( X )
 
-    ## Make the precalculation based on the tree.
+    ## Cache for the data and for the chain:
     cache.data <- list()
+    cache.chain <- list()
+    
     cache.data$X <- X
-    cache.data$data_cor <- cov2cor( var( X ) )
+    cache.data$data_cor <- cov2cor( var( X ) ) ## This is to use the correlation of the data to draw proposals for the root.
     cache.data$k <- ncol(X) ## Number of traits.
-    ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
-    cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
-    ## Need to take care how to match the regimes and the R matrices.
-    anc <- phy$edge[ord.id,1] ## Ancestral edges.
-    cache.data$des <- phy$edge[ord.id,2] ## Descendent edges.
-    cache.data$nodes <- unique(anc) ## The internal nodes we will traverse.
 
-    ## Set the types for each of the nodes that are going to be visited.
-    node.to.tip <- which( tabulate( anc[which(cache.data$des <= length(phy$tip.label))] ) == 2 )
-    node.to.node <- which( tabulate( anc[which(cache.data$des > length(phy$tip.label))] ) == 2 )
-    node.to.tip.node <- unique( anc )[!unique( anc ) %in% c(node.to.node, node.to.tip)]
-    ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
-    names(anc) <- rep(1, times=length(anc))
-    names(anc)[which(anc %in% node.to.node)] <- 2
-    names(anc)[which(anc %in% node.to.tip.node)] <- 3
-    cache.data$anc <- anc ## This need to come with the names.
+    ## Make the precalculation based on the tree. Here two blocks, depending of whether there is only one or several trees.
+    if( is.list(phy) ){ ## There is at least two phylogenies.
+        ## All the objects here are of the type list. Need to modify any call to them.
+        n.phy <- length( phy ) ## Number of trees in the list.
+        cache.chain$which.phy <- vector(mode="integer", length=gen) ## Vector to track which of the phy are we using.
+        
+        ord.id <- lapply(phy, function(x) reorder.phylo(x, order="postorder", index.only = TRUE) ) ## Order for traversal.
+        cache.data$mapped.edge <- lapply(1:n.phy, function(x) phy[[x]]$mapped.edge[ord.id[[x]],]) ## The regimes.
+        anc <- lapply(1:n.phy, function(x) phy[[x]]$edge[ord.id[[x]],1] ) ## Ancestral edges.
+        cache.data$des <- lapply(1:n.phy, function(x) phy[[x]]$edge[ord.id[[x]],2] ) ## Descendent edges.
+        cache.data$nodes <- lapply(anc, unique) ## The internal nodes we will traverse.
+
+        ## Set the types for each of the nodes that are going to be visited.
+        node.to.tip <- lapply(1:n.phy, function(x) which( tabulate( anc[[x]][which(cache.data$des[[x]] <= length(phy[[x]]$tip.label))] ) == 2 ) )
+        node.to.node <- lapply(1:n.phy, function(x) which( tabulate( anc[[x]][which(cache.data$des[[x]] > length(phy[[x]]$tip.label))] ) == 2 ) )
+        node.to.tip.node <- lapply(1:n.phy, function(x) unique( anc[[x]] )[!unique( anc[[x]] ) %in% c(node.to.node[[x]], node.to.tip[[x]])] )
+        ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
+        for( i in 1:n.phy ){
+            names(anc[[i]]) <- rep(1, times=length(anc[[i]]))
+            names(anc[[i]])[which(anc[[i]] %in% node.to.node[[i]])] <- 2
+            names(anc[[i]])[which(anc[[i]] %in% node.to.tip.node[[i]])] <- 3
+        }
+        cache.data$anc <- anc ## This need to come with the names.
+    }
+    if( !is.list(phy) ){ ## There is only one phylogeny.
+        cache.chain$which.phy <- NULL ## To inform that only one tree was used in the MCMC.
+        
+        ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
+        cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
+        ## Need to take care how to match the regimes and the R matrices.
+        anc <- phy$edge[ord.id,1] ## Ancestral edges.
+        cache.data$des <- phy$edge[ord.id,2] ## Descendent edges.
+        cache.data$nodes <- unique(anc) ## The internal nodes we will traverse.
+
+        ## Set the types for each of the nodes that are going to be visited.
+        node.to.tip <- which( tabulate( anc[which(cache.data$des <= length(phy$tip.label))] ) == 2 )
+        node.to.node <- which( tabulate( anc[which(cache.data$des > length(phy$tip.label))] ) == 2 )
+        node.to.tip.node <- unique( anc )[!unique( anc ) %in% c(node.to.node, node.to.tip)]
+        ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
+        names(anc) <- rep(1, times=length(anc))
+        names(anc)[which(anc %in% node.to.node)] <- 2
+        names(anc)[which(anc %in% node.to.tip.node)] <- 3
+        cache.data$anc <- anc ## This need to come with the names.
+    }
+    
     cache.data$p <- length( start[[2]] ) ## Number of R matrices to be fitted. Do I need this?
 
     ## Creates MCMC chain cache:
-    cache.chain <- list()
     cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
     cache.chain$chain[[1]] <- start ## Starting value for the chain.
     cache.chain$chain[[1]][[4]] <- list()
@@ -75,8 +106,19 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     ## Create column vector format for start state of b (phylo mean).
     ##cache.chain$b.curr <- matrix( sapply(as.vector(cache.chain$chain[[1]][[1]]), function(x) rep(x, cache.data$n) ) )
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
-    cache.chain$lik[1] <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
-                                   , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
+
+    ## Need to calculate the initial log.lik with the single tree or with a random tree from the sample:
+    if( is.list( phy ) ){
+        rd.start.tree <- sample(1:n.phy, size = 1)
+        cache.chain$which.phy[1] <- rd.start.tree ## The index for the starting likelihood.
+        cache.chain$lik[1] <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes[[rd.start.tree]], cache.data$des[[rd.start.tree]]
+                                       , cache.data$anc[[rd.start.tree]], cache.data$mapped.edge[[rd.start.tree]]
+                                       , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
+    }
+    if( !is.list( phy ) ){
+        cache.chain$lik[1] <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+                                       , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
+    }
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
     ## Prior log lik starting value for each of the matrices.
     ## cache.chain$curr.r.prior <- lapply(1:cache.data$p, function(x) prior[[2]](cache.chain$chain[[1]][[2]][[x]]) )
@@ -103,23 +145,48 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
         files[[i]] <- file(file.path(dir, paste(outname,".",ID,".",(i-2),".matrix",sep="")),open="a")
     }
 
-    ## Build the update.function list. This functions do the updated AND calculate the likelihood.
-    if(use_corr == TRUE){
-        print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
-        prop.data.cor <- function(..., traitwise=FALSE) multi.phylo.mean.step.fast(..., traitwise=FALSE, use_corr=TRUE)
-        update.function <- list(prop.data.cor, multi.sigma.step.zhang)
-    } else{
-        if(traitwise == TRUE){
-            print("Using an independent proposal distribution for the root value of each trait.")
-            prop.traitwise <- function(..., traitwise=TRUE) multi.phylo.mean.step.fast(..., traitwise=TRUE, use_corr=FALSE)
-            update.function <- list(prop.traitwise, multi.sigma.step.zhang)
-        }
-        if(traitwise == FALSE){
-            print("Using a naive joint proposal distribution for the phylogenetic mean.")
-            prop.not.traitwise <- function(..., traitwise=FALSE) multi.phylo.mean.step.fast(..., traitwise=FALSE, use_corr=FALSE)
-            update.function <- list(prop.not.traitwise, multi.sigma.step.zhang)
-        }
+    ## This will check for the arguments, check if there is more than one phylogeny and create the functions for the update and to calculate the lik.
+    if( !is.list( phy ) ){
+        ## This will use a unique tree.
+        print("MCMC chain will use a single tree provided in the argument 'phy'")
+        if(use_corr == TRUE){
+            print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
+            prop.data.cor <- function(...) multi.phylo.mean.step.fast(..., traitwise=FALSE, use_corr=TRUE)
+            update.function <- list(prop.data.cor, multi.sigma.step.zhang)
+        } else{
+            if(traitwise == TRUE){
+                print("Using an independent proposal distribution for the root value of each trait.")
+                prop.traitwise <- function(...) multi.phylo.mean.step.fast(..., traitwise=TRUE, use_corr=FALSE)
+                update.function <- list(prop.traitwise, multi.sigma.step.zhang)
+            }
+            if(traitwise == FALSE){
+                print("Using a naive joint proposal distribution for the phylogenetic mean.")
+                prop.not.traitwise <- function(...) multi.phylo.mean.step.fast(..., traitwise=FALSE, use_corr=FALSE)
+                update.function <- list(prop.not.traitwise, multi.sigma.step.zhang)
+            }
 
+        }
+    }
+    if( is.list( phy ) ){
+        print("MCMC chain will integrate over the list of phylogenies provided in the argument 'phy'")
+        ## This will integrate over all the trees provided.
+        if(use_corr == TRUE){
+            print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
+            prop.data.cor <- function(...) multi.phylo.mean.step.fast.list(..., n.phy=n.phy, traitwise=FALSE, use_corr=TRUE)
+            update.function <- list(prop.data.cor, function(...) multi.sigma.step.zhang.list(..., n.phy=n.phy) )
+        } else{
+            if(traitwise == TRUE){
+                print("Using an independent proposal distribution for the root value of each trait.")
+                prop.traitwise <- function(...) multi.phylo.mean.step.fast.list(..., n.phy=n.phy, traitwise=TRUE, use_corr=FALSE)
+                update.function <- list(prop.traitwise, function(...) multi.sigma.step.zhang.list(..., n.phy=n.phy) )
+            }
+            if(traitwise == FALSE){
+                print("Using a naive joint proposal distribution for the phylogenetic mean.")
+                prop.not.traitwise <- function(...) multi.phylo.mean.step.fast.list(..., n.phy=n.phy, traitwise=FALSE, use_corr=FALSE)
+                update.function <- list(prop.not.traitwise, function(...) multi.sigma.step.zhang.list(..., n.phy=n.phy) )
+            }
+
+        }
     }
 
     ## Calculate chunks and create write point.
@@ -179,7 +246,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    return( list(acc_vector = cache.chain$acc, k = cache.data$k, p = cache.data$p
+    return( list(acc_vector = cache.chain$acc, which.phy = cache.chain$which.phy, k = cache.data$k, p = cache.data$p
                , ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
                , phy = phy, prior = prior, start = start, gen = gen) )
 }

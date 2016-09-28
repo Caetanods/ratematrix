@@ -22,6 +22,8 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "multi.phylo.mean.step.fast.list.R"
+    "multiR.matrix.step.zhang.list.R"
     "sample.prior.zhang.R"
     "dataset_anoles.R"
     "dataset_centrarchidae.R"
