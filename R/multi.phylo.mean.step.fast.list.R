@@ -16,7 +16,7 @@
 ##' @param w numeric. The sliding window width parameter.
 ##' @return Return a modified 'cache.chain'.
 ##' @importFrom MASS mvrnorm
-multi.phylo.mean.step.fast <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, n.phy, traitwise=FALSE, use_corr=TRUE){
+multi.phylo.mean.step.fast.list <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, n.phy, traitwise=FALSE, use_corr=TRUE){
 
     ## Choose the phylogeny to be used in this evaluation of the liklihood:
     cache.chain$which.phy[count] <- sample(1:n.phy, size = 1)
