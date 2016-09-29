@@ -20,7 +20,4 @@ Merge two or more posterior distributions
 \details{
 Merge two or more posterior distributions based in the same dataset. If you have multiple MCMC chains for the same dataset you can merge them.
 }
-\author{
-daniel
-}
 

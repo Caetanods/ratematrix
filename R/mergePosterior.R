@@ -5,8 +5,7 @@
 ##' @param ... Any number of posterior distributions as produced by the function 'read.multi.R.iwish' or 'read.single.R.iwish'
 ##' @param p Number of R matrices (regimes) fitted to the tree.
 ##' @return A merged posterior distribution in the same format.
-##' @author daniel
-
+##' @export
 mergePosterior <- function(..., p){
     ## Will take mcmc outputs as the arguments. Will return a MCMC output with the merge of all imputs.
     mcmc.list <- list(...) ## This will make a list with all the imput arguments.
