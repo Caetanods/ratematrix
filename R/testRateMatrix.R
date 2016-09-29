@@ -19,8 +19,8 @@ testRateMatrix <- function(mcmc.chain, out, plot = TRUE, file = NULL){
     comb <- combn(1:out$p, 2)
     mean.diff <- list()
     for(i in ncol(comb)){
-        mat1 <- t( sapply(mcmc.chain[[2]][[comb[1,i]]], function(x) c(x) ) )
-        mat2 <- t( sapply(mcmc.chain[[2]][[comb[2,i]]], function(x) c(x) ) )
+        mat1 <- t( sapply(mcmc.chain$matrix[[comb[1,i]]], function(x) c(x) ) )
+        mat2 <- t( sapply(mcmc.chain$matrix[[comb[2,i]]], function(x) c(x) ) )
         mat.diff <- mat1 - mat2
         mean.diff[[i]] <- apply(mat.diff, 1, mean)
     }
