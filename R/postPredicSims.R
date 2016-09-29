@@ -20,8 +20,8 @@ postPredicSims <- function(mcmc.chain, out, n.samples=100, mc.cores=NULL){
         R <- mcmc.chain$matrix[ss]
     } else {
         R <- list()
-        for(i in ss){
-            R[[i]] <- lapply(1:out$p, function(x) mcmc.chain$matrix[[x]][[i]] )
+        for(i in 1:length(ss) ){
+            R[[i]] <- lapply(1:out$p, function(x) mcmc.chain$matrix[[x]][[ ss[i] ]] )
             names(R[[i]]) <- colnames(out$phy$mapped.edge)
         }
     }
