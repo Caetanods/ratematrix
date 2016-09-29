@@ -14,7 +14,7 @@ postPredicSims <- function(mcmc.chain, out, n.samples=100, mc.cores=NULL){
     lchain <- dim(mcmc.chain$root)[1]
     ss <- sample(1:lchain, size = n.samples) ## Take samples from the (joint) posterior.
 
-    root <- mcmc.chain$root[ss]
+    root <- mcmc.chain$root[ss,]
     
     if( out$p == 1 ){
         R <- mcmc.chain$matrix[ss]
