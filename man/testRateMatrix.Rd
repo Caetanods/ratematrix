@@ -4,16 +4,14 @@
 \alias{testRateMatrix}
 \title{Test different of posterior distributions of R matrices.}
 \usage{
-testRateMatrix(mcmc.chain, out, plot = TRUE, file = NULL)
+testRateMatrix(mcmc.chain, out, par = "all")
 }
 \arguments{
 \item{mcmc.chain}{The MCMC chain produced by the read function.}
 
 \item{out}{The output of the MCMC chain. This is a list with a series of important informations about the MCMC chain.}
 
-\item{plot}{logical. Whether plots should be saved as .pdf files in the current directory. The number of the plot increases in function of the number of matrices fitted to the tree. All plots will have a pattern like "post_diff_mat_test_X.pdf", where X is a single digit number.}
-
-\item{file}{string. The name of the file to save the plot. Default is 'NULL' and will plot in the R standard plotting device. If a string is passed to it, then it will plot to a '.pdf' file. This is going to be used as a the start of the string. The number of plots is equal to the combination 2 by 2 of the number of the matrices fitted to the phylogentic tree.}
+\item{par}{This parameter sets the attribute of the R matrices that is checked by the test. Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (variance vector). Chose 'correlation' to test for the median overlap among the correlations (correlation matrix).}
 }
 \value{
 Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
@@ -26,9 +24,10 @@ This functions performs a test to check whether the posterior distribution of th
    different. When the test is significant this means that the posterior distribution of the elements
    of the evolutionary rate matrices does not overlap more than 5%. This test is not a p value, since
    this is not an estimate of a probability of deviance from a given null distribution. On the other hand,
-   the test relies on the overlap of the posterior distribution. It assumes that when the posterior
+   the test relies on the median overlap of the posterior distribution. It assumes that when the posterior
    distribution of two or more paramaters do not overlap, then there is a significative difference
    between the parameters. Note that the test will applied to all pairwise combinations of the
-   matrices fitted to the tree.
+   matrices fitted to the tree. You can use the 'par' parameter to set which are the elements of the R matrix
+   you are interested in comparing.
 }
 
