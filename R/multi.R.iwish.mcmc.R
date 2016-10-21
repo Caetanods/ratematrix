@@ -50,7 +50,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     cache.data$k <- ncol(X) ## Number of traits.
 
     ## Make the precalculation based on the tree. Here two blocks, depending of whether there is only one or several trees.
-    if( is.list(phy) ){ ## There is at least two phylogenies.
+    if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
         ## All the objects here are of the type list. Need to modify any call to them.
         n.phy <- length( phy ) ## Number of trees in the list.
         cache.chain$which.phy <- vector(mode="integer", length=gen) ## Vector to track which of the phy are we using.
