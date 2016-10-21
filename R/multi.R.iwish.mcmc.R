@@ -73,7 +73,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
         }
         cache.data$anc <- anc ## This need to come with the names.
     }
-    if( !is.list(phy) ){ ## There is only one phylogeny.
+    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
         cache.chain$which.phy <- NULL ## To inform that only one tree was used in the MCMC.
         
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
@@ -108,14 +108,14 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
 
     ## Need to calculate the initial log.lik with the single tree or with a random tree from the sample:
-    if( is.list( phy ) ){
+    if( is.list( phy[[1]] ) ){
         rd.start.tree <- sample(1:n.phy, size = 1)
         cache.chain$which.phy[1] <- rd.start.tree ## The index for the starting likelihood.
         cache.chain$lik[1] <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes[[rd.start.tree]], cache.data$des[[rd.start.tree]]
                                        , cache.data$anc[[rd.start.tree]], cache.data$mapped.edge[[rd.start.tree]]
                                        , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
     }
-    if( !is.list( phy ) ){
+    if( !is.list( phy[[1]] ) ){
         cache.chain$lik[1] <- loglikMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
                                        , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
     }
@@ -146,7 +146,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
     }
 
     ## This will check for the arguments, check if there is more than one phylogeny and create the functions for the update and to calculate the lik.
-    if( !is.list( phy ) ){
+    if( !is.list( phy[[1]] ) ){
         ## This will use a unique tree.
         print("MCMC chain will use a single tree provided in the argument 'phy'")
         if(use_corr == TRUE){
@@ -167,7 +167,7 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
 
         }
     }
-    if( is.list( phy ) ){
+    if( is.list( phy[[1]] ) ){
         print("MCMC chain will integrate over the list of phylogenies provided in the argument 'phy'")
         ## This will integrate over all the trees provided.
         if(use_corr == TRUE){
