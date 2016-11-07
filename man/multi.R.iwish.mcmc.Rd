@@ -4,9 +4,10 @@
 \alias{multi.R.iwish.mcmc}
 \title{MCMC for two or more evolutionary rate matrices.}
 \usage{
-multi.R.iwish.mcmc(X, phy, start, prior, gen, v, w_sd, w_mu, prop = c(0.3,
-  0.7), chunk, dir = NULL, outname = "single_R_fast", IDlen = 5,
-  traitwise = TRUE, use_corr = TRUE)
+multi.R.iwish.mcmc(X, phy, start, prior, gen, v = 50, w_sd = 0.5,
+  w_mu = 0.5, prop = c(0.1, 0.9), chunk = gen/100, dir = NULL,
+  outname = "mcmc_ratematrix", IDlen = 5, traitwise = FALSE,
+  use_corr = FALSE)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}

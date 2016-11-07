@@ -29,7 +29,7 @@
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
-multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traitwise=TRUE, use_corr=TRUE){
+multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5, traitwise=FALSE, use_corr=FALSE){
 
     ## Verify the directory:
     if( is.null(dir) ){
@@ -246,7 +246,9 @@ multi.R.iwish.mcmc <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    return( list(acc_vector = cache.chain$acc, which.phy = cache.chain$which.phy, k = cache.data$k, p = cache.data$p
+    out <- list(acc_vector = cache.chain$acc, which.phy = cache.chain$which.phy, k = cache.data$k, p = cache.data$p
                , ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
-               , phy = phy, prior = prior, start = start, gen = gen) )
+               , phy = phy, prior = prior, start = start, gen = gen)
+    class( out ) <- "ratematrix_multi_mcmc"
+    return( out )
 }
