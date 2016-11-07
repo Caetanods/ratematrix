@@ -22,6 +22,7 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "print.methods.R"
     "mergePosterior.R"
     "multi.phylo.mean.step.fast.list.R"
     "multiR.matrix.step.zhang.list.R"
