@@ -18,5 +18,5 @@ print.ratematrix_multi_mcmc <- function(x){
     }
     cat("\n")
     cat("Use 'read.multi.R.iwish' to load the MCMC chain.", "\n")
-    cat("Check 'names' of x for more details.")
+    cat("Check 'names' of x for more details.", "\n")
 }
