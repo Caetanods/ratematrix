@@ -13,6 +13,6 @@
 Print method for the "ratematrix_multi_mcmc" class.
 }
 \details{
-.. content for \details{} ..
+Print information about object.
 }
 
