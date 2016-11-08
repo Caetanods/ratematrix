@@ -4,27 +4,31 @@
 \alias{make.grid.plot}
 \title{Plot posterior distribution of rate matrices.}
 \usage{
-make.grid.plot(mat1, mat2 = NULL, mle1 = NULL, mle2 = NULL,
-  colDiag1 = "purple", colDiag2 = "green", alphaOff1 = 0.5,
-  alphaOff2 = 0.5, leg = NULL, l.cex = 0.7, hpd = 100,
+make.grid.plot(chain, p, colors, alphaOff = 1, alphaDiag = 1,
+  alphaEll = 1, ell.wd = 0.5, point.matrix = NULL, point.color = NULL,
+  point.wd = 0.5, leg = NULL, l.cex = 0.7, hpd = 100,
   show.zero = FALSE, set.xlim = NULL, n.lines = 50)
 }
 \arguments{
-\item{mat1}{list. The posterior distribution of the R matrix.}
+\item{chain}{The MCMC chain loaded from the files.}
 
-\item{mat2}{list. The posterior distribution of the R matrix to be plotted with 'mat1'.}
+\item{p}{A vector with the regimes to be plotted.}
 
-\item{mle1}{matrix. Used as a point estimate. Will be plotted as a vertical line or a single ellipse. Color is 'red'.}
+\item{colors}{A vector with colors. Same length as p.}
 
-\item{mle2}{matrix. Same as 'mle2'. Can be used as the point estimate for 'mat2'.}
+\item{alphaOff}{Transparency of the off-diagonals plots. Numeric between 0 and 1.}
 
-\item{colDiag1}{string. Color for the diagonal of the grid plot and the lines of the lower-tri ellipses.}
+\item{alphaDiag}{Transparency of the diagonals plots. Numeric between 0 and 1.}
 
-\item{colDiag2}{string. Same as 'colDiag1'. Can be used to set color of the 'mat2' plots.}
+\item{alphaEll}{Transparency of the ellipses lines. Numeric between 0 and 1.}
 
-\item{alphaOff1}{numeric. Transparency of the off-diagonal plots. Value between 0 and 1.}
+\item{ell.wd}{The width of the ellipses lines.}
 
-\item{alphaOff2}{numeric. Same as 'alphaOff1'. Set the transparency of the plots relative of 'mat2'.}
+\item{point.matrix}{Optional. A list with matrices of length equal to p. This will be plotted as lines in the grid.plot.}
+
+\item{point.color}{Optional. A vector of colors with length equal to p. This is a alternative color vector to the 'colors' argument to be used with the point matrices. If not provided then the colors of the point matrices will be equal to 'colors'.}
+
+\item{point.wd}{Optional. The width of the lines for the vertical and ellipses of the point matrices.}
 
 \item{leg}{string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.}
 

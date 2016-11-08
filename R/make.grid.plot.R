@@ -16,14 +16,16 @@
 ##'      the number of traits is large. Thinning the posterior distribution of matrices before plotting is
 ##'      recommended.
 ##' @title Plot posterior distribution of rate matrices.
-##' @param mat1 list. The posterior distribution of the R matrix.
-##' @param mat2 list. The posterior distribution of the R matrix to be plotted with 'mat1'.
-##' @param mle1 matrix. Used as a point estimate. Will be plotted as a vertical line or a single ellipse. Color is 'red'.
-##' @param mle2 matrix. Same as 'mle2'. Can be used as the point estimate for 'mat2'.
-##' @param colDiag1 string. Color for the diagonal of the grid plot and the lines of the lower-tri ellipses.
-##' @param colDiag2 string. Same as 'colDiag1'. Can be used to set color of the 'mat2' plots.
-##' @param alphaOff1 numeric. Transparency of the off-diagonal plots. Value between 0 and 1.
-##' @param alphaOff2 numeric. Same as 'alphaOff1'. Set the transparency of the plots relative of 'mat2'.
+##' @param chain The MCMC chain loaded from the files.
+##' @param p A vector with the regimes to be plotted.
+##' @param colors A vector with colors. Same length as p.
+##' @param alphaOff Transparency of the off-diagonals plots. Numeric between 0 and 1.
+##' @param alphaDiag Transparency of the diagonals plots. Numeric between 0 and 1.
+##' @param alphaEll Transparency of the ellipses lines. Numeric between 0 and 1.
+##' @param ell.wd The width of the ellipses lines.
+##' @param point.matrix Optional. A list with matrices of length equal to p. This will be plotted as lines in the grid.plot.
+##' @param point.color Optional. A vector of colors with length equal to p. This is a alternative color vector to the 'colors' argument to be used with the point matrices. If not provided then the colors of the point matrices will be equal to 'colors'.
+##' @param point.wd Optional. The width of the lines for the vertical and ellipses of the point matrices.
 ##' @param leg string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.
 ##' @param l.cex numeric. 'cex' parameter for 'leg'. See 'help(par)' for more information on 'cex'.
 ##' @param hpd numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95\% HPD will be highlighted in the plot. Default value does not show highlighted region.
@@ -32,60 +34,32 @@
 ##' @param n.lines numeric. Number of lines to be displayed in the ellipsed plots.
 ##' @return Plot a grid of charts.
 ##' @export
-make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purple", colDiag2="green", alphaOff1=0.5, alphaOff2=0.5, leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
-    ## Make a grid plot. The upper-tri is the posterior density for the off-diagonal elements of the
-    ##     R evolutionary matrix. The diagonal plots are the posterior elements of the evolutionary
-    ##     rates for each of the traits. The lower-tri are ellipse plots for the rates of correlated
-    ##     evolution.
-    ## Two posterior distributions of matrices can be plotted in the same grid if a distribution for the
-    ##     'mat2' argument is provided. Otherwise only mat1 is plotted.
-    ## If a second distribution of matrices is provided the code will check whether the number of matrices
-    ##     in each list is the same. If not the shorter length will be used and x matrices will be dropped
-    ##     from the beginning of the respective distribution. 
-    ## mat1 = a list of the posterior for the R matrix to be plotted.
-    ## mat2 = a list of the posterior for the R matrix to be plotted. Optional.
-    ## mle1 = a matrix object. This is plotted as a point estimate in the grid plot. The color is always "red".
-    ##     Argument is optional.
-    ## mle1 = a matrix object. This is plotted as a point estimate in the grid plot. The color is always "red".
-    ##     Argument is optional.    
-    ## colDiag1 = color for the diagonal of the grid plot. Color also be used to plot the lines of the ellipse
-    ##     plots. Takes the same colors as in "adjustcolor" function.
-    ## colDiag2 = color for the diagonal of the grid plot. Color also be used to plot the lines of the ellipse
-    ##     plots. Takes the same colors as in "adjustcolor" function. Optional.
-    ## alphaOff1 = The transparency for the color in the off-diagonals. Numeric from 0 - 1.
-    ## alphaOff2 = The transparency for the color in the off-diagonals. Numeric from 0 - 1.
-    ## leg = a character string with length equal to the number of rows in mat.
-    ## l.cex = the cex parameter for the 'leg'.
-    ## hpd = numeric value from 1 to 100. The percentage of the Highest Posterior Density to be highlighted
-    ##     in the plots. By default the function plots the whole posterior.
-    ## show.zero = logical. Whether to plot a vertical line in blue showing the zero position in the
-    ##     density plots.
-    ## set.xlim = Set the xlim for the density plots manually. If NULL then the limits are calculated
-    ##     from the data. Need to be a two element vector, such as 'xlim'.
-    ## n.lines = Number of lines to be displayed in the ellipse plots.
+make.grid.plot <- function(chain, p, colors, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
+    
+    ## First do a batch of tests:
+    check.mat <- vector()
+    check.length <- vector()
+    for(i in p){
+        check.mat[i] <- ncol( chain$matrix[[i]][[1]] ) ## First element of each regime.
+        check.length[i] <- length( chain$matrix[[i]] ) ## The length of each chain regime.
+    }
+    equal.size <- sapply(2:length(p), function(x) check.mat[1] == check.mat[x] )
+    equal.length <- sapply(2:length(p), function(x) check.length[1] == check.length[x] )
 
-    ## Check if matrix 2 is provided and make some data checking.
-    if( !is.null(mat2) ){
-        if( !is.list(mat2) ){
-            stop("Argument 'mat2' need to be of class list.")
-        } else{
-            dd1 <- dim(mat1[[1]])[1]
-            dd2 <- dim(mat2[[1]])[1]
-            if( !dd1 == dd2 ){
-                stop("Distributions of matrices to be plotted need to have the same number of dimensions.")
-            }else{}
-        }
-    } else{}
-
-    ll <- length(mat1) ## This should be the same for both matrices lists.
-    dd <- dim(mat1[[1]])[1]
+    if( !sum(equal.size) == (length(p)-1) ) stop("Matrix regimes do not have the same number of traits.")
+    if( !sum(equal.length) == (length(p)-1) ) stop("Chain for regimes do not have the same length.")
+    
+    ll <- check.length[1]
+    dd <- check.mat[1]
 
     ## Create default titles:
+    ## This need to be changed to get the name of the traits from the MCMC chain.
+    ## Also need to be able to relate the color of the plot with the regime of the R matrix.
     if(is.null(leg)){
         leg <- paste("trait_", 1:dd, sep="")
     }
 
-    ########################################################################################
+########################################################################################
     ## BLOCK FOR HIGHLIGHT THE HPD:
 
     if(hpd < 100){
@@ -94,127 +68,100 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
         prob <- c(frac,1-frac)
 
         ## Create a list where each element is a line of the grid plot:
-        LL1 <- lapply(1:dd, function(y) data.frame( t( sapply(mat1, function(x) x[y,] ) ) ) )
-        if( !is.null(mat2) ){ LL2 <- lapply(1:dd, function(y) data.frame( t( sapply(mat2, function(x) x[y,] ) ) ) ) }
-
+        ## One list for each matrix to be plotted.
+        LL <- lapply(p, function(x) lapply(1:dd, function(y) data.frame( t( sapply(chain$matrix[[x]], function(x) x[y,] ) ) ) ) )
+        
         ## Calculate the limits for the HPD for each cell in the matrix:
-        qq1 <- list()
-        qq.count <- 1
-        for(i in 1:dd){
-            for(j in i:dd){
-                qq1[[qq.count]] <- quantile(x=LL1[[i]][,j], probs=prob)
-                qq.count <- qq.count+1
-            }
-        }
-        if( !is.null(mat2) ){
-            qq2 <- list()
+        ## Now this is a list of lists and have the info for all the matrices.
+        qq.list <- list()
+        for( w in 1:length(LL) ){
+            qq.list[[w]] <- list()
             qq.count <- 1
             for(i in 1:dd){
                 for(j in i:dd){
-                    qq2[[qq.count]] <- quantile(x=LL2[[i]][,j], probs=prob)
-                    qq.count <- qq.count+1
+                    qq.list[[w]][[qq.count]] <- quantile(x=LL[[w]][[i]][,j], probs=prob)
+                    qq.count <- qq.count + 1
                 }
             }
         }
 
         ## Make Sample Of Matrices To The ellipse plots:
-        ss <- sample(1:ll, size=n.lines)
-        ss.mat1 <- mat1[ss]
-        if( !is.null(mat2) ){ ss.mat2 <- mat2[ss] }
-        
-        ## Check whether the sampled matrices are inside or outside the hpd:
-        ss.LL1 <- lapply(1:dd, function(y) data.frame( t( sapply(ss.mat1, function(x) x[y,] ) ) ) )
-        if( !is.null(mat2) ){ ss.LL2 <- lapply(1:dd, function(y) data.frame( t( sapply(ss.mat2, function(x) x[y,] ) ) ) ) }
-
-        inside1 <- t( sapply(ss.mat1, function(x) check.hpd(x, qq1, dd) ) )
-        if(sum(inside1) == 0){
-            stop( paste("All", n.lines," sampled matrices from mat1 are outside the", hpd, " HPD interval.") )
-        }
-        if( !is.null(mat2) ){
-            inside2 <- t( sapply(ss.mat2, function(x) check.hpd(x, qq2, dd) ) )
-            if(sum(inside2) == 0){
-                stop( paste("All", n.lines," sampled matrices from mat2 are outside the", hpd, " HPD interval.") )
+        ## Here I am going to make sure that each sample is within the HPD using rejection sampling.        
+        if( ll < n.lines ) stop(" n.lines is larger than number of matrices in the chain.")
+        if( n.lines < 1 ) stop(" n.lines need to be > 1.")
+        ss.list <- list() ## list for the samples, each element for each regime.
+        sampled.LL <- list() ## The sampled matrices.
+        for( i in 1:length(p) ){ ## For each regime.
+            count <- 1
+            ss.list[[i]] <- vector()
+            while( count < n.lines ){
+                ss <- sample(1:ll, size = 1) ## Take a sample
+                if( ss %in% ss.list[[i]] ) next ## Check if sample is already in the vector.
+                if( check.hpd(chain$matrix[[ p[i] ]][[ss]], qq.list[[i]], dd) ) next ## Check if ss is within HPD.
+                ss.list[[i]][count] <- ss
+                count <- count + 1
             }
-        }            
-
+            sampled.LL[[i]] <- lapply(1:dd, function(y) data.frame( t( sapply(chain$matrix[[ p[i] ]][ ss.list[[i]] ], function(x) x[y,] ) ) ) )
+        }
+        
         ## Get the data for the ellipse plots. The data is going to be in the same order of
         ##         the graphs in the par grid plot. Only the 'lower tri' part of the grid.
         ## Here i is the x axis and j is the y axis.
-        ell.data.in1 <- list() ## Ellipses inside hpd
-        ell.data.out1 <- list() ## Ellipses outside hpd        
-        ell.data.count <- 1
-        for(i in 2:dd){
-            for(j in 1:(i-1)){
-                ell.data.in1[[ell.data.count]] <- get.vcv.ellipse.all.matrix( mat=ss.mat1[inside1]
-                                                                          , traits=c(i,j) )
-                ell.data.out1[[ell.data.count]] <- get.vcv.ellipse.all.matrix( mat=ss.mat1[!inside1]
-                                                                           , traits=c(i,j) )
-                ell.data.count <- ell.data.count+1
-            }
-        }
-        
-        if( !is.null(mat2) ){
-            ell.data.count <- 1
-            ell.data.in2 <- list()
-            ell.data.out2 <- list()
+        ## In this implementation all samples are inside the HPD, so there are no ellipses to be printed in gray color.        
+
+        ell.data <- list() ## Ellipses. This is a list with all of the regimes.
+        for( w in 1:length(p) ){
+            ell.data.count <- 1 ## A counter.
+            ell.data[[w]] <- list()
             for(i in 2:dd){
-                for(j in 1:(i-1)){
-                    ell.data.in2[[ell.data.count]] <- get.vcv.ellipse.all.matrix( mat=ss.mat2[inside2]
-                                                                               , traits=c(i,j) )
-                    ell.data.out2[[ell.data.count]] <- get.vcv.ellipse.all.matrix( mat=ss.mat2[!inside2]
-                                                                                , traits=c(i,j) )
-                    ell.data.count <- ell.data.count+1
+                for(j in 1:(i-1)){                    
+                    ell.data[[w]][[ell.data.count]] <- get.vcv.ellipse.all.matrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ], traits=c(i,j) )
+                    ## ell.data[[w]][[ell.data.count]] <- get.vcv.ellipse.all.matrix( mat=sampled.LL[[w]], traits=c(i,j) )
+                    ell.data.count <- ell.data.count + 1 ## Update the counter.
                 }
             }
         }
 
         ## Create ellipse for the MLE estimate.
-        if( is.matrix(mle1) ){
-            ell.mle1 <- list()
-            ell.mle.count <- 1
-            for(i in 2:dd){
-                for(j in 1:(i-1)){
-                    ell.mle1[[ell.mle.count]] <- get.vcv.ellipse.matrix( mat=mle1, traits=c(i,j) )
-                    ell.mle.count <- ell.mle.count+1
+        ## The mle argument now is a list of matrices. The color of each line will match the color
+        ##     respective regime in the same order. One more parameter will be added to control the width
+        ##     of the line that is plotted as the mle. The name of the parameter will be changed to
+        ##     drop the assumption that the line need to be the mle estimate.
+        if( !is.null(point.matrix) ){ ## Check if the value of the argument is what we want:
+            if( !class( point.matrix ) == "list" ) stop( " point.matrix need to be a list of matrices." )
+            if( !length( point.matrix ) == length(p) ) stop( "Lenght of point.matrix need to be equal to the number of regimes fitted to the tree." )
+            if( !class( point.matrix[[1]] ) == "matrix" ) stop(" point.matrix need to be a list of matrices." )
+            ell.point <- list()
+            for( w in 1:length(p) ){
+                ell.point[[w]] <- list()
+                ell.point.count <- 1
+                for(i in 2:dd){
+                    for(j in 1:(i-1)){
+                        ell.point[[w]][[ell.point.count]] <- get.vcv.ellipse.matrix( mat=point.matrix[[w]], traits=c(i,j) )
+                        ell.point.count <- ell.point.count + 1
+                    }
                 }
             }
         }
-        
-        if( is.matrix(mle2) ){
-            ell.mle2 <- list()         
-            ell.mle.count <- 1
-            for(i in 2:dd){
-                for(j in 1:(i-1)){
-                    ell.mle2[[ell.mle.count]] <- get.vcv.ellipse.matrix( mat=mle2, traits=c(i,j) )
-                    ell.mle.count <- ell.mle.count+1
-                }
-            }
-        }
-
+            
         ## Get the data for the histogram plots. Also in the same order as the plotting.
         ## Here using the data to calculate the range for the x and y axes.
         ## Here i is the x axis and j is the y axis.
-
+        ## Note that we need to check for each regime whether the x and y limits need to be amplified or not.
+        ## We want to fit all the matrices at once.
         y.hist <- vector()
         x.hist <- vector()
         ## First need to find the xlim of the plots. Will need this quantity to set the breaks for
         ##      the histograms.
-        for(i in 1:dd){
-            for(j in i:dd){
-                x.hist <- c( min(x.hist[1], LL1[[i]][,j], na.rm=TRUE) , max(x.hist[2], LL1[[i]][,j], na.rm=TRUE) )
-            }
-        }
-        if( !is.null(mat2) ){
-            ## If the mat2 is provided, them check wether the limits need to be modified.
-            ## Note that it follows the same structure as the previous one.
+        for(w in 1:length(p) ){
             for(i in 1:dd){
                 for(j in i:dd){
-                    x.hist <- c( min(x.hist[1], LL2[[i]][,j], na.rm=TRUE) , max(x.hist[2], LL2[[i]][,j], na.rm=TRUE) )
+                    x.hist <- c( min(x.hist[1], LL[[w]][[i]][,j], na.rm=TRUE) , max(x.hist[2], LL[[w]][[i]][,j], na.rm=TRUE) )
                 }
             }
         }
         
-        if(is.null(set.xlim)){
+        if( is.null(set.xlim) ){ ## Check for a user defined limits.
             ## Calculate the window of each bar:
             wd <- (x.hist[2] - mean(x.hist))/20
             ## Make a sequence for the breaks. Note that we add one window (bar) to the borders.
@@ -226,56 +173,37 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
             xlim.hist <- set.xlim
         }
 
-        hists1 <- list()
-        ccat1 <- list()
-        hists2 <- list()
-        ccat2 <- list()
-        hist.count <- 1
-        for(i in 1:dd[1]){
-            for(j in i:dd[1]){
-                ## Remember that the list 'LL' were made over the lines of the grid.
-                ## This is to calculate the x and y limits of the histogram.
-                hists1[[hist.count]] <- hist(LL1[[i]][,j], plot=FALSE, breaks=brk) ## This might break because the brk are from the two plots.
-                if( !is.null(mat2) ){ hists2[[hist.count]] <- hist(LL2[[i]][,j], plot=FALSE, breaks=brk) }
-                ## Create the cuts for the hpd:
-                ccat1[[hist.count]] <- cut(hists1[[hist.count]]$breaks
-                                        , c(-Inf, qq1[[hist.count]][1], qq1[[hist.count]][2], Inf))             
-                y.hist <- max(y.hist, hists1[[hist.count]]$density)
-                if( !is.null(mat2) ){
-                    ccat2[[hist.count]] <- cut(hists2[[hist.count]]$breaks
-                                            , c(-Inf, qq2[[hist.count]][1], qq2[[hist.count]][2], Inf))
-                    y.hist <- max(y.hist, hists2[[hist.count]]$density)
+        ## Note that we have here one list for each matrix. Now the number of matrices is a variable.
+        hists <- list() ## The histograms. Using the plot function and setting plot=FALSE
+        ccat <- list() ## The categories, the breaks to be used in the histograms.
+        for(w in 1:length(p) ){
+            hists[[w]] <- list()
+            ccat[[w]] <- list()
+            hist.count <- 1
+            for(i in 1:dd[1]){
+                for(j in i:dd[1]){
+                    ## Remember that the list 'LL' were made over the lines of the grid.
+                    ## This is to calculate the x and y limits of the histogram.
+                    hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                    ## Create the cuts for the hpd:
+                    ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
+                                                 , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
+                    y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
+                    hist.count <- hist.count + 1
                 }
-                hist.count <- hist.count+1
             }
         }
-        ylim.hist <- c(0,y.hist)
+        ylim.hist <- c(0, y.hist)
 
         ## Get the xlim and ylim for ellipse plots:
         ## This is just like the original case. But here the function will take into account the limits of both
         ##       mat1 and mat2 in the case that the user have two matrices.
+        ## Important to note that the new implementation will not plot ellipses out of the HPD, also the width
+        ##       of the lines and the transparency can be modified.
+        ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
+        ell.lim <- do.call(rbind, ell.lim)
+        ell.lim <- apply(ell.lim, 2, range)
 
-        ## First a block for the case with one matrix, then a block for the single case:
-        if( is.null(mat2) ){
-            ell.lim.in <- lapply(ell.data.in1, function(x) x[[1]])
-            ell.lim.in <- do.call(rbind, ell.lim.in)
-            ell.lim.in <- apply(ell.lim.in, 2, range)
-            ell.lim.out <- lapply(ell.data.out1, function(x) x[[1]])
-            ell.lim.out <- do.call(rbind, ell.lim.out)
-            ell.lim.out <- apply(ell.lim.out, 2, range)
-            ell.lim <- rbind(ell.lim.out, ell.lim.in)
-            ell.lim <- apply(ell.lim, 2, range)
-        } else{
-            ell.lim.in <- lapply( c(ell.data.in1, ell.data.in2) , function(x) x[[1]])
-            ell.lim.in <- do.call(rbind, ell.lim.in)
-            ell.lim.in <- apply(ell.lim.in, 2, range)
-            ell.lim.out <- lapply( c(ell.data.out1, ell.data.out1) , function(x) x[[1]])
-            ell.lim.out <- do.call(rbind, ell.lim.out)
-            ell.lim.out <- apply(ell.lim.out, 2, range)
-            ell.lim <- rbind(ell.lim.out, ell.lim.in)
-            ell.lim <- apply(ell.lim, 2, range)
-        }
-        
         ## Save the original par:
         old.par <- par(no.readonly = TRUE)
 
@@ -296,8 +224,14 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
 
         ## Produce some of the colors.
         ## Need to create the off-diagonal colors based on the alpha for the colors in the diagonal.
-        colOff1 <- adjustcolor(col=colDiag1, alpha.f=alphaOff1)
-        colOff2 <- adjustcolor(col=colDiag2, alpha.f=alphaOff2)
+        ## Repeat the process for all elements of the graph, and now it will need to be a vector.
+        ## colors has the color for each regime.
+        colOff <- adjustcolor(col=colors, alpha.f=alphaOff)
+        colDiag <- adjustcolor(col=colors, alpha.f=alphaDiag)
+        colEll <- adjustcolor(col=colors, alpha.f=alphaEll)
+        if( is.null(point.color) ){ ## Set the colors for the point matrices equal to the colors if not provided.
+            point.color <- colors
+        }
 
         ell.plot.count <- 1
         hist.plot.count <- 1
@@ -316,20 +250,17 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
                     }
                     box(col="grey")
                     if(j != i){
-                        plot(hists1[[hist.plot.count]], add=TRUE, freq=FALSE, border="gray"
-                           , col=c("white",colOff1,"white")[ccat1[[hist.plot.count]]] )
-                        if( !is.null(mat2) ) {
-                            plot(hists2[[hist.plot.count]], add=TRUE, freq=FALSE, border="gray"
-                                                    , col=c("white",colOff2,"white")[ccat2[[hist.plot.count]]] ) }
+                        for( w in 1:length(p) ){
+                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="gray"
+                               , col=c("white", colOff[w], "white")[ccat[[w]][[hist.plot.count]]] )
+                        }
                     } else{
-                        plot(hists1[[hist.plot.count]], add=TRUE, freq=FALSE, border="black"
-                           , col=c("white",colDiag1,"white")[ccat1[[hist.plot.count]]] )
-                        if( !is.null(mat2) ){
-                            plot(hists2[[hist.plot.count]], add=TRUE, freq=FALSE, border="black"
-                               , col=c("white",colDiag2,"white")[ccat2[[hist.plot.count]]] )
+                        for( w in 1:length(p) ){
+                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="black"
+                               , col=c("white", colDiag[w], "white")[ccat[[w]][[hist.plot.count]]] )
                         }
                         if(i == dd[1]){
-                            axis(1, at=round(c(xlim.hist[1],mean(xlim.hist),xlim.hist[2]), digits = 2) )
+                            axis(1, at=round(c(xlim.hist[1], mean(xlim.hist), xlim.hist[2]), digits = 2) )
                         }
                     }
                     if(i == 1){
@@ -338,39 +269,32 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
                     if(j == 1){
                         mtext(text=leg[i], side=2, cex=l.cex)
                     }
-                    if(is.matrix(mle1)){
-                        lines(x=c(mle1[i,j],mle1[i,j]), y=ylim.hist, type="l", col="red")
+                    if( !is.null(point.matrix) ){
+                        for( w in 1:length(p) ){
+                            lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
+                        }
                     }
-                    if(is.matrix(mle2)){
-                        lines(x=c(mle2[i,j],mle2[i,j]), y=ylim.hist, type="l", col="red")
-                    }
-                    hist.plot.count <- hist.plot.count+1
+                    hist.plot.count <- hist.plot.count + 1
                 } else{
                     plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
                     box(col="grey")
-                    invisible( lapply(ell.data.out1[[ell.plot.count]][[2]], points, col = colOff1
-                                    , type = "l", lwd = 0.5) )
-                    invisible( lapply(ell.data.in1[[ell.plot.count]][[2]], points, col = colDiag1
-                                    , type = "l", lwd = 0.5) )
-                    if( !is.null(mat2) ){
-                        invisible( lapply(ell.data.out2[[ell.plot.count]][[2]], points, col = colOff2
-                                        , type = "l", lwd = 0.5) )
-                        invisible( lapply(ell.data.in2[[ell.plot.count]][[2]], points, col = colDiag2
-                                        , type = "l", lwd = 0.5) )
+                    for( w in 1:length(p) ){
+                        invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
+                                        , type = "l", lwd = ell.wd) )
                     }
-                    if( is.matrix(mle1) ){
-                        invisible( points(ell.mle1[[ell.plot.count]], col="red", type="l", lwd=0.5) )
+                    if( !is.null(point.matrix) ){
+                        for( w in 1:length(p) ){
+                            invisible( points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
+                        }
                     }
-                    if( is.matrix(mle2) ){                        
-                        invisible( points(ell.mle2[[ell.plot.count]], col="red", type="l", lwd=0.5) )
-                    }
-                    ell.plot.count <- ell.plot.count+1
+                    ell.plot.count <- ell.plot.count + 1
                     if(j == 1){
                         mtext(text=leg[i], side=2, cex=l.cex)
                     }
                 }            
             }
         }
+        
         ## Return the old parameters:
         par(old.par)
     } else{
@@ -380,72 +304,51 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
         ## This is used when hpd == 100.
         
         ## Create a list where each element is a line of the grid plot:
-        LL1 <- lapply(1:dd, function(y) data.frame( t( sapply(mat1, function(x) x[y,] ) ) ) )
-        if( !is.null(mat2) ){ LL2 <- lapply(1:dd, function(y) data.frame( t( sapply(mat2, function(x) x[y,] ) ) ) ) }
+        LL <- lapply(p, function(x) lapply(1:dd, function(y) data.frame( t( sapply(chain$matrix[[x]], function(x) x[y,] ) ) ) ) )
 
         ## Get the data for the ellipse plots. The data is going to be in the same order of
         ##         the graphs in the par grid plot. Only the 'lower tri' part of the grid.
         ## Here i is the x axis and j is the y axis.
-        ell.data1 <- list()
-        ell.data.count <- 1    
-        for(i in 2:dd){
-            for(j in 1:(i-1)){
-                ell.data1[[ell.data.count]] <- get.vcv.ellipse.matrix(mat=mat1, traits=c(i,j) )
-                ell.data.count <- ell.data.count+1
-            }
-        }
-        
-        if( !is.null(mat2) ){
-            ell.data.count <- 1
-            ell.data2 <- list()
+        ell.data <- list()
+        for( w in 1:length(p) ){
+            ell.data[[w]] <- list()
+            ell.data.count <- 1    
             for(i in 2:dd){
                 for(j in 1:(i-1)){
-                    ell.data2[[ell.data.count]] <- get.vcv.ellipse.matrix(mat=mat2, traits=c(i,j) )
-                    ell.data.count <- ell.data.count+1
+                    ell.data[[w]][[ell.data.count]] <- get.vcv.ellipse.matrix(mat=chain$matrix[[ p[w] ]], traits=c(i,j) )
+                    ell.data.count <- ell.data.count + 1
                 }
             }
         }
         
         ## Create ellipse for the MLE estimate.
-        if( is.matrix(mle1) ){
-            ell.mle1 <- list()
-            ell.mle.count <- 1
-            for(i in 2:dd){
-                for(j in 1:(i-1)){
-                    ell.mle1[[ell.mle.count]] <- get.vcv.ellipse.matrix( mat=mle1, traits=c(i,j) )
-                    ell.mle.count <- ell.mle.count+1
-                }
-            }
-        }
-        if( is.matrix(mle2) ){            
-            ell.mle2 <- list()
-            ell.mle.count <- 1
-            for(i in 2:dd){
-                for(j in 1:(i-1)){
-                    ell.mle2[[ell.mle.count]] <- get.vcv.ellipse.matrix( mat=mle2, traits=c(i,j) )
-                    ell.mle.count <- ell.mle.count+1
+        if( !is.null(point.matrix) ){ ## Check if the value of the argument is what we want:
+            if( !class( point.matrix ) == "list" ) stop( " point.matrix need to be a list of matrices." )
+            if( !length( point.matrix ) == length(p) ) stop( "Lenght of point.matrix need to be equal to the number of regimes fitted to the tree." )
+            if( !class( point.matrix[[1]] ) == "matrix" ) stop(" point.matrix need to be a list of matrices." )
+            ell.point <- list()
+            for( w in 1:length(p) ){
+                ell.point[[w]] <- list()
+                ell.point.count <- 1
+                for(i in 2:dd){
+                    for(j in 1:(i-1)){
+                        ell.point[[w]][[ell.point.count]] <- get.vcv.ellipse.matrix( mat=point.matrix[[w]], traits=c(i,j) )
+                        ell.point.count <- ell.point.count + 1
+                    }
                 }
             }
         }
 
         ## Get the data for the histogram plots. Also in the same order as the plotting.
         ## Here using the data to calculate the range for the x and y axes.
-        
         y.hist <- vector()
         x.hist <- vector()
         ## First need to find the xlim of the plots. Will need this quantity to set the breaks for
         ##      the histograms.
-        for(i in 1:dd){
-            for(j in i:dd){
-                x.hist <- c( min(x.hist[1], LL1[[i]][,j], na.rm=TRUE) , max(x.hist[2], LL1[[i]][,j], na.rm=TRUE) )
-            }
-        }
-        if( !is.null(mat2) ){
-            ## If the mat2 is provided, them check wether the limits need to be modified.
-            ## Note that it follows the same structure as the previous one.
+        for(w in 1:length(p) ){
             for(i in 1:dd){
                 for(j in i:dd){
-                    x.hist <- c( min(x.hist[1], LL2[[i]][,j], na.rm=TRUE) , max(x.hist[2], LL2[[i]][,j], na.rm=TRUE) )
+                    x.hist <- c( min(x.hist[1], LL[[w]][[i]][,j], na.rm=TRUE) , max(x.hist[2], LL[[w]][[i]][,j], na.rm=TRUE) )
                 }
             }
         }
@@ -462,34 +365,26 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
             xlim.hist <- set.xlim
         }
 
-        hists1 <- list()
-        hists2 <- list()
-        hist.count <- 1
-        for(i in 1:dd){
-            for(j in i:dd){
-                ## Remember that the list 'LL' where made over the lines of the grid.
-                ## This is to calculate the x and y limits of the histogram.
-                hists1[[hist.count]] <- hist(LL1[[i]][,j], plot=FALSE, breaks=brk)
-                y.hist <- max(y.hist, hists1[[hist.count]]$density)
-                if( !is.null(mat2) ){
-                    hists2[[hist.count]] <- hist(LL2[[i]][,j], plot=FALSE, breaks=brk)
-                    y.hist <- max(y.hist, hists2[[hist.count]]$density)
+        hists <- list() ## Here there is no ccat because there is no "white region" in the histograms.
+        for( w in 1:length(p) ){
+            hists[[w]] <- list()
+            hist.count <- 1
+            for(i in 1:dd){
+                for(j in i:dd){
+                    ## Remember that the list 'LL' where made over the lines of the grid.
+                    ## This is to calculate the x and y limits of the histogram.
+                    hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                    y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
+                    hist.count <- hist.count + 1
                 }
-                hist.count <- hist.count + 1
             }
         }
         ylim.hist <- c(0,y.hist)
 
         ## Get the xlim and ylim for ellipse plots:
-        if( !is.null(mat2) ){
-            ell.lim <- lapply( c(ell.data1, ell.data2) , function(x) x[[1]])
-            ell.lim <- do.call(rbind, ell.lim)
-            ell.lim <- apply(ell.lim, 2, range)
-        } else{
-            ell.lim <- lapply(ell.data1, function(x) x[[1]])
-            ell.lim <- do.call(rbind, ell.lim)
-            ell.lim <- apply(ell.lim, 2, range)
-        }
+        ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
+        ell.lim <- do.call(rbind, ell.lim)
+        ell.lim <- apply(ell.lim, 2, range)
         
         ## Save the original par:
         old.par <- par(no.readonly = TRUE)
@@ -503,8 +398,12 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
         ## par(xpd = NA) ## To make plots outside plotting area.
 
         ## Create the color for the plot:
-        colOff1 <- adjustcolor(col=colDiag1, alpha.f=alphaOff1)
-        colOff2 <- adjustcolor(col=colDiag2, alpha.f=alphaOff2)
+        colOff <- adjustcolor(col=colors, alpha.f=alphaOff)
+        colDiag <- adjustcolor(col=colors, alpha.f=alphaDiag)
+        colEll <- adjustcolor(col=colors, alpha.f=alphaEll)
+        if( is.null(point.color) ){ ## Set the colors for the point matrices equal to the colors if not provided.
+            point.color <- colors
+        }
 
         ## Plot the graphs in the grid:
         ## The if and else make sure that the upper.tri and the lower.tri get the correct plots.
@@ -530,11 +429,13 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
                     }
                     box(col="grey")
                     if(j != i){
-                        plot(hists1[[hist.plot.count]], add=TRUE, freq=FALSE, col=colOff1, border="gray")
-                        if( !is.null(mat2) ){ plot(hists2[[hist.plot.count]], add=TRUE, freq=FALSE, col=colOff2, border="gray") }
+                        for( w in 1:length(p) ){
+                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colOff[w], border="gray")
+                        }
                     } else{
-                        plot(hists1[[hist.plot.count]], add=TRUE, freq=FALSE, col=colDiag1, border="black")
-                        if( !is.null(mat2) ){ plot(hists2[[hist.plot.count]], add=TRUE, freq=FALSE, col=colDiag2, border="black") }
+                        for( w in 1:length(p) ){
+                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colDiag[w], border="black")
+                        }
                         if(i == dd){ axis(1, at=round(c(xlim.hist[1],mean(xlim.hist),xlim.hist[2]), digits = 2) ) }
                     }
                     if(i == 1){
@@ -543,27 +444,23 @@ make.grid.plot <- function(mat1, mat2=NULL, mle1=NULL, mle2=NULL, colDiag1="purp
                     if(j == 1){
                         mtext(text=leg[i], side=2, cex=l.cex)
                     }
-                    if(is.matrix(mle1)){
-                        lines(x=c(mle1[i,j],mle1[i,j]), y=ylim.hist, type="l", col="red")
-                    }
-                    if(is.matrix(mle2)){
-                        lines(x=c(mle2[i,j],mle2[i,j]), y=ylim.hist, type="l", col="red")
+                    if( !is.null(point.matrix) ){
+                        for( w in 1:length(p) ){
+                            lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
+                        }
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
                     plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
                     box(col="grey")
-                    invisible( lapply(ell.data1[[ell.plot.count]][[2]], points, col = colDiag1
-                                    , type = "l", lwd = 0.5) )
-                    if( !is.null(mat2) ){
-                        invisible( lapply(ell.data2[[ell.plot.count]][[2]], points, col = colDiag2
-                                        , type = "l", lwd = 0.5) )
+                    for( w in 1:length(p) ){
+                    invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
+                                    , type = "l", lwd = ell.wd) )
                     }
-                    if( is.matrix(mle1) ){
-                        invisible( points(ell.mle1[[ell.plot.count]], col="red", type="l", lwd=0.5) )
-                    }
-                    if( is.matrix(mle2) ){
-                        invisible( points(ell.mle2[[ell.plot.count]], col="red", type="l", lwd=0.5) )
+                    if( !is.null(point.matrix) ){
+                        for( w in 1:length(p) ){
+                            invisible( points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
+                        }
                     }
                     ell.plot.count <- ell.plot.count+1
                     if(j == 1){
