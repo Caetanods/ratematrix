@@ -52,6 +52,9 @@ read.multi.R.iwish <- function(out, burn = 0.5, thin = 1, dir=NULL){
     root <- t( sapply(root, function(x) as.numeric( strsplit(x=x, split=";", fixed=TRUE)[[1]] )
                   , USE.NAMES=FALSE) )
     colnames(root) <- out$names
+
+    out <- list(root = root, matrix = MM, log.lik = lik)
+    class(out) <- "ratematrix_multi_chain"
         
-    return( list(root = root, matrix = MM, log.lik = lik) )
+    return( out )
 }
