@@ -125,5 +125,7 @@ sample.prior.zhang <- function(n, prior, sample.sd=TRUE){
             }
         }
     }
-    return( list( mu=mu, vcv=vcv, sd=sd ) )    
+    out <- list( mu=mu, matrix=vcv, sd=sd )
+    class( out ) <- "ratematrix_prior_sample"
+    return( out )    
 }
