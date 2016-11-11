@@ -35,22 +35,69 @@
 ##' @return Plot a grid of charts.
 ##' @export
 make.grid.plot <- function(chain, p, colors, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
-    
-    ## First do a batch of tests:
-    check.mat <- vector()
-    check.length <- vector()
-    for(i in p){
-        check.mat[i] <- ncol( chain$matrix[[i]][[1]] ) ## First element of each regime.
-        check.length[i] <- length( chain$matrix[[i]] ) ## The length of each chain regime.
-    }
-    equal.size <- sapply(2:length(p), function(x) check.mat[1] == check.mat[x] )
-    equal.length <- sapply(2:length(p), function(x) check.length[1] == check.length[x] )
 
-    if( !sum(equal.size) == (length(p)-1) ) stop("Matrix regimes do not have the same number of traits.")
-    if( !sum(equal.length) == (length(p)-1) ) stop("Chain for regimes do not have the same length.")
+    ## Check if there is only one regime to be plotted:
+    if(length(p) == 1){ ## Nothing to check here, because of single regime.        
+        if( is.list(chain$matrix) & is.matrix(chain$matrix[[p]][[1]]) ){ ## The first level is a list.
+            ## No fix is needed in this case.
+            cat("Plotting a single regime.","\n")
+            dd <- ncol( chain$matrix[[p]][[1]] )
+            ll <- length( chain$matrix[[p]] )
+            ## Check if the chain is a sample from the prior and correct.
+            if( class( chain ) == "ratematrix_prior_sample" ){
+                ## This step will rebuild the R matrix from the samples taken by the prior.
+                corr <- lapply(chain$matrix[[p]], decompose.cov ) ## Over the matrices.
+                rb.matrix <- lapply(1:ll, function(x) rebuild.cov(r=corr[[x]]$r, v=chain$sd[[p]][x,]^2) )
+                chain$matrix[[p]] <- rb.matrix
+            }
+        }
+        if( is.list(chain$matrix) & is.matrix(chain$matrix[[1]]) ){ ## The first level is a matrix and not a list.
+            if( !p == 1 ) stop("There is only one regime in the chain, then p need to be equal to 1.")
+            cat("Plotting a single regime.","\n")
+            dd <- ncol( chain$matrix[[1]] )
+            ll <- length( chain$matrix )
+            if( class( chain ) == "ratematrix_prior_sample" ){
+                ## This step will rebuild the R matrix from the samples taken by the prior.
+                corr <- lapply(chain$matrix, decompose.cov ) ## Over the matrices.
+                rb.matrix <- lapply(1:ll, function(x) rebuild.cov(r=corr[[x]]$r, v=chain$sd[x,]^2) )
+                chain$matrix <- rb.matrix
+            }
+            ## Need to fix the format for the rest of the function.
+            temp <- chain$matrix
+            rm( chain )
+            chain <- list()
+            chain$matrix <- list()
+            chain$matrix[[1]] <- temp
+        }
+    }
     
-    ll <- check.length[1]
-    dd <- check.mat[1]
+    if(length(p) > 1){
+        cat("Plotting multiple regimes.","\n")
+        ## First do a batch of tests:
+        check.mat <- vector()
+        check.length <- vector()
+        for(i in p){
+            check.mat[i] <- ncol( chain$matrix[[i]][[1]] ) ## First element of each regime.
+            check.length[i] <- length( chain$matrix[[i]] ) ## The length of each chain regime.
+        }
+        equal.size <- sapply(2:length(p), function(x) check.mat[1] == check.mat[x] )
+        equal.length <- sapply(2:length(p), function(x) check.length[1] == check.length[x] )
+
+        if( !sum(equal.size) == (length(p)-1) ) stop("Matrix regimes do not have the same number of traits.")
+        if( !sum(equal.length) == (length(p)-1) ) stop("Chain for regimes do not have the same length.")
+        
+        ll <- check.length[1]
+        dd <- check.mat[1]
+
+        if( class( chain ) == "ratematrix_prior_sample" ){
+            ## This step will rebuild the R matrix from the samples taken by the prior.
+            for(i in p){
+                corr <- lapply(chain$matrix[[i]], decompose.cov ) ## Over the matrices.
+                rb.matrix <- lapply(1:ll, function(x) rebuild.cov(r=corr[[x]]$r, v=chain$sd[[i]][x,]^2) )
+                chain$matrix[[i]] <- rb.matrix
+            }
+        }
+    }
 
     ## Create default titles:
     ## This need to be changed to get the name of the traits from the MCMC chain.
