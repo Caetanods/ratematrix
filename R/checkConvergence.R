@@ -19,9 +19,9 @@ checkConvergence <- function(mcmc.chain, p, method=c("heidel","gelman"), multiva
             matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]], c) ) )
             ## Using the Heidelberger and Welch diagnostic for convergence.
             ## Note that better would be to use Gelman's R. But we only have one chain.
-            hei.root <- .passed.heidel(root.mcmc)
+            hei.root <- .checkHeidelTest(root.mcmc)
             ess.root <- coda::effectiveSize(root.mcmc)
-            hei.matrix <- .passed.heidel(matrix.mcmc)
+            hei.matrix <- .checkHeidelTest(matrix.mcmc)
             ess.matrix <- coda::effectiveSize(matrix.mcmc)
             ess <- c(ess.root, ess.matrix)
             names(ess) <- c( paste("root_",1:length(ess.root),sep=""), paste("matrix_cel_",1:length(ess.matrix),sep=""))
@@ -48,14 +48,14 @@ checkConvergence <- function(mcmc.chain, p, method=c("heidel","gelman"), multiva
     if(p > 1){
         if(method == "heidel"){
             root.mcmc <- coda::mcmc( mcmc.chain[[1]] )
-            hei.root <- .passed.heidel(root.mcmc)
+            hei.root <- .checkHeidelTest(root.mcmc)
             ess.root <- coda::effectiveSize(root.mcmc)
             hei.root <- data.frame(hei.root)
             diag <- list()
             ess.matrix <- list()
             for(i in 1:p){
                 matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]][[i]], c) ) )
-                hei.matrix <- .passed.heidel(matrix.mcmc)
+                hei.matrix <- .checkHeidelTest(matrix.mcmc)
                 ess.matrix[[i]] <- coda::effectiveSize(matrix.mcmc)
                 diag[[i]] <- data.frame(hei.matrix)
             }

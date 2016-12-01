@@ -37,8 +37,8 @@ parseResults <- function(out.one.matrix, out.two.matrix, rds=FALSE, flag=NULL, b
 	}
 
     ## Read the results:
-    mcmc.one <- read.single.R.iwish(out=out.one, thin=thin)
-    mcmc.two <- read.multi.R.iwish(out=out.two, thin=thin)
+    mcmc.one <- readSingleRegimeMCMC(out=out.one, thin=thin)
+    mcmc.two <- readMultRegimeMCMC(out=out.two, thin=thin)
 
     ## Check convergence. Here using only a single chain.
     ## Need to separate the root and the matrices. Matrices are transformed using 'c'.
@@ -50,11 +50,11 @@ parseResults <- function(out.one.matrix, out.two.matrix, rds=FALSE, flag=NULL, b
 
     ## Using the Heidelberger and Welch diagnostic for convergence.
     ## Note that better would be to use Gelman's R. But we only have one chain.
-    hei.root.one <- passed.heidel(root.one.mcmc)
-    hei.matrix.one <- passed.heidel(matrix.one.mcmc)
-    hei.root.two <- passed.heidel(root.two.mcmc)
-    hei.matrix.two.1 <- passed.heidel(matrix.two.1.mcmc)
-    hei.matrix.two.2 <- passed.heidel(matrix.two.2.mcmc)
+    hei.root.one <- checkHeidelTest(root.one.mcmc)
+    hei.matrix.one <- checkHeidelTest(matrix.one.mcmc)
+    hei.root.two <- checkHeidelTest(root.two.mcmc)
+    hei.matrix.two.1 <- checkHeidelTest(matrix.two.1.mcmc)
+    hei.matrix.two.2 <- checkHeidelTest(matrix.two.2.mcmc)
     passed.hei.diag <- data.frame(hei.root.one, hei.matrix.one, hei.root.two
                                 , hei.matrix.two.1, hei.matrix.two.2)
 
@@ -76,8 +76,8 @@ parseResults <- function(out.one.matrix, out.two.matrix, rds=FALSE, flag=NULL, b
     write.csv(converge, file=paste("./output_analyses/", flag,".converge.res.csv",sep="") )
 
     ## Calculate the DIC for the model test:
-    dic.one.mat <- dic.mcmc(out.one, mcmc.one)
-    dic.two.mat <- dic.mcmc(out.two, mcmc.two)
+    dic.one.mat <- dicMCMC(out.one, mcmc.one)
+    dic.two.mat <- dicMCMC(out.two, mcmc.two)
     cat( paste("Analysis: ", flag, " | DIC1 = ", dic.one.mat, " | DIC2 = ", dic.two.mat,
                " | diff = ", dic.one.mat - dic.two.mat, "\n", sep="") )
 
@@ -100,11 +100,11 @@ parseResults <- function(out.one.matrix, out.two.matrix, rds=FALSE, flag=NULL, b
 
     ## Make plots:
     pdf( paste("./output_analyses/", flag,".gridplot.onemat.pdf",sep="") )
-    make.grid.plot(mat1=mcmc.one[[2]], mat2=NULL, mle1=mle$R.single)
+    plotRatematrix(mat1=mcmc.one[[2]], mat2=NULL, mle1=mle$R.single)
     dev.off()
 
     pdf( paste("./output_analyses/", flag,".gridplot.twomat.pdf",sep="") )
-    make.grid.plot(mat1=mcmc.two[[2]][[1]], mat2=mcmc.two[[2]][[2]], mle1=mle$R.multiple[,,1]
+    plotRatematrix(mat1=mcmc.two[[2]][[1]], mat2=mcmc.two[[2]][[2]], mle1=mle$R.multiple[,,1]
                  , mle2=mle$R.multiple[,,2])
     dev.off()
 }
