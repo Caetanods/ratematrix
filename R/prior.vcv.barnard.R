@@ -31,7 +31,6 @@ prior.vcv.barnard <- function(S, min=0, max=100){
     dR <- (log(det(R))*(k*(k-1)/2-1)) + (log(sub.prod)*(-(k+1)/2))
     ## There is a more general expression in Barnard. If informative priors are needed.
     dvar <- sum( dunif(x = var, min=min, max=max, log=TRUE) ) ## Indepedent and Identically Distributed.
-    #dchi <- sum( dinvchisq(x = var, v.chi = v.chi) ) ## Indepedent and Identically Distributed.
     d <- dR + dvar
     ## This follows Barnand and assumes the variance component is independent of the
     ##      correlation.

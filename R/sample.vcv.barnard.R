@@ -19,7 +19,6 @@ sample.vcv.barnard <- function(k, min=0, max=100){
     ##      transform the result in a correlation matrix. (Scale matrix is I)
     S <- riwish(v=k+1, S=diag(k))
     R <- cov2cor(S)
-    #var <- rinvchisq(n = k, v.chi = v.chi, scale = 1/v.chi) #Not used. The inverse scaled chisquared.
     var <- runif(n = k, min=0, max=100)
     vcv <- rebuild.cov(r=R, v=var)
     return(vcv)
