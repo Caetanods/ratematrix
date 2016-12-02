@@ -6,8 +6,16 @@
 ##' @export
 print.ratematrix_prior_sample <- function(x){
     ## First make some calculations:
-    number <- nrow( x$mu )
-    cat(number, "samples from the prior distribution","\n")
-    cat("\n")
-    cat("Check 'names' of x for more details.", "\n")
+    if( is.null( nrow( x$mu ) ) ){
+        cat("\n")
+        cat("1 sample from the prior distribution","\n")
+        cat("\n")
+        cat("Check 'names' for more details.", "\n")
+    } else{
+        number <- nrow( x$mu )
+        cat("\n")
+        cat(number, "samples from the prior distribution","\n")
+        cat("\n")
+        cat("Check 'names'for more details.", "\n")
+    }
 }
