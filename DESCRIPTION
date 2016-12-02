@@ -60,6 +60,7 @@ Collate:
     "print.ratematrix_multi_chain.R"
     "print.ratematrix_multi_mcmc.R"
     "print.ratematrix_prior_sample.R"
+    "print.ratematrix_prior_function.R"
     "priorDensityVcvBarnard.R"
     "readMultRegimeMCMC.R"
     "readSingleRegimeMCMC.R"

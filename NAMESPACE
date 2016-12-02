@@ -2,6 +2,7 @@
 
 S3method(print,ratematrix_multi_chain)
 S3method(print,ratematrix_multi_mcmc)
+S3method(print,ratematrix_prior_function)
 S3method(print,ratematrix_prior_sample)
 export(checkConvergence)
 export(dicMCMC)
