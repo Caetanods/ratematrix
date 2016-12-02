@@ -115,6 +115,8 @@ makePriorSeparation <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.
             corr <- function(x) sum( sapply(1:p, function(i) corr_regime[[i]](x[[i]]) ) )
         }
     }
-    
-    return( list(mean.prior=mn, corr.prior=corr, sd.prior=sd, pars=pars) )
+
+    res <- list(mean.prior=mn, corr.prior=corr, sd.prior=sd, pars=pars)
+    class( res ) <- "ratematrix_prior_function"
+    return( res )
 }
