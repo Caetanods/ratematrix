@@ -123,12 +123,14 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 start_run <- samplePriorSeparation(n=1, prior=prior_run, sample.sd=FALSE)
             }
             if(start == "mle"){
-                mle.fit <- mvBM(tree=centrarchidae$phy.map, data=centrarchidae$data, model="BM1", method="pic")
+                cat( "Optimizing likelihood for the starting value of the MCMC.\n")                
+                mle.fit <- mvBM(tree=centrarchidae$phy.map, data=centrarchidae$data, model="BM1", method="pic", echo=FALSE)
+                cat("\n")
                 decomp.R <- decompose.cov( mle.fit$sigma )
                 start_run <- list()
-                start$mu <- as.numeric( mle.fit$theta )
-                start$matrix <- unname( as.matrix( decomp.R$r ) )
-                start$sd <- as.numeric( sqrt(decomp.R$v) )
+                start_run$mu <- as.numeric( mle.fit$theta )
+                start_run$matrix <- unname( as.matrix( decomp.R$r ) )
+                start_run$sd <- as.numeric( sqrt(decomp.R$v) )
             }
         }
         
@@ -174,7 +176,9 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 start_run <- samplePriorSeparation(n=1, prior=prior_run, sample.sd=FALSE)
             }
             if(start == "mle"){
-                mle.fit <- mvBM(tree=centrarchidae$phy.map, data=centrarchidae$data, model="BMM", method="rpf")
+                cat( "Optimizing likelihood for the starting value of the MCMC.\n")
+                mle.fit <- mvBM(tree=centrarchidae$phy.map, data=centrarchidae$data, model="BMM", method="rpf", echo=FALSE)
+                cat( "\n")
                 decomp.r <- list()
                 decomp.sd <- list()
                 for( i in 1:p ){

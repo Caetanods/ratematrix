@@ -67,6 +67,7 @@ Collate:
     "priorDensityVcvBarnard.R"
     "readMultRegimeMCMC.R"
     "readSingleRegimeMCMC.R"
+    "readMCMC.R"
     "riwish.R"
     "samplePriorSeparation.R"
     "simTrees.R"
