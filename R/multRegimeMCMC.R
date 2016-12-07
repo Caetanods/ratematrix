@@ -25,7 +25,6 @@
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
-##' @export
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
@@ -148,19 +147,19 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ## This will check for the arguments, check if there is more than one phylogeny and create the functions for the update and to calculate the lik.
     if( !is.list( phy[[1]] ) ){
         ## This will use a unique tree.
-        print("MCMC chain will use a single tree provided in the argument 'phy'")
+        cat("MCMC chain using a single tree/regime configuration.\n")
         if(use_corr == TRUE){
-            print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
+            # print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
             prop.data.cor <- function(...) makePropMeanForMult(..., traitwise=FALSE, use_corr=TRUE)
             update.function <- list(prop.data.cor, makePropMultSigma)
         } else{
             if(traitwise == TRUE){
-                print("Using an independent proposal distribution for the root value of each trait.")
+                # print("Using an independent proposal distribution for the root value of each trait.")
                 prop.traitwise <- function(...) makePropMeanForMult(..., traitwise=TRUE, use_corr=FALSE)
                 update.function <- list(prop.traitwise, makePropMultSigma)
             }
             if(traitwise == FALSE){
-                print("Using a naive joint proposal distribution for the phylogenetic mean.")
+                # print("Using a naive joint proposal distribution for the phylogenetic mean.")
                 prop.not.traitwise <- function(...) makePropMeanForMult(..., traitwise=FALSE, use_corr=FALSE)
                 update.function <- list(prop.not.traitwise, makePropMultSigma)
             }
@@ -168,20 +167,20 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         }
     }
     if( is.list( phy[[1]] ) ){
-        print("MCMC chain will integrate over the list of phylogenies provided in the argument 'phy'")
+        cat("MCMC chain using multiple trees/regime configurations.\n")
         ## This will integrate over all the trees provided.
         if(use_corr == TRUE){
-            print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
+            # print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
             prop.data.cor <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=FALSE, use_corr=TRUE)
             update.function <- list(prop.data.cor, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
         } else{
             if(traitwise == TRUE){
-                print("Using an independent proposal distribution for the root value of each trait.")
+                # print("Using an independent proposal distribution for the root value of each trait.")
                 prop.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=TRUE, use_corr=FALSE)
                 update.function <- list(prop.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
             }
             if(traitwise == FALSE){
-                print("Using a naive joint proposal distribution for the phylogenetic mean.")
+                # print("Using a naive joint proposal distribution for the phylogenetic mean.")
                 prop.not.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=FALSE, use_corr=FALSE)
                 update.function <- list(prop.not.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
             }
@@ -194,6 +193,9 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Start counter for the acceptance ratio and loglik.
     count <- 2
+
+    ## Inform the start of the MCMC:
+    cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
 
     ## Save a log file with the accept and reject information:
     sink( file.path(dir, paste(outname,".",ID,".mcmc.log", sep="") ) )
@@ -239,6 +241,8 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Close the connections:
     lapply(files, close)
+
+    cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
 
     ## Create table of acceptance ratio.
     ## acc.mat <- matrix(table(cache.chain$acc), nrow=1)

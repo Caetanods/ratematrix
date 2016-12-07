@@ -21,21 +21,10 @@
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.matrix': the evolutionary rate matrix, one per line, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 indicates that the evolutionary rate matrix was updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree. This value will always be 1 for this function, by see 'multi.R.iwish.mcmc'; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
-##' @export
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
 singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traitwise=TRUE){
-
-    ## Verify the directory:
-    if( is.null(dir) ){
-        dir <- "."
-    } else{
-        dir.create(file.path(dir), showWarnings = FALSE)
-    }
-
-    ## Change the data to matrix:
-    if( class(X) == "data.frame" ) X <- as.matrix( X )
 
     ## Creates data cache:
     cache.data <- list()
@@ -44,9 +33,6 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     cache.data$X <- X
     cache.data$phy <- phy
     cache.data$traits <- colnames(X) ## Get names for the traits.
-    ## When using 'phylolm' to compute the likelihood we do not need the D matrix.
-    ## cache.data$D <- matrix(0, nrow = cache.data$n*cache.data$k, ncol = cache.data$k)
-    ## for(i in 1:cache.data$k) cache.data$D[((cache.data$n*(i-1))+1):(cache.data$n*i),i] <- 1
 
     ## Creates MCMC chain cache:
     ## Here trying to initialize the chain cache with the correct number of elements in the list.
@@ -66,12 +52,8 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     cache.chain$lik[1] <- logLikSingleRegime(data=cache.data, chain=cache.chain
                                        , root=as.vector(cache.chain$chain[[1]][[1]])
                                        , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
+    cat( paste("Starting point log-likelihood: ", cache.chain$lik[1], "\n", sep="") )
     
-    ## cache.chain$lik[1] <- logLikSingleRegime(X=cache.data$X, phy=cache.data$phy
-    ##                                    , root=as.vector(cache.chain$chain[[1]][[1]])
-    ##                                    , R=cache.chain$chain[[1]][[2]], n=cache.data$n
-    ##                                    , r=cache.data$k) ## Lik start value.
-
     ## I might need to create a function to make a prior for the case of a single matrix fitted to the tree.
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
     cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[4]]) ## Prior log lik starting value.
@@ -94,12 +76,12 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ## Now this will have two options. This is the part that the function needs to be updated.
     ## Need to make sure that the proposal distributions will be tunned by the w_sd and w_mu parameters.
     if(traitwise == TRUE){
-        print("Using independent proposal distribution for the root value of each trait.")
+        ## print("Using independent proposal distribution for the root value of each trait.")
         prop.traitwise <- function(..., traitwise=TRUE) makePropMean(..., traitwise=TRUE)
         update.function <- list(prop.traitwise, makePropSingleSigma)
     }
     if(traitwise == FALSE){
-        print("Using joint proposal distribution for the phylogenetic mean (root value) of all traits.")
+        ## print("Using joint proposal distribution for the phylogenetic mean (root value) of all traits.")
         prop.not.traitwise <- function(..., traitwise=FALSE) makePropMean(..., traitwise=FALSE)
         update.function <- list(prop.not.traitwise, makePropSingleSigma)
     }
@@ -112,6 +94,9 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
 
     ## Start counter for the acceptance ratio and loglik.
     count <- 2
+
+    ## Inform the start of the MCMC:
+    cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
 
     ## Make loop equal to the number of blocks:
     for(jj in 1:block){
@@ -146,14 +131,17 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
 
     ## Close the connections:
     lapply(files, close)
-    
+
+    cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
     ## Create table of acceptance ratio.
     ## acc.mat <- matrix(table(cache.chain$acc), nrow=1)
     ## colnames(acc.mat) <- c("reject","root","R")
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    return( list(acc_vector = cache.chain$acc, k = cache.data$k, p = 1
+    out <- list(acc_vector = cache.chain$acc, k = cache.data$k, p = 1
                , ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
-               , phy = phy, prior = prior, start = start, gen = gen) )
+              , phy = phy, prior = prior, start = start, gen = gen)
+    class( out ) <- "ratematrix_single_mcmc"
+    return( out )
 }
