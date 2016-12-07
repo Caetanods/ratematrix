@@ -49,6 +49,8 @@ readSingleRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
     root <- t( sapply(root, function(x) as.numeric( strsplit(x=x, split=";", fixed=TRUE)[[1]] )
                   , USE.NAMES=FALSE) )
     colnames(root) <- out$names
-    
-    return( list(root = root, matrix = MM, log.lik = lik) )
+
+    out <- list(root = root, matrix = MM, log.lik = lik)
+    class(out) <- "ratematrix_single_chain"
+    return( out )
 }
