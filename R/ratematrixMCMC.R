@@ -32,7 +32,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
-    if( class(data) == "data.frame" ) X <- as.matrix( X )
+    if( class(data) == "data.frame" ) data <- as.matrix( data )
 
     cat("\n")
 
