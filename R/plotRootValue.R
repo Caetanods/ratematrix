@@ -5,8 +5,8 @@
 ##' @param chain the posterior distribution loaded from the files using 'readMCMC'.
 ##' @param color the color for the histograms.
 ##' @param set.xlab a vector with legends for the x axes. If 'NULL' (default), the names are 'trait_1' to 'trait_n". 
-##' @param set.cex.lab the cex value for the labels (default is 0.7).
-##' @param set.cex.axis the cex value for the axes numbers (default is 1).
+##' @param set.cex.lab the cex value for the labels (default is 1).
+##' @param set.cex.axis the cex value for the axes numbers (default is 1.5).
 ##' @param set.xlim the xlim for the plot. Need to be a vector with the lower and higher bound.
 ##' @param hpd the Highest Posterior Density interval to highlight in the plot. Regions outside the interval will be painted in "white". A numeric value between 0 and 100 (default is 100).
 ##' @param mfrow the number of lines for the plate. The plots will be arranged in the number of lines provided (default is 1).
@@ -17,7 +17,7 @@
 ##' @return A plot with the posterior density for the root values of the MCMC analysis. Many characteristics of the plot can be controlled by the user.
 ##' @export
 ##' @author daniel
-plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=0.7, set.cex.axis=1, set.xlim=NULL, hpd=100, mfrow=1, vline.values=NULL, vline.color=NULL, vline.wd=NULL, show.zero=FALSE){
+plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, set.cex.axis=1.5, set.xlim=NULL, hpd=100, mfrow=1, vline.values=NULL, vline.color=NULL, vline.wd=NULL, show.zero=FALSE){
     ## Plot Root value. Will work just like the plotRatematrix.
     ntr <- ncol( chain$root )
 

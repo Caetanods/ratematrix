@@ -4,8 +4,8 @@
 \alias{plotRootValue}
 \title{Plot the posterior distribution of the root values for the traits.}
 \usage{
-plotRootValue(chain, color = "black", set.xlab = NULL, set.cex.lab = 0.7,
-  set.cex.axis = 1, set.xlim = NULL, hpd = 100, mfrow = 1,
+plotRootValue(chain, color = "black", set.xlab = NULL, set.cex.lab = 1,
+  set.cex.axis = 1.5, set.xlim = NULL, hpd = 100, mfrow = 1,
   vline.values = NULL, vline.color = NULL, vline.wd = NULL,
   show.zero = FALSE)
 }
@@ -16,9 +16,9 @@ plotRootValue(chain, color = "black", set.xlab = NULL, set.cex.lab = 0.7,
 
 \item{set.xlab}{a vector with legends for the x axes. If 'NULL' (default), the names are 'trait_1' to 'trait_n".}
 
-\item{set.cex.lab}{the cex value for the labels (default is 0.7).}
+\item{set.cex.lab}{the cex value for the labels (default is 1).}
 
-\item{set.cex.axis}{the cex value for the axes numbers (default is 1).}
+\item{set.cex.axis}{the cex value for the axes numbers (default is 1.5).}
 
 \item{set.xlim}{the xlim for the plot. Need to be a vector with the lower and higher bound.}
 
