@@ -2,29 +2,29 @@
 % Please edit documentation in R/estimateTimeMCMC.R
 \name{estimateTimeMCMC}
 \alias{estimateTimeMCMC}
-\title{All the things!}
+\title{Estimate the time needed to run the MCMC.}
 \usage{
 estimateTimeMCMC(data, phy, gen, eval.times = 5, singlerate = FALSE)
 }
 \arguments{
-\item{data}{}
+\item{data}{a matrix with the data. Each column is a different trait and species names need to be provided as rownames (rownames(data) == phy$tip.label).}
 
-\item{phy}{}
+\item{phy}{a phylogeny of the class "simmap" with the mapped regimes. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in phy. Regime names will also be used. See 'Details'.}
 
-\item{gen}{}
+\item{gen}{the number of generations of the MCMC to estime the time.}
 
-\item{eval.times}{}
+\item{eval.times}{the number of replicates to account for uncertainty in computing times. The median of all evaluations will be used in the final estimate (default is 5).}
 
-\item{singlerate}{}
+\item{singlerate}{whether the function should fit a single regime and ignore the number of regimes painted to the tree (default is FALSE).}
 }
 \value{
-The thing.
+a numeric value with the time in seconds and print a message with the result.
 }
 \description{
-Do the thing!
+Estimate time needed to run the MCMC. Function will estimate the time based on the computation of the log-likelihood, prior density, and the Jacobian of the proposal step. The time estimated is a minimum bound based on the processing power of the current computer. Running the MCMC in different computers might change the time.
 }
 \details{
-Really does it!
+Function will use the package 'microbenchmark' if present otherwise it will compute time using the 'proc.time' function.
 }
 \author{
 daniel
