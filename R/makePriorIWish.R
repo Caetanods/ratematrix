@@ -13,7 +13,6 @@
 ##' @param p numeric. The dimension of the evolutionary rate matrix.
 ##' @param S matrix. The scale matrix for the inverse Wishart distribution.
 ##' @return List of prior functions.
-##' @export
 makePriorIWish <- function(mu, sd, v, p, S){
     ## Returns a list of the prior function for the log densitiy of the inverse-Wishart distribution
     ##      and the prior function for the phylogenetic mean vector.

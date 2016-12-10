@@ -6,7 +6,6 @@
 ##' @param clade numeric. The proportion of the total tips in the focus clade.
 ##' @param sims numeric. Number of phylogenies to be generated.
 ##' @return A list with two elements. 'phy' is a "multiPhylo" object; 'nodes' is a list of the nodes in the same order as 'phy' pointing to the focus clade. The focus clade has the number of tips set by the argument 'clade'.
-##' @export
 simTrees <- function(tips, clade, sims){
     ## Function for sampling a phy with the desired number of tips that
     ##      have a clade with the exact diversity as 'clade'.

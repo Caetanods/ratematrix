@@ -7,7 +7,6 @@
 ##' @param n.samples Number of samples to be taken from the posterior distribution.
 ##' @param mc.cores The number of cores to be used for parallel simulations. Default value is 'NULL' and uses a single computer processor.
 ##' @return A list of matrices. Each element is a simulation of datasets. Using the same model and parameter estimates from the joint posterior distribution.
-##' @export
 ##' @seealso \code{read.single.R.iwish} or \code{read.multi.R.iwish} or \code{mergePosterior}
 ##' @importFrom phytools sim.corrs
 postPredicSims <- function(mcmc.chain, out, n.samples=100, mc.cores=NULL){

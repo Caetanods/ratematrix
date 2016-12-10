@@ -14,7 +14,6 @@
 ##' @param max numeric. Maximum bound of the uniform prior on the variance component of the covariance matrix.
 ##' @return List of prior functions..
 ##' @references Barnard, J., R. McCulloch, and X.-L. Meng. 2000. Modeling covariance matrices in terms of standard deviations and correlations, with application to shrinkage. Statistica Sinica 10:1281–1312.
-##' @export
 makePriorBarnard <- function(mu, sd, min, max){
     ## Returns a list of the prior function for the log density of the vcv matrix using the Barnard
     ##      separation strategy and the multivariate normal for the root vector.

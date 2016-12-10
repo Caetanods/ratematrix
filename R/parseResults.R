@@ -10,7 +10,6 @@
 ##' @param burn The burnin to be excluded.
 ##' @param thin The thinning.
 ##' @return Plots and etc.
-##' @export
 parseResults <- function(out.one.matrix, out.two.matrix, rds=FALSE, flag=NULL, burn=0.5, thin=100){
     ## Function to read and parse the results from the simulations.
     ## This also make plots. The function creates a directory to store all the plots and outputs.
