@@ -22,6 +22,7 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "mergeSimmap.R"
     "estimateTimeMCMC.R"
     "ratematrixMCMC.R"
     "calcNodeToNode.R"
