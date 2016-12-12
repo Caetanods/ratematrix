@@ -4,17 +4,17 @@
 \alias{plotRatematrix}
 \title{Plot posterior distribution of rate matrices.}
 \usage{
-plotRatematrix(chain, p, colors, alphaOff = 1, alphaDiag = 1,
-  alphaEll = 1, ell.wd = 0.5, point.matrix = NULL, point.color = NULL,
-  point.wd = 0.5, leg = NULL, l.cex = 0.7, hpd = 100,
-  show.zero = FALSE, set.xlim = NULL, n.lines = 50)
+plotRatematrix(chain, p = NULL, colors = NULL, alphaOff = 1,
+  alphaDiag = 1, alphaEll = 1, ell.wd = 0.5, point.matrix = NULL,
+  point.color = NULL, point.wd = 0.5, leg = NULL, l.cex = 0.7,
+  hpd = 100, show.zero = FALSE, set.xlim = NULL, n.lines = 50)
 }
 \arguments{
 \item{chain}{The MCMC chain loaded from the files.}
 
-\item{p}{A vector with the regimes to be plotted.}
+\item{p}{A vector with the regimes to be plotted. If not provided, the function will plot all regimes in the chain.}
 
-\item{colors}{A vector with colors. Same length as p.}
+\item{colors}{A vector with colors. Same length as p. If not provided, the function will use pre-selected colors.}
 
 \item{alphaOff}{Transparency of the off-diagonals plots. Numeric between 0 and 1.}
 

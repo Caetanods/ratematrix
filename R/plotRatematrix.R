@@ -17,8 +17,8 @@
 ##'      recommended.
 ##' @title Plot posterior distribution of rate matrices.
 ##' @param chain The MCMC chain loaded from the files.
-##' @param p A vector with the regimes to be plotted.
-##' @param colors A vector with colors. Same length as p.
+##' @param p A vector with the regimes to be plotted. If not provided, the function will plot all regimes in the chain.
+##' @param colors A vector with colors. Same length as p. If not provided, the function will use pre-selected colors.
 ##' @param alphaOff Transparency of the off-diagonals plots. Numeric between 0 and 1.
 ##' @param alphaDiag Transparency of the diagonals plots. Numeric between 0 and 1.
 ##' @param alphaEll Transparency of the ellipses lines. Numeric between 0 and 1.
@@ -34,7 +34,30 @@
 ##' @param n.lines numeric. Number of lines to be displayed in the ellipsed plots.
 ##' @return Plot a grid of charts.
 ##' @export
-plotRatematrix <- function(chain, p, colors, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
+plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
+
+    ## Set default values for p and colors if none is provided:
+    if( is.null(p) ){
+        ## p need to be all the regimes in the data.
+        if( is.list(chain$matrix) & is.matrix(chain$matrix[[1]][[1]]) ){ ## More than one regime.
+            np <- length(chain$matrix)
+            p <- 1:np ## All the regimes in the same order.
+        } else{ ## A single regime.
+            p <- 1
+        }
+    }
+    if( is.null(colors) ){
+        np <- length(p)
+        if( np > 9 ) stop("Unable to generate colors for more than 9 regimes. Please chose color vector for the 'colors' argument.") 
+        if( np == 1 ){
+            colors <- "black"
+        } else{
+            check <- c(np < 4, 3 < np && np < 6, np > 5)
+            cols <- list( c("#002244", "#69BE28", "#A5ACAF"), c("#7fc97f", "#beaed4", "#fdc086", "#386cb0", "#ffff99"), c("#bc80bd", "#d9d9d9", "#fccde5", "#b3de69", "#fdb462", "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd") )
+            colors <- unlist(cols[check])[1:np]
+        }
+    }
+            
 
     ## Check if there is only one regime to be plotted:
     if(length(p) == 1){ ## Nothing to check here, because of single regime.        
@@ -273,6 +296,7 @@ plotRatematrix <- function(chain, p, colors, alphaOff=1, alphaDiag=1, alphaEll=1
         ## Need to create the off-diagonal colors based on the alpha for the colors in the diagonal.
         ## Repeat the process for all elements of the graph, and now it will need to be a vector.
         ## colors has the color for each regime.
+        ## Need to adapt this to accept both color names and HEX.
         colOff <- adjustcolor(col=colors, alpha.f=alphaOff)
         colDiag <- adjustcolor(col=colors, alpha.f=alphaDiag)
         colEll <- adjustcolor(col=colors, alpha.f=alphaEll)
