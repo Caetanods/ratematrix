@@ -7,7 +7,7 @@
 ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
   gen, v = 50, w_sd = 0.5, w_mu = 0.5, prop = c(0.025, 0.975),
   chunk = gen/100, dir = NULL, outname = "ratematrixMCMC", IDlen = 5,
-  singlerate = FALSE)
+  singlerate = FALSE, rescaletree = TRUE)
 }
 \arguments{
 \item{data}{a matrix with the data. Each column is a different trait and species names need to be provided as rownames (rownames(data) == phy$tip.label).}
@@ -37,6 +37,8 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
 \item{IDlen}{length of digits of the numeric identifier used to name output files (default is 5).}
 
 \item{singlerate}{whether the function should fit a single regime and ignore the number of regimes painted to the tree (default is FALSE).}
+
+\item{rescaletree}{whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. Default is TRUE.}
 }
 \value{
 Function returns a list with the details of the MCMC run and write the MCMC output to the directory in a series of files.
@@ -48,6 +50,8 @@ Function runs a MCMC chain to estimate the posterior distribution of the evoluti
 Talk about function 'x' to collapse two or more regimes of a 'simmap' class tree.
 Explain the structure of the prior so that people can build their own.
 Explain how to fix the possible problem of function cannot write to the current directory. Need to be something simple. Maybe bullet proff it somehow.\cr
+\cr
+Function will check if the tree has branch lengths and will fail if branch lengths are not present. Function will also rescale the phylogeny so that the distance from every tip to the root is equal to 1. Function will give a warning if the phylogenetic tree is not ultrametric. Although all the comutations can be made with a non-ultrametric tree, the model of evolution assumes that all the species were sampled in the same point in time, so the distance from any given tip to the root of the phylogeny should be the same. This is a common assumption of trait evolution models in comparative methods. One should be careful to interpret the results based on a non-ultrametric tree.\cr
 \cr
 Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 \cr

@@ -4,6 +4,8 @@
 ##' Explain the structure of the prior so that people can build their own.
 ##' Explain how to fix the possible problem of function cannot write to the current directory. Need to be something simple. Maybe bullet proff it somehow.\cr
 ##' \cr
+##' Function will check if the tree has branch lengths and will fail if branch lengths are not present. Function will also rescale the phylogeny so that the distance from every tip to the root is equal to 1. Function will give a warning if the phylogenetic tree is not ultrametric. Although all the comutations can be made with a non-ultrametric tree, the model of evolution assumes that all the species were sampled in the same point in time, so the distance from any given tip to the root of the phylogeny should be the same. This is a common assumption of trait evolution models in comparative methods. One should be careful to interpret the results based on a non-ultrametric tree.\cr
+##' \cr
 ##'Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
@@ -22,12 +24,15 @@
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
 ##' @param singlerate whether the function should fit a single regime and ignore the number of regimes painted to the tree (default is FALSE).
+##' @param rescaletree whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. Default is TRUE.
 ##' @return Function returns a list with the details of the MCMC run and write the MCMC output to the directory in a series of files.
 ##' @author daniel
 ##' @export
 ##' @importFrom mvMORPH mvBM
 ##' @importFrom corpcor decompose.cov
-ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE){
+##' @importFrom ape is.ultrametric
+##' @importFrom phytools rescaleSimmap
+ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=TRUE){
     ## Need to drop 'traitwise' and 'use_corr' arguments.
 
     ## #######################
@@ -73,7 +78,13 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     }
 
     if( !class(gen) == "numeric" ) stop('gen need to be a "numeric" value.')
-    
+
+    ## Check if the tree is ultrametric, also rescale the tree if needed.
+    if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
+    if( rescaletree ){
+        cat("Rescaling phylogenetic tree so that depth is equal to 1.\n")
+        phy <- rescaleSimmap(phy, model="depth", 1)
+    }   
 
     ## #######################
     ## Block to create the directory for the output:
