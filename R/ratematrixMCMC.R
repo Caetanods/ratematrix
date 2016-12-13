@@ -80,11 +80,20 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     if( !class(gen) == "numeric" ) stop('gen need to be a "numeric" value.')
 
     ## Check if the tree is ultrametric, also rescale the tree if needed.
-    if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
-    if( rescaletree ){
-        cat("Rescaling phylogenetic tree so that depth is equal to 1.\n")
-        phy <- rescaleSimmap(phy, model="depth", 1)
-    }   
+    if( is.list(phy[[1]]) ){
+        ultra <- sapply(phy, is.ultrametric)
+        if( !sum(ultra)==length(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
+        if( rescaletree ){
+            cat("Rescaling phylogenetic trees so that depth is equal to 1.\n")
+            phy <- lapply(phy, function(x) rescaleSimmap(x, model="depth", 1) )
+        }
+    } else{
+        if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
+        if( rescaletree ){
+            cat("Rescaling phylogenetic tree so that depth is equal to 1.\n")
+            phy <- rescaleSimmap(phy, model="depth", 1)
+        }   
+    }
 
     ## #######################
     ## Block to create the directory for the output:
