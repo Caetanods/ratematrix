@@ -137,57 +137,37 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
 
     ## Open files to write:
-    ## Need to open one matrix file per p R matrices to be fitted.
-    ## Different from the single.R case. These lists have no names.
-    files <- list( file(file.path(dir, paste(outname,".",ID,".loglik",sep="")), open="a"),
-                   file(file.path(dir, paste(outname,".",ID,".root",sep="")), open="a")
-                 )
-    for(i in 3:(cache.data$p+2)){
-        files[[i]] <- file(file.path(dir, paste(outname,".",ID,".",(i-2),".matrix",sep="")),open="a")
+    files <- list( file(file.path(dir, paste(outname,".",ID,".mcmc",sep="")), open="a")
+                 , file(file.path(dir, paste(outname,".",ID,".log",sep="")), open="a") )
+    ## Write header for the posterior MCMC file:
+    ## Here "regime" need to be changed for the name of the regime for the analysis. A default name will be produced by the function is one is not provided.
+    header <- vector(mode="character")
+    for( k in 1:cache.data$p ){
+        for( i in 1:cache.data$k ){
+            for( j in 1:cache.data$k ){
+                header <- c( header, paste("regime.p", k, ".", i, j, "; ", sep="") )
+            }
+        }
     }
+    ## Traitname need also to be changed for the name of the trait.
+    header <- c( header, paste("trait.", 1:cache.data$k, "; ", sep=""), "log.lik \n")
+    cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
+
+    ## Header for the log file:
+    cat("accepted; matrix.corr; matrix.sd; root; which.phylo \n", sep="", file=files[[2]], append=TRUE)    
 
     ## This will check for the arguments, check if there is more than one phylogeny and create the functions for the update and to calculate the lik.
     if( !is.list( phy[[1]] ) ){
         ## This will use a unique tree.
         cat("MCMC chain using a single tree/regime configuration.\n")
-        if(use_corr == TRUE){
-            # print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
-            prop.data.cor <- function(...) makePropMeanForMult(..., traitwise=FALSE, use_corr=TRUE)
-            update.function <- list(prop.data.cor, makePropMultSigma)
-        } else{
-            if(traitwise == TRUE){
-                # print("Using an independent proposal distribution for the root value of each trait.")
-                prop.traitwise <- function(...) makePropMeanForMult(..., traitwise=TRUE, use_corr=FALSE)
-                update.function <- list(prop.traitwise, makePropMultSigma)
-            }
-            if(traitwise == FALSE){
-                # print("Using a naive joint proposal distribution for the phylogenetic mean.")
-                prop.not.traitwise <- function(...) makePropMeanForMult(..., traitwise=FALSE, use_corr=FALSE)
-                update.function <- list(prop.not.traitwise, makePropMultSigma)
-            }
-
-        }
+        prop.not.traitwise <- function(...) makePropMeanForMult(..., traitwise=FALSE, use_corr=FALSE)
+        update.function <- list(prop.not.traitwise, makePropMultSigma)
     }
     if( is.list( phy[[1]] ) ){
-        cat("MCMC chain using multiple trees/regime configurations.\n")
         ## This will integrate over all the trees provided.
-        if(use_corr == TRUE){
-            # print("Using a data informed joint proposal distribution for the phylogenetic mean, value of 'traitwise' ignored.")
-            prop.data.cor <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=FALSE, use_corr=TRUE)
-            update.function <- list(prop.data.cor, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
-        } else{
-            if(traitwise == TRUE){
-                # print("Using an independent proposal distribution for the root value of each trait.")
-                prop.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=TRUE, use_corr=FALSE)
-                update.function <- list(prop.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
-            }
-            if(traitwise == FALSE){
-                # print("Using a naive joint proposal distribution for the phylogenetic mean.")
-                prop.not.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=FALSE, use_corr=FALSE)
-                update.function <- list(prop.not.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
-            }
-
-        }
+        cat("MCMC chain using multiple trees/regime configurations.\n")
+        prop.not.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=FALSE, use_corr=FALSE)
+        update.function <- list(prop.not.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
     }
 
     ## Calculate chunks and create write point.
@@ -198,9 +178,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Inform the start of the MCMC:
     cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
-
-    ## Save a log file with the accept and reject information:
-    sink( file.path(dir, paste(outname,".",ID,".mcmc.log", sep="") ) )
 
     ## Make loop equal to the number of blocks:
     for(jj in 1:block){
@@ -220,7 +197,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
             ###########################################
             ## Update and accept reject steps:
             ## Did a small modification to the prop of the phylogenetic mean that now requires the function to be called with its explicit argnames.
-            cache.chain <- update.function[[up]](cache.data=cache.data, cache.chain=cache.chain, prior=prior, v=v, w_sd=w_sd, w_mu=w_mu, iter=i, count=count)
+            cache.chain <- update.function[[up]](cache.data=cache.data, cache.chain=cache.chain, prior=prior, v=v, w_sd=w_sd, w_mu=w_mu, iter=i, count=count, files=files)
             ## Update counter.
             count <- count+1
             ###########################################
@@ -234,9 +211,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         ###########################################
         
     }
-
-    ## Close the connection to the log:
-    sink()
 
     ## Stops the clock.
     ## time <- proc.time() - ptm

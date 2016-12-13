@@ -16,15 +16,21 @@ writeToMultFile <- function(files, cache.chain, p, chunk){
     ##ll <- length(cache.chain$chain)
     ll <- chunk+1
     ## Never write the first element. Keep the last element.
-    sapply(2:ll, function(x) cat(c(cache.chain$lik[x]),"\n",sep=";",file=files[[1]], append=TRUE))
-    sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[1]]),"\n",sep=";",file=files[[2]], append=TRUE))
-    for(i in 1:p){
-        ## Note that 1st position of files is the posteior of the root.
-        sapply(2:ll, function(x) cat(c(cache.chain$chain[[x]][[4]][[i]]),"\n",sep=";"
-                                    , file=files[[i+2]], append=TRUE))
+    ## This will write all the output to the same logfile.
+    ## First come the p R matrices regimes followed by the root values and then the loglik.
+
+    for( i in 2:ll){
+        for( j in 1:p){
+            cat( c(cache.chain$chain[[i]][[4]][[j]]), sep="; ", file=files[[1]], append=TRUE)
+            cat("; ", sep="", file=files[[1]], append=TRUE)
+        }
+        cat(cache.chain$chain[[i]][[1]], sep="; ", file=files[[1]], append=TRUE)
+        cat("; ", sep="", file=files[[1]], append=TRUE)        
+        cat(cache.chain$lik[i], sep="; ", file=files[[1]], append=TRUE)
+        cat("\n", file=files[[1]], append=TRUE)
     }
 
-    ## Keep the last elemente and clear the rest for memory saving.
+    ## Keep the last element and clear the rest for memory saving.
     keep.chain <- cache.chain$chain[[ll]]
     keep.lik <- cache.chain$lik[ll]
     ##cache.chain$chain <- list()
