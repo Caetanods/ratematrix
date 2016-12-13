@@ -4,8 +4,7 @@
 \alias{makePropMean}
 \title{Phylogenetic mean proposal and accept/reject.}
 \usage{
-makePropMean(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count,
-  traitwise)
+makePropMean(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count)
 }
 \arguments{
 \item{cache.data}{The cache for the data.}
@@ -14,17 +13,15 @@ makePropMean(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count,
 
 \item{prior}{List with prior functions.}
 
-\item{w_sd}{}
+\item{w_sd}{the width for the vector of standard deviations}
 
-\item{w_mu}{}
+\item{w_mu}{the width for the root values}
 
 \item{v}{The degrees of freedom parameter for the inverted-wishart distribution.}
 
 \item{iter}{Tracks the current generation of the MCMC chain.}
 
 \item{count}{Used to track the accept and reject steps of the MCMC.}
-
-\item{traitwise}{}
 
 \item{w}{The width parameter for the sliding-window proposal step of the phylogenetic mean.}
 }

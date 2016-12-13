@@ -5,7 +5,7 @@
 \title{Proposal and accept/reject for the phylogenetic mean.}
 \usage{
 makePropMeanForMultList(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
-  count, files, n.phy, traitwise = FALSE, use_corr = TRUE)
+  count, files, n.phy)
 }
 \arguments{
 \item{cache.data}{list. The cache with the data.}
@@ -24,13 +24,9 @@ makePropMeanForMultList(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
 
 \item{count}{numeric. Keep the count of the chain to record accepted and rejected steps.}
 
+\item{files}{The path to write the log file.}
+
 \item{n.phy}{The index for the phylogeny used in this evaluation of the log lik.}
-
-\item{traitwise}{Whether the proposal for the phylogenetic mean is made for all the traits or trait-by-trait.}
-
-\item{use_corr}{Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.}
-
-\item{w}{numeric. The sliding window width parameter.}
 }
 \value{
 Return a modified 'cache.chain'.

@@ -33,7 +33,6 @@
 ##' @importFrom ape is.ultrametric
 ##' @importFrom phytools rescaleSimmap
 ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=TRUE){
-    ## Need to drop 'traitwise' and 'use_corr' arguments.
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -165,7 +164,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         }
         
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                     , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traitwise=FALSE)
+                                     , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen)
         return( out_single )
         
     } else{
@@ -230,8 +229,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         }
         
         out_mult <- multRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                 , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traitwise=FALSE
-                                 , use_corr=FALSE)
+                                 , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen)
         return( out_mult )
         
     }

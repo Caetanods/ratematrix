@@ -5,27 +5,18 @@
 ##' @param cache.data The cache for the data.
 ##' @param cache.chain The cache with the MCMC chain.
 ##' @param prior List with prior functions.
-##' @param w_sd 
-##' @param w_mu 
+##' @param w_sd the width for the vector of standard deviations
+##' @param w_mu the width for the root values
 ##' @param v The degrees of freedom parameter for the inverted-wishart distribution.
 ##' @param iter Tracks the current generation of the MCMC chain.
 ##' @param count Used to track the accept and reject steps of the MCMC.
-##' @param traitwise 
 ##' @param w The width parameter for the sliding-window proposal step of the phylogenetic mean.
 ##' @return Updated version of the cache.chain.
-makePropMean <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count, traitwise){
+makePropMean <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count){
 
-    if(traitwise == TRUE){
-        select <- sample(1:cache.data$k, size=1) ## Select one of the traits to be updated.
-        ## make.prop.mean is a function to make sliding window proposal moves.
-        prop.root <- cache.chain$chain[[iter-1]][[1]]
-        prop.root[select] <- slideWindow(prop.root[select], w_mu)
-    }
-    if(traitwise == FALSE){
-        ## make.prop.mean is a function to make sliding window proposal moves.
-        prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
-        ## select <- "both (ignore NAs)" ## This is to write the accept reject to the log. Not implemented for the single matrix case.
-    }
+    ## make.prop.mean is a function to make sliding window proposal moves.
+    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
+    ## select <- "both (ignore NAs)" ## This is to write the accept reject to the log. Not implemented for the single matrix case.
 
     ## make.prop.mean is a function to make sliding window proposal moves.
     ## prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
@@ -48,11 +39,9 @@ makePropMean <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, co
         #cache.chain$b.curr <- b.prop
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
-        cache.chain$acc[count] <- 1
         cache.chain$lik[iter] <- prop.root.lik
     } else{                ## Reject.
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-        cache.chain$acc[count] <- 0
         cache.chain$lik[iter] <- cache.chain$lik[iter-1]
     }
 

@@ -10,21 +10,19 @@
 ##' @param gen numeric. Number of generations of the MCMC.
 ##' @param v numeric. Degrees of freedom parameter for the inverse-Wishart proposal distribution for the evolutionary rate matrix.
 ##' @param w_sd numeric. Width of the uniform sliding window proposal for the vector of standard deviations.
-##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means. Please note that the proposal can be made for all the traits at the same time or trait by trait. Check the argument "traitwise".
+##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means.
 ##' @param prop vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each generation, second is the probability that the evolutionary rate matrix will be updated instead.
 ##' @param chunk numeric. Number of generations that the MCMC chain will be stored in memory before writing to file. At each 'chunk' generations the function will write the block stored in memory to a file and erase all but the last generation, which is used to continue the MCMC chain.
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
-##' @param traitwise Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.
-##' @param w numeric. Width of the sliding window proposal step for the phylogenetic mean.
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.matrix': the evolutionary rate matrix, one per line, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 indicates that the evolutionary rate matrix was updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree. This value will always be 1 for this function, by see 'multi.R.iwish.mcmc'; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
-singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traitwise=TRUE){
+singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
 
     ## Creates data cache:
     cache.data <- list()
@@ -42,9 +40,6 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
     cache.chain$chain[[1]] <- start ## Starting value for the chain.
     cache.chain$chain[[1]][[4]] <- rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
-    cache.chain$acc <- vector(mode="integer", length=gen) ## Vector for acceptance ratio.
-    ## Acceptance ratio is not recycled at each 'chunk'.
-    cache.chain$acc[1] <- 1 ## Represents the starting value.
     ## The loglik function from mvMORPH does not need the b vector, but the root value.
                                         #cache.chain$root.curr <- as.vector(cache.chain$chain[[1]][[1]])
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
@@ -75,19 +70,9 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ## Build the update.function list:
     ## Now this will have two options. This is the part that the function needs to be updated.
     ## Need to make sure that the proposal distributions will be tunned by the w_sd and w_mu parameters.
-    if(traitwise == TRUE){
-        ## print("Using independent proposal distribution for the root value of each trait.")
-        prop.traitwise <- function(..., traitwise=TRUE) makePropMean(..., traitwise=TRUE)
-        update.function <- list(prop.traitwise, makePropSingleSigma)
-    }
-    if(traitwise == FALSE){
-        ## print("Using joint proposal distribution for the phylogenetic mean (root value) of all traits.")
-        prop.not.traitwise <- function(..., traitwise=FALSE) makePropMean(..., traitwise=FALSE)
-        update.function <- list(prop.not.traitwise, makePropSingleSigma)
-    }
+    prop.not.traitwise <- function(...) makePropMean(...)
+    update.function <- list(prop.not.traitwise, makePropSingleSigma)
     
-    ## update.function <- list(phylo.mean.step.fast, makePropSingleSigma)
-
     ## Calculate chunks and create write point.
     block <- gen/chunk
     ##if(is.integer(block) == FALSE) stop("The division 'gen/chunk' needs to return an INTEGER value.")
@@ -133,14 +118,10 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     lapply(files, close)
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
-    ## Create table of acceptance ratio.
-    ## acc.mat <- matrix(table(cache.chain$acc), nrow=1)
-    ## colnames(acc.mat) <- c("reject","root","R")
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    out <- list(acc_vector = cache.chain$acc, k = cache.data$k, p = 1
-               , ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
+    out <- list(k = cache.data$k, p = 1, ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
               , phy = phy, prior = prior, start = start, gen = gen)
     class( out ) <- "ratematrix_single_mcmc"
     return( out )

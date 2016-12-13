@@ -5,7 +5,7 @@
 \title{Proposal and accept/reject for the phylogenetic mean.}
 \usage{
 makePropMeanForMult(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count,
-  files, traitwise = FALSE, use_corr = TRUE)
+  files)
 }
 \arguments{
 \item{cache.data}{list. The cache with the data.}
@@ -24,11 +24,7 @@ makePropMeanForMult(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count,
 
 \item{count}{numeric. Keep the count of the chain to record accepted and rejected steps.}
 
-\item{traitwise}{Whether the proposal for the phylogenetic mean is made for all the traits or trait-by-trait.}
-
-\item{use_corr}{Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.}
-
-\item{w}{numeric. The sliding window width parameter.}
+\item{files}{the path to write to the log file.}
 }
 \value{
 Return a modified 'cache.chain'.

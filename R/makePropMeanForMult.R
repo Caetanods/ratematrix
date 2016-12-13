@@ -10,12 +10,10 @@
 ##' @param w_mu Width of the proposal for the phylogenetic mean.
 ##' @param iter numeric. The state of the MCMC chain. This is used to access elements in the MCMC caches.
 ##' @param count numeric. Keep the count of the chain to record accepted and rejected steps.
-##' @param traitwise Whether the proposal for the phylogenetic mean is made for all the traits or trait-by-trait.
-##' @param use_corr Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.
-##' @param w numeric. The sliding window width parameter.
+##' @param files the path to write to the log file.
 ##' @return Return a modified 'cache.chain'.
 ##' @importFrom MASS mvrnorm
-makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files, traitwise=FALSE, use_corr=TRUE){
+makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files){
 
     ## make.prop.mean is a function to make sliding window proposal moves.
     prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
@@ -38,12 +36,10 @@ makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, i
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
-        cache.chain$acc[count] <- 1
         cache.chain$lik[iter] <- prop.root.lik
     } else{                ## Reject.
         cat( paste("0; 0; 0; 1; 1", "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Always the phylo 1 in this case.
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-        cache.chain$acc[count] <- 0
         cache.chain$lik[iter] <- cache.chain$lik[iter-1]
     }
 

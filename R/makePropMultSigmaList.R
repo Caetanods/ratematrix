@@ -64,12 +64,10 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
             cache.chain$chain[[iter]][[3]][[Rp]] <- prop.sd
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
             cache.chain$curr.sd.prior <- prop.sd.prior
-            cache.chain$acc[count] <- Rp+cache.data$p+1 ## sd vector are the larger numbers.
             cache.chain$lik[iter] <- prop.sd.lik
         } else{                ## Reject.
             cat( paste("0; 0; ", Rp, "; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-            cache.chain$acc[count] <- 0
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }
         
@@ -113,12 +111,10 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
             cache.chain$curr.r.prior <- prop.r.prior
             cache.chain$curr.r.jacobian[[Rp]] <- prop.r.jacobian
-            cache.chain$acc[count] <- Rp+1
             cache.chain$lik[iter] <- prop.r.lik
         } else{                ## Reject.
             cat( paste("0; ", Rp, "; 0; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-            cache.chain$acc[count] <- 0
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }
         

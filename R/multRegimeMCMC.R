@@ -14,21 +14,19 @@
 ##' @param gen numeric. Number of generations of the MCMC.
 ##' @param v numeric. Degrees of freedom parameter for the inverse-Wishart proposal distribution for the evolutionary rate matrix.
 ##' @param w_sd numeric. Width of the uniform sliding window proposal for the vector of standard deviations.
-##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means. Please note that the proposal can be made for all the traits at the same time or trait by trait. Check the argument "traitwise".
+##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means.
 ##' @param prop vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each genetarion, second is the probability that the evolutionary rate matrix will be updated instead. First the function sample whether the root value or the matrix should be updated. If the matrix is selected for an update, then one of the matrices fitted to the phylogeny is selected to be updated at random with the same probability.
 ##' @param chunk numeric. Number of generations that the MCMC chain will be stored in memory before writing to file. At each 'chunk' generations the function will write the block stored in memory to a file and erase all but the last generation, which is used to continue the MCMC chain. Each of the covariance matrices is saved to its own file.
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
-##' @param traitwise Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.
-##' @param use_corr Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
-multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5, traitwise=FALSE, use_corr=FALSE){
+multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5){
 
     ## Verify the directory:
     if( is.null(dir) ){
@@ -52,8 +50,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
         ## All the objects here are of the type list. Need to modify any call to them.
         n.phy <- length( phy ) ## Number of trees in the list.
-        cache.chain$which.phy <- vector(mode="integer", length=gen) ## Vector to track which of the phy are we using.
-        
         ord.id <- lapply(phy, function(x) reorder.phylo(x, order="postorder", index.only = TRUE) ) ## Order for traversal.
         cache.data$mapped.edge <- lapply(1:n.phy, function(x) phy[[x]]$mapped.edge[ord.id[[x]],]) ## The regimes.
         anc <- lapply(1:n.phy, function(x) phy[[x]]$edge[ord.id[[x]],1] ) ## Ancestral edges.
@@ -73,8 +69,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         cache.data$anc <- anc ## This need to come with the names.
     }
     if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
-        cache.chain$which.phy <- NULL ## To inform that only one tree was used in the MCMC.
-        
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
         cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
         ## Need to take care how to match the regimes and the R matrices.
@@ -100,8 +94,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     cache.chain$chain[[1]] <- start ## Starting value for the chain.
     cache.chain$chain[[1]][[4]] <- list()
     for(i in 1:cache.data$p) cache.chain$chain[[1]][[4]][[i]] <- rebuild.cov(r=cov2cor(start[[2]][[i]]), v=start[[3]][[i]]^2)
-    cache.chain$acc <- vector(mode="integer", length=gen) ## Vector for acceptance ratio.
-    cache.chain$acc[1] <- 1 ## Represents the starting value.
     ## Create column vector format for start state of b (phylo mean).
     ##cache.chain$b.curr <- matrix( sapply(as.vector(cache.chain$chain[[1]][[1]]), function(x) rep(x, cache.data$n) ) )
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
@@ -109,7 +101,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ## Need to calculate the initial log.lik with the single tree or with a random tree from the sample:
     if( is.list( phy[[1]] ) ){
         rd.start.tree <- sample(1:n.phy, size = 1)
-        cache.chain$which.phy[1] <- rd.start.tree ## The index for the starting likelihood.
         cache.chain$lik[1] <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[rd.start.tree]], cache.data$des[[rd.start.tree]]
                                                , cache.data$anc[[rd.start.tree]], cache.data$mapped.edge[[rd.start.tree]]
                                                , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
@@ -160,13 +151,13 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     if( !is.list( phy[[1]] ) ){
         ## This will use a unique tree.
         cat("MCMC chain using a single tree/regime configuration.\n")
-        prop.not.traitwise <- function(...) makePropMeanForMult(..., traitwise=FALSE, use_corr=FALSE)
+        prop.not.traitwise <- function(...) makePropMeanForMult(...)
         update.function <- list(prop.not.traitwise, makePropMultSigma)
     }
     if( is.list( phy[[1]] ) ){
         ## This will integrate over all the trees provided.
         cat("MCMC chain using multiple trees/regime configurations.\n")
-        prop.not.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy, traitwise=FALSE, use_corr=FALSE)
+        prop.not.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy)
         update.function <- list(prop.not.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
     }
 
@@ -220,14 +211,9 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
 
-    ## Create table of acceptance ratio.
-    ## acc.mat <- matrix(table(cache.chain$acc), nrow=1)
-    ## colnames(acc.mat) <- c("reject","root",paste("R", 1:cache.data$p, sep=""))
-
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    out <- list(acc_vector = cache.chain$acc, which.phy = cache.chain$which.phy, k = cache.data$k, p = cache.data$p
-               , ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
+    out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
                , phy = phy, prior = prior, start = start, gen = gen)
     class( out ) <- "ratematrix_multi_mcmc"
     return( out )

@@ -6,8 +6,7 @@
 \usage{
 multRegimeMCMC(X, phy, start, prior, gen, v = 50, w_sd = 0.5, w_mu = 0.5,
   prop = c(0.1, 0.9), chunk = gen/100, dir = NULL,
-  outname = "mcmc_ratematrix", IDlen = 5, traitwise = FALSE,
-  use_corr = FALSE)
+  outname = "mcmc_ratematrix", IDlen = 5)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}
@@ -24,7 +23,7 @@ multRegimeMCMC(X, phy, start, prior, gen, v = 50, w_sd = 0.5, w_mu = 0.5,
 
 \item{w_sd}{numeric. Width of the uniform sliding window proposal for the vector of standard deviations.}
 
-\item{w_mu}{numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means. Please note that the proposal can be made for all the traits at the same time or trait by trait. Check the argument "traitwise".}
+\item{w_mu}{numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means.}
 
 \item{prop}{vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each genetarion, second is the probability that the evolutionary rate matrix will be updated instead. First the function sample whether the root value or the matrix should be updated. If the matrix is selected for an update, then one of the matrices fitted to the phylogeny is selected to be updated at random with the same probability.}
 
@@ -35,10 +34,6 @@ multRegimeMCMC(X, phy, start, prior, gen, v = 50, w_sd = 0.5, w_mu = 0.5,
 \item{outname}{string. Name pasted to the files. Name of the output files will start with 'outname'.}
 
 \item{IDlen}{numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.}
-
-\item{traitwise}{Whether the proposal for the phylogenetic root is made trait by trait or all the traits at the same time.}
-
-\item{use_corr}{Whether the proposal for the root value will use the correlation of the tip data to sample proposals following the major axis of variation observed in the data. When this is set to TRUE the update will use a multivariate normal distribution and, thus, will always sample the values for the two traits at once. The value for "traitwise" will be ignored, if "use_corr" is set to TRUE.}
 }
 \value{
 Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr

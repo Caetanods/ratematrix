@@ -48,11 +48,9 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
             cache.chain$chain[[iter]][[3]] <- prop.sd
             cache.chain$chain[[iter]][[4]] <- prop.vcv
             cache.chain$curr.sd.prior <- prop.sd.prior
-            cache.chain$acc[count] <- 3
             cache.chain$lik[iter] <- prop.sd.lik
         } else{                ## Reject.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-            cache.chain$acc[count] <- 0
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }
         
@@ -89,11 +87,9 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
             cache.chain$chain[[iter]][[4]] <- prop.vcv
             cache.chain$curr.r.prior <- prop.r.prior
             cache.chain$curr.r.jacobian <- prop.r.jacobian
-            cache.chain$acc[count] <- 2
             cache.chain$lik[iter] <- prop.r.lik
         } else{                ## Reject.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-            cache.chain$acc[count] <- 0
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }
         
