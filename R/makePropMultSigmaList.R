@@ -14,13 +14,14 @@
 ##' @return The chain cache.
 ##' @author daniel
 ##' @importFrom corpcor decompose.cov rebuild.cov
-makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, n.phy) {
+makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files, n.phy) {
     ## This is going to be the step for the correlation matrix and the vector of standard deviations.
     ## The moves for the correlation matrix now are independent of the moves for the standard deviations.
     ## Thus, I need to sample which move to make at each call of the function.
     ## In a second implementation, would be better to separate this function into two independent update functions maybe.
     
-    cache.chain$which.phy[count] <- sample(1:n.phy, size = 1) ## The index for the phy used for the log.lik.
+    which.phy <- sample(1:n.phy, size = 1) ## The index for the phy used for the log.lik.
+    cache.chain$which.phy[count] <- which.phy ## DROP
     up <- sample(1:2, size=1) ## Updates the standard deviations or the correlation structure.
     ## Random draw one of the p R matrices to update:
     Rp <- sample(1:cache.data$p, size=1)
@@ -58,7 +59,7 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
         if(exp(r) > runif(1)){ ## Accept.
-            print( paste0("ACCEPTED. Proposal for sd vector; r =", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
+            cat( paste("1; 0; ", Rp, "; 0; ", which.phy, "\n",sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[3]][[Rp]] <- prop.sd
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
@@ -66,7 +67,7 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
             cache.chain$acc[count] <- Rp+cache.data$p+1 ## sd vector are the larger numbers.
             cache.chain$lik[iter] <- prop.sd.lik
         } else{                ## Reject.
-            print( paste0("REJECTED. Proposal for sd vector; r =", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
+            cat( paste("0; 0; ", Rp, "; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$acc[count] <- 0
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
@@ -106,7 +107,7 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
         if(exp(r) > runif(1)){ ## Accept.
-            print( paste0("ACCEPTED. Proposal for corr; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
+            cat( paste("1; ", Rp, "; 0; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[2]][[Rp]] <- prop.r
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
@@ -115,7 +116,7 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
             cache.chain$acc[count] <- Rp+1
             cache.chain$lik[iter] <- prop.r.lik
         } else{                ## Reject.
-            print( paste0("REJECTED. Proposal for corr; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
+            cat( paste("0; ", Rp, "; 0; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$acc[count] <- 0
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]

@@ -4,7 +4,8 @@
 \alias{makePropMultSigma}
 \title{Sigma step using Zhang strategy}
 \usage{
-makePropMultSigma(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count)
+makePropMultSigma(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count,
+  files)
 }
 \arguments{
 \item{cache.data}{}

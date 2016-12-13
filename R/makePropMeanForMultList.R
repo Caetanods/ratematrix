@@ -16,27 +16,14 @@
 ##' @param w numeric. The sliding window width parameter.
 ##' @return Return a modified 'cache.chain'.
 ##' @importFrom MASS mvrnorm
-makePropMeanForMultList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, n.phy, traitwise=FALSE, use_corr=TRUE){
+makePropMeanForMultList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files, n.phy, traitwise=FALSE, use_corr=TRUE){
 
     ## Choose the phylogeny to be used in this evaluation of the liklihood:
-    cache.chain$which.phy[count] <- sample(1:n.phy, size = 1)
+    which.phy <- sample(1:n.phy, size = 1)
+    cache.chain$which.phy[count] <- which.phy ## DROP
 
-    if(traitwise == TRUE){
-        select <- sample(1:cache.data$k, size=1) ## Select one of the traits to be updated.
-        ## make.prop.mean is a function to make sliding window proposal moves.
-        prop.root <- cache.chain$chain[[iter-1]][[1]]
-        prop.root[select] <- slideWindow(prop.root[select], w_mu)
-    }
-    if(traitwise == FALSE){
-        ## make.prop.mean is a function to make sliding window proposal moves.
-        prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
-        select <- "both (ignore NAs)"
-    }
-    if(use_corr == TRUE){
-        ## This will use a multivariate normal with correlation estimated from the data, the variance will scale with 'w_mu'.
-        prop.root <- mvrnorm(1, mu=rep(0, times=cache.data$k), Sigma = cache.data$data_cor * w_mu) + cache.chain$chain[[iter-1]][[1]]
-        select <- "both (using cor from tip data; ignore NAs)"
-    }
+    ## make.prop.mean is a function to make sliding window proposal moves.
+    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
 
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
     prop.root.prior <- prior[[1]](prop.root)
@@ -54,14 +41,14 @@ makePropMeanForMultList <- function(cache.data, cache.chain, prior, v, w_sd, w_m
     ## Acceptance step.
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
     if(exp(r) > runif(1)){ ## Accept.
-        print( paste0("ACCEPTED. Proposal for trait ", select, " from ", round(cache.chain$chain[[iter-1]][[1]][select], 4), " to ", round(prop.root[select], 4), "; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
+        cat( paste("1; 0; 0; 1; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE)
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
         cache.chain$acc[count] <- 1
         cache.chain$lik[iter] <- prop.root.lik
     } else{                ## Reject.
-        print( paste0("REJECTED. Proposal for trait ", select, " from ", round(cache.chain$chain[[iter-1]][[1]][select], 4), " to ", round(prop.root[select], 4), "; r=", round(exp(r), 4), "; log_lik=", round(ll, 4), "; log_prior= ", round(pp, 4), ".") )
+        cat( paste("0; 0; 0; 1; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE)        
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$acc[count] <- 0
         cache.chain$lik[iter] <- cache.chain$lik[iter-1]

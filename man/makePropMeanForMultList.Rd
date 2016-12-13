@@ -5,7 +5,7 @@
 \title{Proposal and accept/reject for the phylogenetic mean.}
 \usage{
 makePropMeanForMultList(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
-  count, n.phy, traitwise = FALSE, use_corr = TRUE)
+  count, files, n.phy, traitwise = FALSE, use_corr = TRUE)
 }
 \arguments{
 \item{cache.data}{list. The cache with the data.}

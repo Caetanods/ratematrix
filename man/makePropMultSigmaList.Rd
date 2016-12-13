@@ -5,7 +5,7 @@
 \title{Sigma step using Zhang strategy}
 \usage{
 makePropMultSigmaList(cache.data, cache.chain, prior, v, w_sd, w_mu, iter,
-  count, n.phy)
+  count, files, n.phy)
 }
 \arguments{
 \item{cache.data}{}
