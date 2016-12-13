@@ -45,12 +45,38 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     if( prior == "empirical_mean" ) cat("Using default prior. \n")
     if( start == "prior_sample" ) cat("Using default starting point. \n")
     if( v == 50 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.025 ) cat("Using default proposal settings. \n")
-    
-    if( !inherits(phy, what="simmap") ){
-        cat('phy is not of class "simmap". Fitting a sigle rate regime to the tree. \n')
-        no_phymap <- TRUE
-    } else{
-        no_phymap <- FALSE
+
+    ## Check if 'phy' is a single phylogeny or a list of phylogenies.
+    if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+        ## Check if the tree is ultrametric, also rescale the tree if needed.
+        ultra <- sapply(phy, is.ultrametric)
+        if( !sum(ultra)==length(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
+        if( rescaletree ){
+            cat("Rescaling phylogenetic trees so that depth is equal to 1.\n")
+            phy <- lapply(phy, function(x) rescaleSimmap(x, model="depth", 1) )
+        }
+        ## Check if the phylogeny is of 'simmap' class.
+        check.simmap <- sapply(phy, function(x) inherits(x, what="simmap") )
+        if( !sum(check.simmap)==length(check.simmap) ){
+            cat('Some (or all) of the phylogenetic tree are not of class "simmap". Fitting a sigle rate regime to the tree. \n')
+            no_phymap <- TRUE
+        } else{
+            no_phymap <- FALSE
+        }
+    } else{ ## Is a single phylogeny.
+        ## Check if the tree is ultrametric, also rescale the tree if needed.
+        if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
+        if( rescaletree ){
+            cat("Rescaling phylogenetic tree so that depth is equal to 1.\n")
+            phy <- rescaleSimmap(phy, model="depth", 1)
+        }
+        ## Check if the phylogeny is of 'simmap' class.
+        if( !inherits(phy, what="simmap") ){
+            cat('phy is not of class "simmap". Fitting a sigle rate regime to the tree. \n')
+            no_phymap <- TRUE
+        } else{
+            no_phymap <- FALSE
+        }
     }
 
     ## Make a quick check down the road to see if the prior is working.
@@ -78,22 +104,6 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     }
 
     if( !class(gen) == "numeric" ) stop('gen need to be a "numeric" value.')
-
-    ## Check if the tree is ultrametric, also rescale the tree if needed.
-    if( is.list(phy[[1]]) ){
-        ultra <- sapply(phy, is.ultrametric)
-        if( !sum(ultra)==length(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
-        if( rescaletree ){
-            cat("Rescaling phylogenetic trees so that depth is equal to 1.\n")
-            phy <- lapply(phy, function(x) rescaleSimmap(x, model="depth", 1) )
-        }
-    } else{
-        if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
-        if( rescaletree ){
-            cat("Rescaling phylogenetic tree so that depth is equal to 1.\n")
-            phy <- rescaleSimmap(phy, model="depth", 1)
-        }   
-    }
 
     ## #######################
     ## Block to create the directory for the output:
@@ -159,8 +169,14 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         return( out_single )
         
     } else{
+
+        ## Check if 'phy' is a single phylogeny or a list of phylogenies.
+        if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+            p <- ncol( phy[[1]]$mapped.edge ) ## Multiple regimes.
+        } else{ ## Is a single phylogeny.
+            p <- ncol( phy$mapped.edge ) ## Multiple regimes.
+        }
         
-        p <- ncol( phy$mapped.edge ) ## Multiple regimes.
         r <- ncol( data )
 
         ## #######################
