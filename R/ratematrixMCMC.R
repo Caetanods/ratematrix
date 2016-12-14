@@ -151,9 +151,16 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             if(start == "prior_sample"){
                 start_run <- samplePriorSeparation(n=1, prior=prior_run, sample.sd=FALSE)
             }
-            if(start == "mle"){
-                cat( "Optimizing likelihood for the starting value of the MCMC.\n")                
-                mle.fit <- mvBM(tree=centrarchidae$phy.map, data=centrarchidae$data, model="BM1", method="pic", echo=FALSE)
+            if(start == "mle"){ ## This will break if the phylogeny is a list.
+                cat( "Optimizing likelihood for the starting value of the MCMC.\n")
+                if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+                    rr <- sample(1:length(phy), size=1)
+                    cat( paste("Using phylogeny number ", rr, " to estimate the MLE.\n", sep="") )
+                    phy.sample <- phy[[rr]]
+                    mle.fit <- mvBM(tree=phy.sample, data=data, model="BM1", method="pic", echo=FALSE)
+                } else{                      
+                    mle.fit <- mvBM(tree=phy, data=data, model="BM1", method="pic", echo=FALSE)
+                }
                 cat("\n")
                 decomp.R <- decompose.cov( mle.fit$sigma )
                 start_run <- list()
@@ -210,9 +217,16 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             if(start == "prior_sample"){
                 start_run <- samplePriorSeparation(n=1, prior=prior_run, sample.sd=FALSE)
             }
-            if(start == "mle"){
+            if(start == "mle"){ ## Need to deal with the list of matrices here.
                 cat( "Optimizing likelihood for the starting value of the MCMC.\n")
-                mle.fit <- mvBM(tree=centrarchidae$phy.map, data=centrarchidae$data, model="BMM", method="rpf", echo=FALSE)
+                if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+                    rr <- sample(1:length(phy), size=1)
+                    cat( paste("Using phylogeny number ", rr, " to estimate the MLE.\n", sep="") )
+                    phy.sample <- phy[[r]]
+                    mle.fit <- mvBM(tree=phy.sample, data=data, model="BMM", method="rpf", echo=FALSE)
+                } else{
+                    mle.fit <- mvBM(tree=phy, data=data, model="BMM", method="rpf", echo=FALSE)
+                }
                 cat( "\n")
                 decomp.r <- list()
                 decomp.sd <- list()
