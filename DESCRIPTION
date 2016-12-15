@@ -22,6 +22,8 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "makePropSingleSigmaList.R"
+    "makePropMeanList.R"
     "mergeSimmap.R"
     "estimateTimeMCMC.R"
     "ratematrixMCMC.R"
