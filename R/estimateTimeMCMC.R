@@ -32,6 +32,11 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         no_phymap <- FALSE
     }
 
+    ## Use a random phylogeny from the sample, if necessary:
+    if( is.list(phy[[1]]) ){
+        phy <- phy[[ sample(1:length(phy), size=1) ]]
+    }
+
     ## Separate the analysis for the single rate or for the multiple rate regime:
     if( no_phymap || singlerate ){
         ## Generate the prior distribution.
@@ -49,7 +54,6 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cache.data$n <- length(phy$tip.label) ## Number of tips.
         cache.data$k <- ncol(data) ## Number of traits.
         cache.data$X <- data
-        cache.data$phy <- phy
         cache.data$traits <- colnames(data) ## Get names for the traits.
         cache.chain <- list()
         cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
@@ -57,7 +61,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cache.chain$chain[[1]][[4]] <- rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
 
         evaluateStepMCMC <- function(){
-            logLikSingleRegime(data=cache.data, chain=cache.chain
+            logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
                              , root=as.vector(cache.chain$chain[[1]][[1]])
                              , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
             prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
@@ -88,13 +92,6 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cache.data$X <- data
         cache.data$data_cor <- cov2cor( var( data ) ) ## This is to use the correlation of the data to draw proposals for the root.
         cache.data$k <- ncol(data) ## Number of traits.
-
-        ## Make the precalculation based on the tree. Here two blocks, depending of whether there is only one or several trees.
-        if( is.list(phy[[1]]) ){ ## Here only using a single tree to compute the time.
-            phy <- phy[[1]]
-        }
-        
-        cache.chain$which.phy <- NULL ## To inform that only one tree was used in the MCMC.    
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
         cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
         anc <- phy$edge[ord.id,1] ## Ancestral edges.
