@@ -24,32 +24,41 @@
 ##' @importFrom corpcor rebuild.cov
 singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
 
-    ## Creates data cache:
+    ## Creates data and chain cache:
     cache.data <- list()
-    cache.data$n <- length(phy$tip.label) ## Number of tips.
+    cache.chain <- list()
     cache.data$k <- ncol(X) ## Number of traits.
     cache.data$X <- X
-    cache.data$phy <- phy
     cache.data$traits <- colnames(X) ## Get names for the traits.
 
     ## Creates MCMC chain cache:
     ## Here trying to initialize the chain cache with the correct number of elements in the list.
     ## Note that the length is dependent on the 'chunk' and not the total of the 'gen'.
     ## This is a better approach to the loop.
-    cache.chain <- list()
     cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
     cache.chain$chain[[1]] <- start ## Starting value for the chain.
     cache.chain$chain[[1]][[4]] <- rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
     ## The loglik function from mvMORPH does not need the b vector, but the root value.
                                         #cache.chain$root.curr <- as.vector(cache.chain$chain[[1]][[1]])
     cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
+    
+    if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
+        cache.data$n <- length(phy[[1]]$tip.label) ## Number of tips.
+        n.phy <- length(phy)
+        init.phylo <- phy[[ sample(1:n.phy, size=1) ]]
+        cache.chain$lik[1] <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=init.phylo
+                                               , root=as.vector(cache.chain$chain[[1]][[1]])
+                                               , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
+    }
 
-    cache.chain$lik[1] <- logLikSingleRegime(data=cache.data, chain=cache.chain
-                                       , root=as.vector(cache.chain$chain[[1]][[1]])
-                                       , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
+    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+        cache.data$n <- length(phy$tip.label)
+        cache.chain$lik[1] <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
+                                               , root=as.vector(cache.chain$chain[[1]][[1]])
+                                               , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
+    }
     cat( paste("Starting point log-likelihood: ", cache.chain$lik[1], "\n", sep="") )
     
-    ## I might need to create a function to make a prior for the case of a single matrix fitted to the tree.
     cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
     cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[4]]) ## Prior log lik starting value.
 
@@ -62,16 +71,33 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
 
     ## Open files to write:
-    files <- list(log.lik=file(file.path(dir, paste(outname,".",ID,".loglik",sep="")), open="a"),
-                  root=file(file.path(dir, paste(outname,".",ID,".root",sep="")), open="a"),
-                  matrix=file(file.path(dir, paste(outname,".",ID,".matrix",sep="")),open="a")
+    files <- list( file(file.path(dir, paste(outname,".",ID,".mcmc",sep="")), open="a"),
+                  file(file.path(dir, paste(outname,".",ID,".log",sep="")), open="a")
                   )
+    
+    header <- vector(mode="character")
+    for( i in 1:cache.data$k ){
+        for( j in 1:cache.data$k ){
+            header <- c( header, paste("regime.", i, j, "; ", sep="") )
+        }
+    }
+    
+    ## Traitname need also to be changed for the name of the trait.
+    header <- c( header, paste("trait.", 1:cache.data$k, "; ", sep=""), "log.lik \n")
+    cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
+
+    ## Header for the log file:
+    cat("accepted; matrix.corr; matrix.sd; root; which.phylo \n", sep="", file=files[[2]], append=TRUE)    
 
     ## Build the update.function list:
     ## Now this will have two options. This is the part that the function needs to be updated.
     ## Need to make sure that the proposal distributions will be tunned by the w_sd and w_mu parameters.
-    prop.not.traitwise <- function(...) makePropMean(...)
-    update.function <- list(prop.not.traitwise, makePropSingleSigma)
+    if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
+        update.function <- list( function(...) makePropMeanList(..., n.phy=n.phy), function(...) makePropSingleSigmaList(..., n.phy=n.phy) )
+    }
+    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+        update.function <- list( makePropMean, makePropSingleSigma )
+    }
     
     ## Calculate chunks and create write point.
     block <- gen/chunk
@@ -91,26 +117,26 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
 
             ## Proposals will be sampled given the 'prop' vector of probabilities.
 
-            ###########################################
+            ## #########################################
             ## Sample which parameter is updated:
             ## 'prop' is a vector of probabilities for 'update.function' 1 or 2.
             ## 1 = phylo root and 2 = R matrix.
             up <- sample(x = c(1,2), size = 1, prob = prop)
-            ###########################################
+            ## #########################################
 
-            ###########################################
+            ## #########################################
             ## Update and accept reject steps:
-            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w_sd, w_mu, v, iter=i, count)
+            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w_sd, w_mu, v, iter=i, count, files, phy)
             ## Update counter.
             count <- count+1
-            ###########################################
+            ## #########################################
             
         }
         
-        ###########################################
+        ## #########################################
         ## Write to file:
         cache.chain <- writeToFile(files, cache.chain, chunk)
-        ###########################################
+        ## #########################################
         
     }
 
@@ -121,7 +147,8 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    out <- list(k = cache.data$k, p = 1, ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
+    out <- list(k = cache.data$k, p = 1, ID = ID, dir = dir, outname = outname
+              , trait.names = cache.data$traits, data = X
               , phy = phy, prior = prior, start = start, gen = gen)
     class( out ) <- "ratematrix_single_mcmc"
     return( out )
