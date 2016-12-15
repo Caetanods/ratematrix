@@ -4,7 +4,7 @@
 \alias{logLikSingleRegime}
 \title{Log likelihood for one evolutionary rate matrix fitted to the data and tree.}
 \usage{
-logLikSingleRegime(data, chain, root, R)
+logLikSingleRegime(data, chain, phy, root, R)
 }
 \arguments{
 \item{data}{the data cache.}
