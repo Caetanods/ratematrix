@@ -28,16 +28,6 @@
 ##' @importFrom corpcor rebuild.cov
 multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5){
 
-    ## Verify the directory:
-    if( is.null(dir) ){
-        dir <- "."
-    } else{
-        dir.create(file.path(dir), showWarnings = FALSE)
-    }
-
-    ## Change the data to matrix:
-    if( class(X) == "data.frame" ) X <- as.matrix( X )
-
     ## Cache for the data and for the chain:
     cache.data <- list()
     cache.chain <- list()
