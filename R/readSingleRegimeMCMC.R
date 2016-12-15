@@ -29,7 +29,7 @@ readSingleRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
     
     ## Define the columns correspondent to the matrix:
     init <- 1
-    end <- out$k^2+1
+    end <- out$k^2
     RR <- lapply(1:dim(mcmc)[2], function(x) matrix( as.matrix(mcmc)[init:end,x], nrow=out$k ) )
     ## names(RR) <- c("regime1","regime2") ## This need to be the name of the regimes!!
     
