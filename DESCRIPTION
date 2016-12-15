@@ -22,6 +22,7 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "likelihoodFunction.R"
     "makePropSingleSigmaList.R"
     "makePropMeanList.R"
     "mergeSimmap.R"
