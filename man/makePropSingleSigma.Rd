@@ -4,7 +4,8 @@
 \alias{makePropSingleSigma}
 \title{Sigma step using Zhang strategy}
 \usage{
-makePropSingleSigma(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count)
+makePropSingleSigma(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count,
+  files, phy)
 }
 \arguments{
 \item{cache.data}{Description}

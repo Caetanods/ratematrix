@@ -4,7 +4,8 @@
 \alias{makePropMean}
 \title{Phylogenetic mean proposal and accept/reject.}
 \usage{
-makePropMean(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count)
+makePropMean(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count, files,
+  phy)
 }
 \arguments{
 \item{cache.data}{The cache for the data.}

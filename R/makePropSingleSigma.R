@@ -12,7 +12,7 @@
 ##' @param count Description
 ##' @return The chain cache.
 ##' @importFrom corpcor decompose.cov rebuild.cov
-makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count) {
+makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count, files, phy) {
     ## This is going to be the step for the correlation matrix and the vector of standard deviations.
     ## The moves for the correlation matrix now are independent of the moves for the standard deviations.
     ## Thus, I need to sample which move to make at each call of the function.
@@ -33,8 +33,9 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
         prop.vcv <- rebuild.cov( r=decom$r, v=prop.sd^2 ) ## We are making moves to the standard deviation.
         ## This part will not work with the 'log.dmvnorm' function from the 'ratematrix' package.
         ## Only work with the one defined here.
-        prop.sd.lik <- logLikSingleRegime(data=cache.data, chain=cache.chain, root=as.vector( cache.chain$chain[[iter-1]][[1]] )
-                                    , R=prop.vcv)
+        prop.sd.lik <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
+                                        , root=as.vector( cache.chain$chain[[iter-1]][[1]] )
+                                        , R=prop.vcv)
         ## prop.sd.lik <- logDensityMvNorm(cache.data$X, mu=cache.chain$chain[[iter-1]][[1]], sigma=prop.vcv)
         ll <-  prop.sd.lik - cache.chain$lik[iter-1]
         
@@ -44,12 +45,14 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
         if(exp(r) > runif(1)){ ## Accept.
+            cat("1; 0; 1; 0; 1 \n" , sep="", file=files[[2]], append=TRUE)
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[3]] <- prop.sd
             cache.chain$chain[[iter]][[4]] <- prop.vcv
             cache.chain$curr.sd.prior <- prop.sd.prior
             cache.chain$lik[iter] <- prop.sd.lik
         } else{                ## Reject.
+            cat("0; 0; 1; 0; 1 \n" , sep="", file=files[[2]], append=TRUE)
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }
@@ -67,8 +70,9 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
         ## We use the independent vector of standard deviations to calculate the likelihood.
         ## prop.vcv is the covariance matrix to calculate the likelihood and the parameter for the posterior.
         prop.vcv <- rebuild.cov( r=decom$r, v=cache.chain$chain[[iter-1]][[3]]^2 )
-        prop.r.lik <- logLikSingleRegime(data=cache.data, chain=cache.chain, root=as.vector( cache.chain$chain[[iter-1]][[1]] )
-                                   , R=prop.vcv)
+        prop.r.lik <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
+                                       , root=as.vector( cache.chain$chain[[iter-1]][[1]] )
+                                       , R=prop.vcv)
         ll <- prop.r.lik - cache.chain$lik[iter-1]
         ## The hastings ratio.
         hh <- hastingsDensity(curr.vcv=cache.chain$chain[[iter-1]][[2]], prop.vcv=prop.r, p=cache.data$k, v=v)
@@ -82,6 +86,7 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
         if(exp(r) > runif(1)){ ## Accept.
+            cat("1; 1; 0; 0; 1 \n" , sep="", file=files[[2]], append=TRUE)
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[2]] <- prop.r
             cache.chain$chain[[iter]][[4]] <- prop.vcv
@@ -89,6 +94,7 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
             cache.chain$curr.r.jacobian <- prop.r.jacobian
             cache.chain$lik[iter] <- prop.r.lik
         } else{                ## Reject.
+            cat("0; 1; 0; 0; 1 \n" , sep="", file=files[[2]], append=TRUE)
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }
