@@ -6,7 +6,7 @@
 \usage{
 plotRatematrix(chain, p = NULL, colors = NULL, alphaOff = 1,
   alphaDiag = 1, alphaEll = 1, ell.wd = 0.5, point.matrix = NULL,
-  point.color = NULL, point.wd = 0.5, leg = NULL, l.cex = 0.7,
+  point.color = NULL, point.wd = 0.5, set.leg = NULL, l.cex = 0.7,
   hpd = 100, show.zero = FALSE, set.xlim = NULL, n.lines = 50)
 }
 \arguments{
@@ -30,9 +30,9 @@ plotRatematrix(chain, p = NULL, colors = NULL, alphaOff = 1,
 
 \item{point.wd}{Optional. The width of the lines for the vertical and ellipses of the point matrices.}
 
-\item{leg}{string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.}
+\item{set.leg}{string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.}
 
-\item{l.cex}{numeric. 'cex' parameter for 'leg'. See 'help(par)' for more information on 'cex'.}
+\item{l.cex}{numeric. 'cex' parameter for 'set.leg'. See 'help(par)' for more information on 'cex'.}
 
 \item{hpd}{numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95\% HPD will be highlighted in the plot. Default value does not show highlighted region.}
 

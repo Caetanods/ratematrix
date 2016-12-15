@@ -26,15 +26,15 @@
 ##' @param point.matrix Optional. A list with matrices of length equal to p. This will be plotted as lines in the grid.plot.
 ##' @param point.color Optional. A vector of colors with length equal to p. This is a alternative color vector to the 'colors' argument to be used with the point matrices. If not provided then the colors of the point matrices will be equal to 'colors'.
 ##' @param point.wd Optional. The width of the lines for the vertical and ellipses of the point matrices.
-##' @param leg string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.
-##' @param l.cex numeric. 'cex' parameter for 'leg'. See 'help(par)' for more information on 'cex'.
+##' @param set.leg string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.
+##' @param l.cex numeric. 'cex' parameter for 'set.leg'. See 'help(par)' for more information on 'cex'.
 ##' @param hpd numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95\% HPD will be highlighted in the plot. Default value does not show highlighted region.
 ##' @param show.zero logical. Whether to plot a 'blue' vertical line at 0.
 ##' @param set.xlim numeric. Two elements vector to set the 'xlim' [see 'help(hist)'] for the density plots manually. If 'NULL', the default value, then the limits are calculated from the data.
 ##' @param n.lines numeric. Number of lines to be displayed in the ellipsed plots.
 ##' @return Plot a grid of charts.
 ##' @export
-plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
+plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, set.leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
 
     ## Set default values for p and colors if none is provided:
     if( is.null(p) ){
@@ -96,6 +96,12 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
     
     if(length(p) > 1){
         cat("Plotting multiple regimes.","\n")
+        
+        ## Print a text with the association between the colors and the regimes.
+        name.table <- rbind(names(chain$matrix), colors)
+        cat("Table with regimes and colors (names or HEX):\n")
+        write.table(format(name.table, justify="right"), row.names=F, col.names=F, quote=F)
+        
         ## First do a batch of tests:
         check.mat <- vector()
         check.length <- vector()
@@ -122,14 +128,12 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
         }
     }
 
-    ## Create default titles:
-    ## This need to be changed to get the name of the traits from the MCMC chain.
-    ## Also need to be able to relate the color of the plot with the regime of the R matrix.
-    if(is.null(leg)){
-        leg <- paste("trait_", 1:dd, sep="")
+    ## If custom legend is not provided, then use the names of the traits.
+    if(is.null(set.leg)){
+        set.leg <- colnames( chain$root )
     }
 
-########################################################################################
+    ## ######################################################################################
     ## BLOCK FOR HIGHLIGHT THE HPD:
 
     if(hpd < 100){
@@ -335,10 +339,10 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
                         }
                     }
                     if(i == 1){
-                        mtext(text=leg[j], side=3, cex=l.cex)
+                        mtext(text=set.leg[j], side=3, cex=l.cex)
                     }
                     if(j == 1){
-                        mtext(text=leg[i], side=2, cex=l.cex)
+                        mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
@@ -360,7 +364,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
                     }
                     ell.plot.count <- ell.plot.count + 1
                     if(j == 1){
-                        mtext(text=leg[i], side=2, cex=l.cex)
+                        mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                 }            
             }
@@ -368,9 +372,10 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
         
         ## Return the old parameters:
         par(old.par)
+       
     } else{
 
-        ########################################################################################
+        ## ######################################################################################
         ## BLOCK FOR POSTERIOR HPD IS NOT HIGHLIGHTED.
         ## This is used when hpd == 100.
         
@@ -510,10 +515,10 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
                         if(i == dd){ axis(1, at=round(c(xlim.hist[1],mean(xlim.hist),xlim.hist[2]), digits = 2) ) }
                     }
                     if(i == 1){
-                        mtext(text=leg[j], side=3, cex=l.cex)
+                        mtext(text=set.leg[j], side=3, cex=l.cex)
                     }
                     if(j == 1){
-                        mtext(text=leg[i], side=2, cex=l.cex)
+                        mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
@@ -535,7 +540,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
                     }
                     ell.plot.count <- ell.plot.count+1
                     if(j == 1){
-                        mtext(text=leg[i], side=2, cex=l.cex)
+                        mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                 }            
             }
