@@ -27,10 +27,9 @@ makePropMeanForMultList <- function(cache.data, cache.chain, prior, v, w_sd, w_m
     pp <- prop.root.prior - cache.chain$curr.root.prior
 
     ## Get log likelihood ratio.
-    prop.root.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[cache.chain$which.phy[count]]]
-                              , cache.data$des[[cache.chain$which.phy[count]]], cache.data$anc[[cache.chain$which.phy[count]]]
-                              , cache.data$mapped.edge[[cache.chain$which.phy[count]]]
-                              , R=cache.chain$chain[[iter-1]][[4]], mu=as.vector(prop.root) )
+    prop.root.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[which.phy]], cache.data$des[[which.phy]]
+                                      , cache.data$anc[[which.phy]], cache.data$mapped.edge[[which.phy]]
+                                      , R=cache.chain$chain[[iter-1]][[4]], mu=as.vector(prop.root) )
     ll <-  prop.root.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.
     r <- ll + pp

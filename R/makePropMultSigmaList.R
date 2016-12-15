@@ -45,10 +45,9 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
         ## Only work with the one defined here.
         Rlik <- cache.chain$chain[[iter-1]][[4]] ## This log lik need both matrices.
         Rlik[[Rp]] <- prop.vcv
-        prop.sd.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[cache.chain$which.phy[count]]]
-                                , cache.data$des[[cache.chain$which.phy[count]]], cache.data$anc[[cache.chain$which.phy[count]]]
-                                , cache.data$mapped.edge[[cache.chain$which.phy[count]]]
-                                , R=Rlik, mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
+        prop.sd.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[which.phy]], cache.data$des[[which.phy]]
+                                        , cache.data$anc[[which.phy]], cache.data$mapped.edge[[which.phy]], R=Rlik
+                                        , mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
         ## prop.sd.lik <- logDensityMvNorm(cache.data$X, mu=cache.chain$chain[[iter-1]][[1]], sigma=prop.vcv)
         ll <-  prop.sd.lik - cache.chain$lik[iter-1]
         
@@ -87,10 +86,9 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
         prop.vcv <- rebuild.cov( r=decom$r, v=cache.chain$chain[[iter-1]][[3]][[Rp]]^2 )
         Rlik <- cache.chain$chain[[iter-1]][[4]] ## This log lik need both matrices.
         Rlik[[Rp]] <- prop.vcv
-        prop.r.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[cache.chain$which.phy[count]]]
-                               , cache.data$des[[cache.chain$which.phy[count]]], cache.data$anc[[cache.chain$which.phy[count]]]
-                               , cache.data$mapped.edge[[cache.chain$which.phy[count]]]
-                               , R=Rlik, mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
+        prop.r.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[which.phy]], cache.data$des[[which.phy]]
+                                       , cache.data$anc[[which.phy]], cache.data$mapped.edge[[which.phy]], R=Rlik
+                                       , mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
         ll <- prop.r.lik - cache.chain$lik[iter-1]
         ## The hastings ratio.
         hh <- hastingsDensity(curr.vcv=cache.chain$chain[[iter-1]][[2]][[Rp]], prop.vcv=prop.r, p=cache.data$k, v=v)
