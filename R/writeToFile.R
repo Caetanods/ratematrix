@@ -14,8 +14,8 @@ writeToFile <- function(files, cache.chain, chunk){
         cat( c(cache.chain$chain[[i]][[4]]), sep="; ", file=files[[1]], append=TRUE)
         cat("; ", sep="", file=files[[1]], append=TRUE)
         cat(cache.chain$chain[[i]][[1]], sep="; ", file=files[[1]], append=TRUE)
-        cat("; ", sep="", file=files[[1]], append=TRUE)        
-        cat(cache.chain$lik[i], sep="; ", file=files[[1]], append=TRUE)
+        ## cat("; ", sep="", file=files[[1]], append=TRUE)        
+        ## cat(cache.chain$lik[i], sep="; ", file=files[[1]], append=TRUE)
         cat("\n", file=files[[1]], append=TRUE)
     }
 

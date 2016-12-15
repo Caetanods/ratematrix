@@ -38,9 +38,10 @@ readSingleRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
     colnames(root) <- out$names ## This need to be the names from the data matrix.
     
     ## The the loglik:
-    lik <- sapply(1:dim(mcmc)[2], function(x) as.matrix(mcmc)[dim(mcmc)[1],x])
+    ## lik <- sapply(1:dim(mcmc)[2], function(x) as.matrix(mcmc)[dim(mcmc)[1],x])
 
-    out <- list(root = root, matrix = RR, log.lik = lik)
+    ## out <- list(root = root, matrix = RR, log.lik = lik)
+    out <- list(root = root, matrix = RR)
     class(out) <- "ratematrix_multi_chain"
     
     return( out )

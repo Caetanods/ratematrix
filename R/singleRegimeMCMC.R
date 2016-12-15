@@ -82,11 +82,11 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     }
     
     ## Traitname need also to be changed for the name of the trait.
-    header <- c( header, paste("trait.", 1:cache.data$k, "; ", sep=""), "log.lik \n")
+    header <- c( header, paste("trait.", 1:(cache.data$k-1), "; ", sep=""), paste("trait.", cache.data$k, sep=""), "\n")
     cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
 
     ## Header for the log file:
-    cat("accepted; matrix.corr; matrix.sd; root; which.phylo \n", sep="", file=files[[2]], append=TRUE)    
+    cat("accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n", sep="", file=files[[2]], append=TRUE)    
 
     ## Build the update.function list:
     ## Now this will have two options. This is the part that the function needs to be updated.

@@ -35,14 +35,14 @@ makePropMean <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, co
     ## Acceptance step.
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
     if(exp(r) > runif(1)){ ## Accept.
-        cat("1; 0; 0; 1; 1 \n" , sep="", file=files[[2]], append=TRUE)
+        cat("1; 0; 0; 1; 1; ", prop.root.lik, "\n", sep="", file=files[[2]], append=TRUE)
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         #cache.chain$b.curr <- b.prop
         cache.chain$chain[[iter]][[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
         cache.chain$lik[iter] <- prop.root.lik
     } else{                ## Reject.
-        cat("0; 0; 0; 1; 1 \n" , sep="", file=files[[2]], append=TRUE)
+        cat("0; 0; 0; 1; 1; ", cache.chain$lik[iter-1], "\n", sep="", file=files[[2]], append=TRUE)
         cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
         cache.chain$lik[iter] <- cache.chain$lik[iter-1]
     }

@@ -25,8 +25,8 @@ writeToMultFile <- function(files, cache.chain, p, chunk){
             cat("; ", sep="", file=files[[1]], append=TRUE)
         }
         cat(cache.chain$chain[[i]][[1]], sep="; ", file=files[[1]], append=TRUE)
-        cat("; ", sep="", file=files[[1]], append=TRUE)        
-        cat(cache.chain$lik[i], sep="; ", file=files[[1]], append=TRUE)
+        ## cat("; ", sep="", file=files[[1]], append=TRUE)        
+        ## cat(cache.chain$lik[i], sep="; ", file=files[[1]], append=TRUE)
         cat("\n", file=files[[1]], append=TRUE)
     }
 

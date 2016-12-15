@@ -57,14 +57,14 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
         if(exp(r) > runif(1)){ ## Accept.
-            cat( paste("1; 0; ", Rp, "; 0; ", which.phy, "\n",sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
+            cat( paste("1; 0; ", Rp, "; 0; ", which.phy, "; ", prop.sd.lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[3]][[Rp]] <- prop.sd
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
             cache.chain$curr.sd.prior <- prop.sd.prior
             cache.chain$lik[iter] <- prop.sd.lik
         } else{                ## Reject.
-            cat( paste("0; 0; ", Rp, "; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
+            cat( paste("0; 0; ", Rp, "; 0; ", which.phy, "; ", cache.chain$lik[iter-1], "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }
@@ -102,7 +102,7 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
         if(exp(r) > runif(1)){ ## Accept.
-            cat( paste("1; ", Rp, "; 0; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
+            cat( paste("1; ", Rp, "; 0; 0; ", which.phy, "; ", prop.r.lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$chain[[iter]][[2]][[Rp]] <- prop.r
             cache.chain$chain[[iter]][[4]][[Rp]] <- prop.vcv
@@ -110,7 +110,7 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
             cache.chain$curr.r.jacobian[[Rp]] <- prop.r.jacobian
             cache.chain$lik[iter] <- prop.r.lik
         } else{                ## Reject.
-            cat( paste("0; ", Rp, "; 0; 0; ", which.phy, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
+            cat( paste("0; ", Rp, "; 0; 0; ", which.phy, "; ", cache.chain$lik[iter-1], "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
             cache.chain$lik[iter] <- cache.chain$lik[iter-1]
         }

@@ -130,11 +130,11 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         }
     }
     ## Traitname need also to be changed for the name of the trait.
-    header <- c( header, paste("trait.", 1:cache.data$k, "; ", sep=""), "log.lik \n")
+    header <- c( header, paste("trait.", 1:(cache.data$k-1), "; ", sep=""), paste("trait.", cache.data$k, sep=""), "\n")
     cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
 
     ## Header for the log file:
-    cat("accepted; matrix.corr; matrix.sd; root; which.phylo \n", sep="", file=files[[2]], append=TRUE)    
+    cat("accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n", sep="", file=files[[2]], append=TRUE)    
 
     ## This will check for the arguments, check if there is more than one phylogeny and create the functions for the update and to calculate the lik.
     if( !is.list( phy[[1]] ) ){
