@@ -6,7 +6,7 @@
 \usage{
 multRegimeMCMC(X, phy, start, prior, gen, v = 50, w_sd = 0.5, w_mu = 0.5,
   prop = c(0.1, 0.9), chunk = gen/100, dir = NULL,
-  outname = "mcmc_ratematrix", IDlen = 5)
+  outname = "mcmc_ratematrix", IDlen = 5, regimes, traits)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}

@@ -26,7 +26,7 @@
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
-multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5){
+multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5, regimes, traits){
 
     ## Cache for the data and for the chain:
     cache.data <- list()
@@ -203,8 +203,8 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = cache.data$traits, data = X
-               , phy = phy, prior = prior, start = start, gen = gen)
+    out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
+              , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen)
     class( out ) <- "ratematrix_multi_mcmc"
     return( out )
 }

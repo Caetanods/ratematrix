@@ -19,9 +19,12 @@ readMCMC <- function(out, burn=0.25, thin=100, dir=NULL){
     
     if(out$p == 1){
         mcmc <- readSingleRegimeMCMC(out=out, burn=burn, thin=thin, dir=dir)
+        colnames( mcmc$root ) <- out$trait.names
     }
     if(out$p > 1){
         mcmc <- readMultRegimeMCMC(out=out, burn=burn, thin=thin, dir=dir)
+        colnames( mcmc$root ) <- out$trait.names
+        names( mcmc$matrix ) <- out$regime.names
     }
     
     return( mcmc )

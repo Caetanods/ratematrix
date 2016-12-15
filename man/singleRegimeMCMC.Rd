@@ -5,7 +5,7 @@
 \title{MCMC for a single evolutionary rate matrix.}
 \usage{
 singleRegimeMCMC(X, phy, start, prior, gen, v, w_sd, w_mu, prop = c(0.3, 0.7),
-  chunk, dir = NULL, outname = "single_R_fast", IDlen = 5)
+  chunk, dir = NULL, outname = "single_R_fast", IDlen = 5, traits)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}

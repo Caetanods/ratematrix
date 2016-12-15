@@ -37,7 +37,7 @@ readMultRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
     ## names(RR) <- c("regime1","regime2") ## This need to be the name of the regimes!!
     
     ## Now find the root values.
-    root <- t(sapply(2:dim(mcmc)[2], function(x) as.numeric( as.matrix(mcmc)[(end[out$p]+1):(end[out$p]+out$k+1),x])))
+    root <- t(sapply(2:dim(mcmc)[2], function(x) as.numeric( as.matrix(mcmc)[(end[out$p]+1):(end[out$p]+out$k),x])))
     colnames(root) <- out$names ## This need to be the names from the data matrix.
     
     ## The the loglik:

@@ -10,7 +10,7 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
   singlerate = FALSE, rescaletree = TRUE)
 }
 \arguments{
-\item{data}{a matrix with the data. Each column is a different trait and species names need to be provided as rownames (rownames(data) == phy$tip.label).}
+\item{data}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait, colnames are used as the names for the traits. If not provided, the function will use default names for the traits.}
 
 \item{phy}{a phylogeny of the class "simmap" with the mapped regimes. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in phy. Regime names will also be used. See 'Details'.}
 

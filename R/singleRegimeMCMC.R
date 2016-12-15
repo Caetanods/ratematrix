@@ -22,14 +22,13 @@
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
-singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5){
+singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traits){
 
     ## Creates data and chain cache:
     cache.data <- list()
     cache.chain <- list()
     cache.data$k <- ncol(X) ## Number of traits.
     cache.data$X <- X
-    cache.data$traits <- colnames(X) ## Get names for the traits.
 
     ## Creates MCMC chain cache:
     ## Here trying to initialize the chain cache with the correct number of elements in the list.
@@ -148,8 +147,7 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
     out <- list(k = cache.data$k, p = 1, ID = ID, dir = dir, outname = outname
-              , trait.names = cache.data$traits, data = X
-              , phy = phy, prior = prior, start = start, gen = gen)
+              , trait.names = traits, data = X, phy = phy, prior = prior, start = start, gen = gen)
     class( out ) <- "ratematrix_single_mcmc"
     return( out )
 }

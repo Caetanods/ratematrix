@@ -10,7 +10,7 @@
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
 ##' @title Run the MCMC chain for the evolutionary rate matrix model.
-##' @param data a matrix with the data. Each column is a different trait and species names need to be provided as rownames (rownames(data) == phy$tip.label).
+##' @param data a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait, colnames are used as the names for the traits. If not provided, the function will use default names for the traits.
 ##' @param phy a phylogeny of the class "simmap" with the mapped regimes. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in phy. Regime names will also be used. See 'Details'.
 ##' @param prior the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default), (iii) the output of the "makePriorSeparation" function or (iv) a list of functions. See 'Details'.
 ##' @param start the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See 'Details'.
@@ -116,6 +116,31 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     }
 
     ## #######################
+    ## Block to set the regime and trait names:
+    if( is.null( colnames(data) ) ){
+        trait.names <- paste("trait_", 1:ncol(data), sep="")
+    } else{
+        trait.names <- colnames(data)
+    }
+    ## First check if analysis will use regimes.
+    if( !no_phymap || singlerate ){
+        if( is.list(phy[[1]]) ){ ## Check if phy is a list of phylo.
+            if( is.null( colnames(phy[[1]]$mapped.edge) ) ){
+                regime.names <- paste("regime_", 1:ncol(phy[[1]]$mapped.edge), sep="")
+            } else{
+                regime.names <- colnames(phy[[1]]$mapped.edge)
+            }
+        } else{
+            if( is.null( colnames(phy$mapped.edge) ) ){
+                regime.names <- paste("regime_", 1:ncol(phy$mapped.edge), sep="")
+            } else{
+                regime.names <- colnames(phy$mapped.edge)
+            }
+        }
+    }
+    
+
+    ## #######################
     ## Block to set the analysis. First division is whether one or more regimes are fitted to the tree.
     if( no_phymap || singlerate ){
         
@@ -171,7 +196,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         }
         
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                     , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen)
+                                     , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names)
         return( out_single )
         
     } else{
@@ -243,7 +268,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         }
         
         out_mult <- multRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                 , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen)
+                                 , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, regimes=regime.names, traits=trait.names)
         return( out_mult )
         
     }
