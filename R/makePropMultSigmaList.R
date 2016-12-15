@@ -21,7 +21,6 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
     ## In a second implementation, would be better to separate this function into two independent update functions maybe.
     
     which.phy <- sample(1:n.phy, size = 1) ## The index for the phy used for the log.lik.
-    cache.chain$which.phy[count] <- which.phy ## DROP
     up <- sample(1:2, size=1) ## Updates the standard deviations or the correlation structure.
     ## Random draw one of the p R matrices to update:
     Rp <- sample(1:cache.data$p, size=1)

@@ -18,7 +18,6 @@ makePropMeanForMultList <- function(cache.data, cache.chain, prior, v, w_sd, w_m
 
     ## Choose the phylogeny to be used in this evaluation of the liklihood:
     which.phy <- sample(1:n.phy, size = 1)
-    cache.chain$which.phy[count] <- which.phy ## DROP
 
     ## make.prop.mean is a function to make sliding window proposal moves.
     prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
