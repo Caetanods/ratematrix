@@ -33,7 +33,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     cache.chain <- list()
     
     cache.data$X <- X
-    cache.data$data_cor <- cov2cor( var( X ) ) ## This is to use the correlation of the data to draw proposals for the root.
     cache.data$k <- ncol(X) ## Number of traits.
 
     ## Make the precalculation based on the tree. Here two blocks, depending of whether there is only one or several trees.
