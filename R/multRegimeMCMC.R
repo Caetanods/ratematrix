@@ -23,13 +23,15 @@
 ##' @param regimes 
 ##' @param traits 
 ##' @param save.handle 
+##' @param continue 
+##' @param add.gen 
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
-multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5, regimes, traits, save.handle){
+multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5, regimes, traits, save.handle, continue=NULL, add.gen, ID=NULL){
 
     ## Save the 'mcmc.par' list for the mcmc.handle:
     mcmc.par <- list()
@@ -42,7 +44,6 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ## Cache for the data and for the chain:
     cache.data <- list()
     cache.chain <- list()
-    
     cache.data$X <- X
     cache.data$k <- ncol(X) ## Number of traits.
 
@@ -123,29 +124,37 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     
     ## cache.chain$curr.sd.prior <- lapply(1:cache.data$p, function(x) prior[[3]](cache.chain$chain[[1]][[3]][[x]]) ) ## Prior log lik starting value.
     cache.chain$curr.sd.prior <- prior[[3]](cache.chain$chain[[1]][[3]]) ## Takes a list of sd vectors and returns a numeric.
-    
-    ## Generate identifier:
-    ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
 
-    ## Open files to write:
-    files <- list( file(file.path(dir, paste(outname,".",ID,".mcmc",sep="")), open="a")
-                 , file(file.path(dir, paste(outname,".",ID,".log",sep="")), open="a") )
-    ## Write header for the posterior MCMC file:
-    ## Here "regime" need to be changed for the name of the regime for the analysis. A default name will be produced by the function is one is not provided.
-    header <- vector(mode="character")
-    for( k in 1:cache.data$p ){
-        for( i in 1:cache.data$k ){
-            for( j in 1:cache.data$k ){
-                header <- c( header, paste("regime.p", k, ".", i, j, "; ", sep="") )
+    ## Need to check if this is a continuing MCMC before creating new ID and files:
+    if( is.null(continue) ){
+        
+        ## Generate identifier:
+        ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
+
+        ## Open files to write:
+        files <- list( file(file.path(dir, paste(outname,".",ID,".mcmc",sep="")), open="a")
+                    , file(file.path(dir, paste(outname,".",ID,".log",sep="")), open="a") )
+        ## Write header for the posterior MCMC file:
+        ## Here "regime" need to be changed for the name of the regime for the analysis. A default name will be produced by the function is one is not provided.
+        header <- vector(mode="character")
+        for( k in 1:cache.data$p ){
+            for( i in 1:cache.data$k ){
+                for( j in 1:cache.data$k ){
+                    header <- c( header, paste("regime.p", k, ".", i, j, "; ", sep="") )
+                }
             }
         }
-    }
-    ## Traitname need also to be changed for the name of the trait.
-    header <- c( header, paste("trait.", 1:(cache.data$k-1), "; ", sep=""), paste("trait.", cache.data$k, sep=""), "\n")
-    cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
+        ## Traitname need also to be changed for the name of the trait.
+        header <- c( header, paste("trait.", 1:(cache.data$k-1), "; ", sep=""), paste("trait.", cache.data$k, sep=""), "\n")
+        cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
 
-    ## Header for the log file:
-    cat("accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n", sep="", file=files[[2]], append=TRUE)    
+        ## Header for the log file:
+        cat("accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n", sep="", file=files[[2]], append=TRUE)
+    } else{
+        ## Need to create the files object with the path to the existing files. But do not open again.
+        files <- list( file.path(dir, paste(outname,".",ID,".mcmc",sep="") )
+                    , file.path(dir, paste(outname,".",ID,".log",sep="") ) )
+    }
 
     ## This will check for the arguments, check if there is more than one phylogeny and create the functions for the update and to calculate the lik.
     if( !is.list( phy[[1]] ) ){
@@ -161,20 +170,33 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         update.function <- list(prop.not.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
     }
 
+    ## Before running need to exclude the generations already done if continuing.
+    ## Also add the option to do additional generations.
+    if( is.null(continue) ){
+        cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
+    } else{
+        if( continue == "continue" ){
+            cat( paste("Continue previous MCMC run ", outname, ".", ID, " for ", add.gen, " generations for a total of ", gen, " generations.\n", sep="") )
+            gen <- add.gen
+        }
+        if( continue == "add.gen" ){
+            cat( paste("Adding ", add.gen, " generations to previous MCMC run ", outname, ".", ID, "\n", sep="") )
+            gen <- add.gen
+        }
+    }
+
     ## Calculate chunks and create write point.
     block <- gen/chunk
 
     ## Start counter for the acceptance ratio and loglik.
     count <- 2
-
-    ## Inform the start of the MCMC:
-    cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
-
+    
     ## Save the handle object:
     if( save.handle ){
         out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
                   , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
                   , mcmc.par = mcmc.par)
+        class( out ) <- "ratematrix_multi_mcmc"
         saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
     }
 
@@ -215,7 +237,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ## time <- proc.time() - ptm
 
     ## Close the connections:
-    lapply(files, close)
+    if( is.null(continue) ) lapply(files, close)
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
 

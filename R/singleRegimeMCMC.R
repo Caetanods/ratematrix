@@ -23,7 +23,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
 singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5
-                           , traits, save.handle){
+                           , traits, save.handle, continue=NULL, add.gen, ID=NULL){
 
     ## Save the 'mcmc.par' list for the mcmc.handle:
     mcmc.par <- list()
@@ -76,36 +76,62 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     cache.chain$curr.r.jacobian <- sum( sapply(1:cache.data$k, function(x) log( decom$v[x]) ) ) * log( (cache.data$k-1)/2 )
     
     cache.chain$curr.sd.prior <- prior[[3]](cache.chain$chain[[1]][[3]]) ## Prior log lik starting value.
-    ## Generate identifier:
-    ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
 
-    ## Open files to write:
-    files <- list( file(file.path(dir, paste(outname,".",ID,".mcmc",sep="")), open="a"),
-                  file(file.path(dir, paste(outname,".",ID,".log",sep="")), open="a")
-                  )
-    
-    header <- vector(mode="character")
-    for( i in 1:cache.data$k ){
-        for( j in 1:cache.data$k ){
-            header <- c( header, paste("regime.", i, j, "; ", sep="") )
+    ## Need to check if this is a continuing MCMC before creating new ID and files:
+    if( is.null(continue) ){
+        
+        ## Generate identifier:
+        ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
+
+        ## Open files to write:
+        files <- list( file(file.path(dir, paste(outname,".",ID,".mcmc",sep="")), open="a"),
+                      file(file.path(dir, paste(outname,".",ID,".log",sep="")), open="a")
+                      )
+        
+        header <- vector(mode="character")
+        for( i in 1:cache.data$k ){
+            for( j in 1:cache.data$k ){
+                header <- c( header, paste("regime.", i, j, "; ", sep="") )
+            }
         }
-    }
-    
-    ## Traitname need also to be changed for the name of the trait.
-    header <- c( header, paste("trait.", 1:(cache.data$k-1), "; ", sep=""), paste("trait.", cache.data$k, sep=""), "\n")
-    cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
+        
+        ## Traitname need also to be changed for the name of the trait.
+        header <- c( header, paste("trait.", 1:(cache.data$k-1), "; ", sep=""), paste("trait.", cache.data$k, sep=""), "\n")
+        cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
 
-    ## Header for the log file:
-    cat("accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n", sep="", file=files[[2]], append=TRUE)    
+        ## Header for the log file:
+        cat("accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n", sep="", file=files[[2]], append=TRUE)
+    } else{
+        ## Need to create the files object with the path to the existing files. But do not open again.
+        files <- list( file.path(dir, paste(outname,".",ID,".mcmc",sep="") )
+                    , file.path(dir, paste(outname,".",ID,".log",sep="") ) )
+    }
 
     ## Build the update.function list:
     ## Now this will have two options. This is the part that the function needs to be updated.
     ## Need to make sure that the proposal distributions will be tunned by the w_sd and w_mu parameters.
     if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
+        cat("MCMC chain using a single tree/regime configuration.\n")
         update.function <- list( function(...) makePropMeanList(..., n.phy=n.phy), function(...) makePropSingleSigmaList(..., n.phy=n.phy) )
     }
     if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+        cat("MCMC chain using multiple trees/regime configurations.\n")
         update.function <- list( makePropMean, makePropSingleSigma )
+    }
+
+    ## Before running need to exclude the generations already done if continuing.
+    ## Also add the option to do additional generations.
+    if( is.null(continue) ){
+        cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
+    } else{
+        if( continue == "continue" ){
+            cat( paste("Continue previous MCMC run ", outname, ".", ID, " for ", add.gen, " generations for a total of ", gen, " generations.\n", sep="") )
+            gen <- add.gen
+        }
+        if( continue == "add.gen" ){
+            cat( paste("Adding ", add.gen, " generations to previous MCMC run ", outname, ".", ID, "\n", sep="") )
+            gen <- add.gen
+        }
     }
     
     ## Calculate chunks and create write point.
@@ -115,14 +141,12 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ## Start counter for the acceptance ratio and loglik.
     count <- 2
 
-    ## Inform the start of the MCMC:
-    cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
-
     ## Save the handle object:
     if( save.handle ){
-        out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
-                  , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
+        out <- list(k = cache.data$k, p = 1, ID = ID, dir = dir, outname = outname, trait.names = traits
+                  , data = X, phy = phy, prior = prior, start = start, gen = gen
                   , mcmc.par = mcmc.par)
+        class( out ) <- "ratematrix_single_mcmc"
         saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
     }
 
@@ -158,7 +182,7 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     }
 
     ## Close the connections:
-    lapply(files, close)
+    if( is.null(continue) ) lapply(files, close)
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
 

@@ -6,7 +6,8 @@
 \usage{
 multRegimeMCMC(X, phy, start, prior, gen, v = 50, w_sd = 0.5, w_mu = 0.5,
   prop = c(0.1, 0.9), chunk = gen/100, dir = NULL,
-  outname = "mcmc_ratematrix", IDlen = 5, regimes, traits)
+  outname = "mcmc_ratematrix", IDlen = 5, regimes, traits, save.handle,
+  continue = NULL, add.gen, ID = NULL)
 }
 \arguments{
 \item{X}{matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.}
@@ -34,6 +35,16 @@ multRegimeMCMC(X, phy, start, prior, gen, v = 50, w_sd = 0.5, w_mu = 0.5,
 \item{outname}{string. Name pasted to the files. Name of the output files will start with 'outname'.}
 
 \item{IDlen}{numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.}
+
+\item{regimes}{}
+
+\item{traits}{}
+
+\item{save.handle}{}
+
+\item{continue}{}
+
+\item{add.gen}{}
 }
 \value{
 Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
