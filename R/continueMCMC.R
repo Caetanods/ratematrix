@@ -42,9 +42,18 @@ continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE){
             continue <- "continue"
             add.gen <- handle$gen - total
             if( add.gen == 1 || add.gen < 0 ) stop("This MCMC run is complete. Use 'add.gen' to add more generations.\n")
+            ## Check if 'chunk' is a divisible of the generation number, if not, adjust.
         } else{
             continue <- "add.gen"
             handle$gen <- handle$gen + add.gen ## Update the total gen in the handle.
+        }
+
+        ## Checks if the 'chunk' is correct given add.gen.
+        if( add.gen < handle$mcmc.par$chunk ){
+            handle$mcmc.par$chunk <- add.gen
+        }
+        if( add.gen %% handle$mcmc.par$chunk > 0 ){ ## Check the remainder of the division
+            add.gen <- add.gen - (add.gen %% handle$mcmc.par$chunk)
         }
 
         singleRegimeMCMC(X=handle$data, phy=handle$phy, start=start, prior=handle$prior, gen=handle$gen, v=handle$mcmc.par$v
@@ -90,8 +99,14 @@ continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE){
             continue <- "add.gen"
             handle$gen <- handle$gen + add.gen ## Update the total gen in the handle.
         }
-
-        print( start )
+        
+        ## Checks if the 'chunk' is correct given add.gen.
+        if( add.gen < handle$mcmc.par$chunk ){
+            handle$mcmc.par$chunk <- add.gen
+        }
+        if( add.gen %% handle$mcmc.par$chunk > 0 ){ ## Check the remainder of the division
+            add.gen <- add.gen - (add.gen %% handle$mcmc.par$chunk)
+        }
         
         multRegimeMCMC(X=handle$data, phy=handle$phy, start=start, prior=handle$prior, gen=handle$gen, v=handle$mcmc.par$v
                      , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu, prop=handle$mcmc.par$prop, chunk=handle$mcmc.par$chunk

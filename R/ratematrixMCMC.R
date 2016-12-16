@@ -106,6 +106,15 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
 
     if( !class(gen) == "numeric" ) stop('gen need to be a "numeric" value.')
 
+    ## Check if 'chunk' is a divisible of the generation number, if not, adjust.
+    ## Default is: gen/100
+    if( chunk > gen ){
+        chunk <- gen
+    }        
+    if( gen %% chunk > 0 ){ ## Check the remainder of the division
+        gen <- gen - (gen %% chunk)
+    }   
+
     ## #######################
     ## Block to create the directory for the output:
     if( is.null(dir) ){
@@ -197,6 +206,8 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             }
         }
 
+        cat(paste0("chunk", chunk, "\n"))
+        cat(paste0("gen", gen, "\n"))
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
                                      , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
                                       , save.handle=save.handle)
