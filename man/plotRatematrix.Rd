@@ -7,7 +7,8 @@
 plotRatematrix(chain, p = NULL, colors = NULL, alphaOff = 1,
   alphaDiag = 1, alphaEll = 1, ell.wd = 0.5, point.matrix = NULL,
   point.color = NULL, point.wd = 0.5, set.leg = NULL, l.cex = 0.7,
-  hpd = 100, show.zero = FALSE, set.xlim = NULL, n.lines = 50)
+  hpd = 100, show.zero = FALSE, set.xlim = NULL, n.lines = 50,
+  n.points = 200)
 }
 \arguments{
 \item{chain}{The MCMC chain loaded from the files.}
@@ -41,6 +42,8 @@ plotRatematrix(chain, p = NULL, colors = NULL, alphaOff = 1,
 \item{set.xlim}{numeric. Two elements vector to set the 'xlim' [see 'help(hist)'] for the density plots manually. If 'NULL', the default value, then the limits are calculated from the data.}
 
 \item{n.lines}{numeric. Number of lines to be displayed in the ellipsed plots.}
+
+\item{n.points}{Number of points to make the ellipse.}
 }
 \value{
 Plot a grid of charts.

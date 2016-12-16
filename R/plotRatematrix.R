@@ -32,10 +32,16 @@
 ##' @param show.zero logical. Whether to plot a 'blue' vertical line at 0.
 ##' @param set.xlim numeric. Two elements vector to set the 'xlim' [see 'help(hist)'] for the density plots manually. If 'NULL', the default value, then the limits are calculated from the data.
 ##' @param n.lines numeric. Number of lines to be displayed in the ellipsed plots.
+##' @param n.points Number of points to make the ellipse.
 ##' @return Plot a grid of charts.
 ##' @export
-plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, set.leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50){
+plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, set.leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50, n.points=200){
 
+    ## Check if the sample is larger than 'n.lines'. Otherwise, it needs to be equal to.
+    if( n.lines > nrow( chain[[1]] ) ){
+        n.lines <- nrow( chain[[1]] )
+    }
+    
     ## Set default values for p and colors if none is provided:
     if( is.null(p) ){
         ## p need to be all the regimes in the data.
@@ -189,8 +195,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
             ell.data[[w]] <- list()
             for(i in 2:dd){
                 for(j in 1:(i-1)){                    
-                    ell.data[[w]][[ell.data.count]] <- getEllipseAllMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ], traits=c(i,j) )
-                    ## ell.data[[w]][[ell.data.count]] <- getEllipseAllMatrix( mat=sampled.LL[[w]], traits=c(i,j) )
+                    ell.data[[w]][[ell.data.count]] <- getEllipseAllMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ]
+                                                                         , traits=c(i,j), n.points=n.points)
                     ell.data.count <- ell.data.count + 1 ## Update the counter.
                 }
             }
@@ -211,7 +217,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
                 ell.point.count <- 1
                 for(i in 2:dd){
                     for(j in 1:(i-1)){
-                        ell.point[[w]][[ell.point.count]] <- getEllipseMatrix( mat=point.matrix[[w]], traits=c(i,j) )
+                        ell.point[[w]][[ell.point.count]] <- getEllipseMatrix( mat=point.matrix[[w]], traits=c(i,j)
+                                                                            , sample.line=n.lines, n.points=n.points)
                         ell.point.count <- ell.point.count + 1
                     }
                 }
@@ -391,7 +398,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
             ell.data.count <- 1    
             for(i in 2:dd){
                 for(j in 1:(i-1)){
-                    ell.data[[w]][[ell.data.count]] <- getEllipseMatrix(mat=chain$matrix[[ p[w] ]], traits=c(i,j) )
+                    ell.data[[w]][[ell.data.count]] <- getEllipseMatrix(mat=chain$matrix[[ p[w] ]], traits=c(i,j)
+                                                                      , sample.line=n.lines, n.points=n.points )
                     ell.data.count <- ell.data.count + 1
                 }
             }
@@ -408,7 +416,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
                 ell.point.count <- 1
                 for(i in 2:dd){
                     for(j in 1:(i-1)){
-                        ell.point[[w]][[ell.point.count]] <- getEllipseMatrix( mat=point.matrix[[w]], traits=c(i,j) )
+                        ell.point[[w]][[ell.point.count]] <- getEllipseMatrix( mat=point.matrix[[w]], traits=c(i,j)
+                                                                            , sample.line=n.lines, n.points=n.points)
                         ell.point.count <- ell.point.count + 1
                     }
                 }

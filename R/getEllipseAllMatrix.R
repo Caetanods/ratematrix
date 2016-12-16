@@ -11,9 +11,8 @@
 getEllipseAllMatrix <- function(mat, center=c(0,0), traits, n.points=200){
     ## Function is just like 'get.vcv.ellipse.matrix'. However there is no sample of the matrices.
     ## Points are calculated for all the matrices.
-
-    mat.list <- mat
     
+    mat.list <- mat
     RR <- lapply(mat.list, chol.default) ## Cholesky decomposition.
     angles <- seq(0, 2*pi, length.out = n.points) ## angles for ellipse
     ## ellipse scaled with factor 1

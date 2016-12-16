@@ -4,8 +4,8 @@
 \alias{getEllipseMatrix}
 \title{Calculate sample of ellipses.}
 \usage{
-getEllipseMatrix(mat, center = c(0, 0), traits, burn = 0.5, thin = 1,
-  sample.line = 50, n.points = 200)
+getEllipseMatrix(mat, center = c(0, 0), traits, sample.line = 50,
+  n.points = 200)
 }
 \arguments{
 \item{mat}{list. List of covariance matrices.}
@@ -13,10 +13,6 @@ getEllipseMatrix(mat, center = c(0, 0), traits, burn = 0.5, thin = 1,
 \item{center}{numeric. Coordinates for the center.}
 
 \item{traits}{numeric (?). The traits (?).}
-
-\item{burn}{numeric. The proportion of the burnin.}
-
-\item{thin}{numeric. The thinnig to be applied to the posterior distribution. Same as the 'by' argument of the 'seq' function.}
 
 \item{sample.line}{numeric. Sample size to be used to calculate the ellipses.}
 
