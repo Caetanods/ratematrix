@@ -22,6 +22,7 @@ Suggests:
 VignetteBuilder: 
 LinkingTo: 
 Collate:
+    "continueMCMC.R"
     "logAnalizer.R"
     "likelihoodFunction.R"
     "makePropSingleSigmaList.R"
