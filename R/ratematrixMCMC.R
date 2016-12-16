@@ -1,5 +1,6 @@
 ##' Function runs a MCMC chain to estimate the posterior distribution of the evolutionary rate matrix and the phylogenetic root value given a phylogeny and trait data. Prior distribution and starting state of the chain can be chosen from one of the options provided. The function also accepts custom priors and starting states. Note that function requires output files in the chosen directory to be created and accessed. See 'Details' and 'Examples' for more information.
 ##'
+##' Talk about how the handle object can be used to continue a MCMC chain and for other important tasks.
 ##' Talk about function 'x' to collapse two or more regimes of a 'simmap' class tree.
 ##' Explain the structure of the prior so that people can build their own.
 ##' Explain how to fix the possible problem of function cannot write to the current directory. Need to be something simple. Maybe bullet proff it somehow.\cr
@@ -25,6 +26,7 @@
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
 ##' @param singlerate whether the function should fit a single regime and ignore the number of regimes painted to the tree (default is FALSE).
 ##' @param rescaletree whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. Default is TRUE.
+##' @param save.handle whether the handle for the MCMC should be save to the directory in addition to the output of the function.
 ##' @return Function returns a list with the details of the MCMC run and write the MCMC output to the directory in a series of files.
 ##' @author daniel
 ##' @export
@@ -32,7 +34,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom ape is.ultrametric
 ##' @importFrom phytools rescaleSimmap
-ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=TRUE){
+ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=FALSE, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -194,9 +196,10 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 start_run$sd <- as.numeric( sqrt(decomp.R$v) )
             }
         }
-        
+
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                     , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names)
+                                     , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
+                                      , save.handle=save.handle)
         return( out_single )
         
     } else{
@@ -268,7 +271,8 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         }
         
         out_mult <- multRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                 , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, regimes=regime.names, traits=trait.names)
+                                 , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, regimes=regime.names, traits=trait.names
+                                   , save.handle=save.handle)
         return( out_mult )
         
     }

@@ -22,8 +22,18 @@
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
-singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5, traits){
+singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5
+                           , traits, save.handle){
 
+    ## Save the 'mcmc.par' list for the mcmc.handle:
+    mcmc.par <- list()
+    mcmc.par$v <- v
+    mcmc.par$w_sd <- w_sd
+    mcmc.par$w_mu <- w_mu
+    mcmc.par$prop <- prop
+    mcmc.par$chunk <- chunk
+    
+    
     ## Creates data and chain cache:
     cache.data <- list()
     cache.chain <- list()
@@ -108,6 +118,14 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ## Inform the start of the MCMC:
     cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
 
+    ## Save the handle object:
+    if( save.handle ){
+        out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
+                  , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
+                  , mcmc.par = mcmc.par)
+        saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
+    }
+
     ## Make loop equal to the number of blocks:
     for(jj in 1:block){
 
@@ -147,7 +165,8 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
     out <- list(k = cache.data$k, p = 1, ID = ID, dir = dir, outname = outname
-              , trait.names = traits, data = X, phy = phy, prior = prior, start = start, gen = gen)
+              , trait.names = traits, data = X, phy = phy, prior = prior, start = start, gen = gen
+               , mcmc.par=mcmc.par)
     class( out ) <- "ratematrix_single_mcmc"
     return( out )
 }

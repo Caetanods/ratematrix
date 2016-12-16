@@ -20,13 +20,24 @@
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
+##' @param regimes 
+##' @param traits 
+##' @param save.handle 
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
-multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5, regimes, traits){
+multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), chunk=gen/100, dir=NULL, outname="mcmc_ratematrix", IDlen=5, regimes, traits, save.handle){
+
+    ## Save the 'mcmc.par' list for the mcmc.handle:
+    mcmc.par <- list()
+    mcmc.par$v <- v
+    mcmc.par$w_sd <- w_sd
+    mcmc.par$w_mu <- w_mu
+    mcmc.par$prop <- prop
+    mcmc.par$chunk <- chunk
 
     ## Cache for the data and for the chain:
     cache.data <- list()
@@ -159,6 +170,14 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ## Inform the start of the MCMC:
     cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
 
+    ## Save the handle object:
+    if( save.handle ){
+        out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
+                  , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
+                  , mcmc.par = mcmc.par)
+        saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
+    }
+
     ## Make loop equal to the number of blocks:
     for(jj in 1:block){
 
@@ -203,7 +222,8 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
     out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
-              , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen)
+              , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
+               , mcmc.par=mcmc.par)
     class( out ) <- "ratematrix_multi_mcmc"
     return( out )
 }
