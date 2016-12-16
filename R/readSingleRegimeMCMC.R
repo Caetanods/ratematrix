@@ -42,7 +42,7 @@ readSingleRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
 
     ## out <- list(root = root, matrix = RR, log.lik = lik)
     out <- list(root = root, matrix = RR)
-    class(out) <- "ratematrix_multi_chain"
+    class(out) <- "ratematrix_single_chain"
     
     return( out )
 
