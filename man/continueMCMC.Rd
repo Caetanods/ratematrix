@@ -17,10 +17,10 @@ continueMCMC(handle, add.gen = NULL, save.handle = TRUE)
 The thing!
 }
 \description{
-.. content for \description{} (no empty lines) ..
+That
 }
 \details{
-.. content for \details{} ..
+This
 }
 \author{
 daniel

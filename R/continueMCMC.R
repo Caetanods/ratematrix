@@ -1,6 +1,6 @@
-##' .. content for \description{} (no empty lines) ..
+##' That
 ##'
-##' .. content for \details{} ..
+##' This
 ##' @title Make the thing!
 ##' @param handle 
 ##' @param add.gen 
