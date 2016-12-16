@@ -37,7 +37,6 @@ logAnalizer <- function(out, burn=0.25, thin=1, show.plots=TRUE, print.result=TR
 
     mix.phylo <- table( log.mcmc[ which(log.mcmc[,1] == 1), 5] ) / length( log.mcmc[ log.mcmc[,1],5 ] )
 
-    post <- seq(round(2000 * 0.25)+1, 2000+1, by=1) ## First line is the header.
     at.gen <- round( seq(from=1, to=length(post), length.out = 5) )
     labels.gen <- round( seq(from=post[1], to=post[length(post)], length.out = 5) )
     cum.accept <- cumsum(log.mcmc[,1]) / 1:length(log.mcmc[,1])
