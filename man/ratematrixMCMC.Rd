@@ -7,7 +7,7 @@
 ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
   gen, v = 50, w_sd = 0.5, w_mu = 0.5, prop = c(0.025, 0.975),
   chunk = gen/100, dir = NULL, outname = "ratematrixMCMC", IDlen = 5,
-  singlerate = FALSE, rescaletree = TRUE)
+  singlerate = FALSE, rescaletree = FALSE, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait, colnames are used as the names for the traits. If not provided, the function will use default names for the traits.}
@@ -39,6 +39,8 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
 \item{singlerate}{whether the function should fit a single regime and ignore the number of regimes painted to the tree (default is FALSE).}
 
 \item{rescaletree}{whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. Default is TRUE.}
+
+\item{save.handle}{whether the handle for the MCMC should be save to the directory in addition to the output of the function.}
 }
 \value{
 Function returns a list with the details of the MCMC run and write the MCMC output to the directory in a series of files.
@@ -47,6 +49,7 @@ Function returns a list with the details of the MCMC run and write the MCMC outp
 Function runs a MCMC chain to estimate the posterior distribution of the evolutionary rate matrix and the phylogenetic root value given a phylogeny and trait data. Prior distribution and starting state of the chain can be chosen from one of the options provided. The function also accepts custom priors and starting states. Note that function requires output files in the chosen directory to be created and accessed. See 'Details' and 'Examples' for more information.
 }
 \details{
+Talk about how the handle object can be used to continue a MCMC chain and for other important tasks.
 Talk about function 'x' to collapse two or more regimes of a 'simmap' class tree.
 Explain the structure of the prior so that people can build their own.
 Explain how to fix the possible problem of function cannot write to the current directory. Need to be something simple. Maybe bullet proff it somehow.\cr
