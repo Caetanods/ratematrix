@@ -15,6 +15,6 @@ plotPrior <- function(out, n=1000, color="black", ...){
 
     ## samplePriorSeparationLimits need to be implemented and used here.
     
-    samples <- samplePriorSeparation(n=n, prior=out$prior, sample.sd=TRUE)
+    samples <- samplePrior(n=n, prior=out$prior, sample.sd=TRUE)
     plotRatematrix(chain=samples, p=1, colors=color, ...)
 }
