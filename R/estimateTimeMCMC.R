@@ -45,9 +45,9 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         ssd <- apply(data, 2, sd)
         par.mu <- as.matrix( cbind(mn, ssd) )
         par.sd <- c(0,100)
-        prior <- makePriorSeparation(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
+        prior <- makePrior(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
         ## Generate the state to compute the log lik.
-        start <- samplePriorSeparation(n=1, prior=prior, sample.sd=FALSE)
+        start <- samplePrior(n=1, prior=prior, sample.sd=FALSE)
 
         ## Creates data cache:
         cache.data <- list()
@@ -80,9 +80,9 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         par.mu <- as.matrix( cbind(mn, ssd) )
         rep.sd.regime <- rep(c(0,100), times=p)
         par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
-        prior <- makePriorSeparation(r=r, p=p, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
+        prior <- makePrior(r=r, p=p, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
         ## Generate the state to compute the log lik.
-        start <- samplePriorSeparation(n=1, prior=prior, sample.sd=FALSE)
+        start <- samplePrior(n=1, prior=prior, sample.sd=FALSE)
 
         ## Prepare the likelihood to run:
 
