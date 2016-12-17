@@ -40,7 +40,16 @@
 ##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
 ##' @examples
 ##' \donttest{
-##' 
+##' ## Load data
+##' data(centrarchidae)
+##' ## Run MCMC. This is just a very short chain.
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+##' ## Load posterior distribution, make plots and check the log.
+##' posterior <- readMCMC(handle, burn=0.25, thin=1)
+##' plotRatematrix(posterior)
+##' plotRootValue(posterior)
+##' plotPrior(handle)
+##' logAnalizer(handle)
 ##' }
 ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=FALSE, save.handle=TRUE){
 
