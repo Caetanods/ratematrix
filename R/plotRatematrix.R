@@ -247,10 +247,12 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
             wd <- (x.hist[2] - mean(x.hist))/20
             ## Make a sequence for the breaks. Note that we add one window (bar) to the borders.
             brk <- seq(from=x.hist[1]-wd, to=x.hist[2]+wd, by=wd)
+            brk.var <- seq(0, to=x.hist[2]+wd, by=wd)
             xlim.hist <- x.hist
         } else{
             wd <- (set.xlim[2] - mean(set.xlim))/20
             brk <- seq(from=x.hist[1]-wd, to=x.hist[2]+wd, by=wd)
+            brk.var <- seq(from=0, to=x.hist[2]+wd, by=wd)
             xlim.hist <- set.xlim
         }
 
@@ -263,14 +265,22 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
             hist.count <- 1
             for(i in 1:dd[1]){
                 for(j in i:dd[1]){
-                    ## Remember that the list 'LL' were made over the lines of the grid.
-                    ## This is to calculate the x and y limits of the histogram.
-                    hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
-                    ## Create the cuts for the hpd:
-                    ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
-                                                 , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
-                    y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
-                    hist.count <- hist.count + 1
+                    if( i == j ){
+                        ## Remember that the list 'LL' were made over the lines of the grid.
+                        ## This is to calculate the x and y limits of the histogram.
+                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
+                        ## Create the cuts for the hpd:
+                        ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
+                                                     , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
+                        y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
+                        hist.count <- hist.count + 1
+                    } else{
+                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                        ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
+                                                     , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
+                        y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
+                        hist.count <- hist.count + 1
+                    }
                 }
             }
         }
@@ -443,10 +453,12 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
             wd <- (x.hist[2] - mean(x.hist))/20
             ## Make a sequence for the breaks. Note that we add one window to the borders.
             brk <- seq(from=x.hist[1]-wd, to=x.hist[2]+wd, by=wd)
+            brk.var <- seq(from=0, to=x.hist[2]+wd, by=wd)
             xlim.hist <- x.hist
         } else{
             wd <- (set.xlim[2] - mean(set.xlim))/20
             brk <- seq(from=x.hist[1]-wd, to=x.hist[2]+wd, by=wd)
+            brk.var <- seq(from=0, to=x.hist[2]+wd, by=wd)
             xlim.hist <- set.xlim
         }
 
@@ -456,11 +468,17 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, 
             hist.count <- 1
             for(i in 1:dd){
                 for(j in i:dd){
-                    ## Remember that the list 'LL' where made over the lines of the grid.
-                    ## This is to calculate the x and y limits of the histogram.
-                    hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
-                    y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
-                    hist.count <- hist.count + 1
+                    if( i == j ){
+                        ## Remember that the list 'LL' where made over the lines of the grid.
+                        ## This is to calculate the x and y limits of the histogram.
+                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
+                        y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
+                        hist.count <- hist.count + 1
+                    } else{
+                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                        y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
+                        hist.count <- hist.count + 1
+                    }
                 }
             }
         }
