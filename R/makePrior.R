@@ -13,7 +13,7 @@
 ##' @param nu The degrees of freedom parameter of the inverse Wishart distribution. Larger values will make the distribution more tight around the scale matrix. Need to be a vector of length equal to 'p'.
 ##' @return List of density functions to be used as the prior for MCMC functions.
 ##' @export
-makePriorSeparation <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.corr=TRUE, Sigma=NULL, nu=NULL){
+makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.corr=TRUE, Sigma=NULL, nu=NULL){
 
     ## Save all parameters to use in subsequent functions.
     pars <- list()

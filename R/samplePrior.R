@@ -10,7 +10,7 @@
 ##' @return A list with the parameters draw from the prior. The structure is the same to be used as the "start" parameter of the MCMC chain.
 ##' @importFrom corpcor decompose.cov
 ##' @export
-samplePriorSeparation <- function(n, prior, sample.sd=TRUE){
+samplePrior <- function(n, prior, sample.sd=TRUE){
     pars <- prior$pars
 
     ## Sample phylogenetic means:

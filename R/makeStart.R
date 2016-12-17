@@ -7,7 +7,7 @@
 ##' @return A list with the starting points for a MCMC. This function will draw from an uniform prior. Same as created by 'make.prior.zhang'.
 ##' @export
 ##' @importFrom corpcor decompose.cov
-makeStartSeparation <- function(n.traits, n.R){
+makeStart <- function(n.traits, n.R){
     mn <- runif(n.traits, min=-100, max=100)
     if( n.R == 1 ){
         corr <- riwish(v=n.traits+1, S=diag(nrow=n.traits))
