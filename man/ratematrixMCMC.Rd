@@ -2,7 +2,7 @@
 % Please edit documentation in R/ratematrixMCMC.R
 \name{ratematrixMCMC}
 \alias{ratematrixMCMC}
-\title{Run the MCMC chain for the evolutionary rate matrix model.}
+\title{Estimate the evolutionary rate matrix using Markov-chain Monte Carlo}
 \usage{
 ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
   gen, v = 50, w_sd = 0.5, w_mu = 0.5, prop = c(0.025, 0.975),
@@ -10,57 +10,68 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
   singlerate = FALSE, rescaletree = FALSE, save.handle = TRUE)
 }
 \arguments{
-\item{data}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait, colnames are used as the names for the traits. If not provided, the function will use default names for the traits.}
+\item{data}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait. Names for the columns is used as trait labels. If labels are not provided, the function will use default labels.}
 
-\item{phy}{a phylogeny of the class "simmap" with the mapped regimes. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in phy. Regime names will also be used. See 'Details'.}
+\item{phy}{a phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used. 'phy' can also be a list of phylogenies. See 'Details'.}
 
-\item{prior}{the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default), (iii) the output of the "makePriorSeparation" function or (iv) a list of functions. See 'Details'.}
+\item{prior}{the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default), (iii) the output of the "makePrior" function or (iv) a list of functions. See more information on 'makePrior' function.}
 
-\item{start}{the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See 'Details'.}
+\item{start}{the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See more information on 'makeStart' function.}
 
 \item{gen}{number of generations for the chain.}
 
-\item{v}{value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix.}
+\item{v}{value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.)}
 
 \item{w_sd}{value for the width of the uniform proposal distribution for the vector of standard deviations.}
 
 \item{w_mu}{value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean).}
 
-\item{prop}{the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to be 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.}
+\item{prop}{the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.}
 
-\item{chunk}{number of generations that the MCMC chain will be kept in the computer memory before writing to file. Larger values will use more RAM memory.}
+\item{chunk}{number of generations that the MCMC chain will be kept in the computer memory before writing to file. Larger values will use more RAM memory. If 'chunk' is less than 'gen', then 'chunk = gen'. If 'gen' is not divisible by 'chunk', then the remainder of the integer division will be subtracted from 'gen'. (default is 'gen/100')}
 
-\item{dir}{path of the directory to write the files (default is 'NULL'). If 'NULL' then function will write files to current directory (check 'getwd()'). If directory does not exist, then function will create a new directory. If function does not have permission (or fail) to write files to the pointed directory, then program will stop with an error message.}
+\item{dir}{path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.}
 
 \item{outname}{name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.}
 
 \item{IDlen}{length of digits of the numeric identifier used to name output files (default is 5).}
 
-\item{singlerate}{whether the function should fit a single regime and ignore the number of regimes painted to the tree (default is FALSE).}
+\item{singlerate}{whether the function should fit a single regime regardless of the regimes painted to the tree. (default is FALSE)}
 
-\item{rescaletree}{whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. Default is TRUE.}
+\item{rescaletree}{whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. (Default is FALSE).}
 
-\item{save.handle}{whether the handle for the MCMC should be save to the directory in addition to the output of the function.}
+\item{save.handle}{whether the handle for the MCMC should be saved to the directory in addition to the output files.}
 }
 \value{
-Function returns a list with the details of the MCMC run and write the MCMC output to the directory in a series of files.
+Function returns the 'handle' object and writes the posterior distribution and log as files in the directory (see 'dir'). The handle is a list with the details of the MCMC chain. It is composed by: *k* the number of traits; *p* the number of R regimes fitted to the tree; *ID* the unique identifier of the run; *dir* the directory where the posterior and log files were saved; *outname* the name for the chain; *trait.names* a vector with the label for the traits; *regime.names* a vector with the label for the rate regimes; *data* the data used in the analysis; *phy* a single phylogeny or the list of phylogenies; *prior* a list with the prior functions; *start* a list with the starting parameters for the chain; *gen* the number of generations for the chain; *mcmc.par* a list with the tunning parameters for the MCMC.
 }
 \description{
-Function runs a MCMC chain to estimate the posterior distribution of the evolutionary rate matrix and the phylogenetic root value given a phylogeny and trait data. Prior distribution and starting state of the chain can be chosen from one of the options provided. The function also accepts custom priors and starting states. Note that function requires output files in the chosen directory to be created and accessed. See 'Details' and 'Examples' for more information.
+Function runs a MCMC chain to estimate the posterior distribution of the evolutionary rate matrix (R) and the root value (phylogenetic mean). Prior distribution and starting state for the chain can be chosen among pre-defined options or manually set by the user using accompanying functions. Please note that the function will write files to the directory.
 }
 \details{
-Talk about how the handle object can be used to continue a MCMC chain and for other important tasks.
-Talk about function 'x' to collapse two or more regimes of a 'simmap' class tree.
-Explain the structure of the prior so that people can build their own.
-Explain how to fix the possible problem of function cannot write to the current directory. Need to be something simple. Maybe bullet proff it somehow.\cr
+The MCMC chain works by proposing values for the evolutionary rate matrices (R) fitted to the tree and the vector of root values (or phylogenetic mean). The proposal for the R matrices works by separating the variance-covariance matrix into a correlation matrix and a vector of standard deviations and making independent proposals for each. This scheme is called the 'separation strategy' and significantly improves the mix of the chain and also provide a intuitive distinction between the evolutionary correlation among the traits (correlation matrix) and the rates of evolution (standard deviation vector). The proposal for the root values are made all in a single step. \cr
 \cr
-Function will check if the tree has branch lengths and will fail if branch lengths are not present. Function will also rescale the phylogeny so that the distance from every tip to the root is equal to 1. Function will give a warning if the phylogenetic tree is not ultrametric. Although all the comutations can be made with a non-ultrametric tree, the model of evolution assumes that all the species were sampled in the same point in time, so the distance from any given tip to the root of the phylogeny should be the same. This is a common assumption of trait evolution models in comparative methods. One should be careful to interpret the results based on a non-ultrametric tree.\cr
+The function will print a series of messages to the screen. Those provide details of the setup of the chain, the unique identifier for the files and the log-likelihood of the starting value of the chain. Up to now these messages cannot be disabled. \cr
 \cr
-Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
+SAMPLE OF TREES: The MCMC chain can integrate the phylogenetic uncertainty or the uncertainty in the rate regimes by randomly sampling a phylogenetic tree from a list of trees. To activate this option, provide a list of 'simmap' or 'phylo' trees as the 'phy' argument. The MCMC will randomly sampled a tree each time the likelihood of the proposal is evaluated. Check the 'logAnalizer' function for more information. \cr
 \cr
-Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
+MCMC DOES NOT START: It is possible that the starting point shows a very low likelihood value, resulting in the collapse of the chain. This might be a result of a random sample from a very unlikely region of the prior. We suggest that another sample of the prior is taken or, if this does not solve the issue, that the starting point be the maximum likelihood estimate or set manually. \cr
+\cr
+MCMC DOES NOT CONVERGE OR MIX: If the MCMC is taking too long to converge (something between 500000 and 1500000 is OK) then the parameters of the chain might not be good for your data. First check the 'logAnalyzer' function. The recommended acceptance ratio is ~ 0.24, if it is too high, then the step size of the proposals might be too small, try increasing the step size. In contrast, low acceptance ratio might be due to step sizes too large. Try to decrease the size of the steps. If the effective sample size (ESS) for the chain (see 'checkConvergence' function) is to low for some parameter, then try to increase the proportion of times that the parameter is proposed in the MCMC. Future versions of the package will provide an adaptive MCMC step to automatically tun the sampler. There is no "magic default value" for this, it is normal to adjust the MCMC sampler in function of the characteristics of the data. \cr
+\cr
+CANNOT FIND THE POSTERIOR: The function writes the posterior into two files: The '.log' file has the log-likelihood and information about which phylogeny was used, which parameter was proposed and whether the step was accepted or not. The '.mcmc' file has the posterior for the parameters of the model. Those are identified by a name for the chain set by "outname" and an unique series of numbers set by "IDlen". Note that you will need the handle object provided as the output for the function (or saved to the directory if 'save.handle' is TRUE) to be able to load, plot and analyze the posterior distribution. \cr
+\cr
+TREE BRANCH LENGTHS: Function will check if the tree has branch lengths and will fail if branch lengths are not present. Function will show a warning if the phylogenetic tree is not ultrametric. Although all computations can be made with a non-ultrametric tree, the model of evolution assumes that all the species were sampled from the same slice of time. Such that the distance from any given tip to the root of the phylogeny should be the same. This is a very common assumption of trait evolution models in comparative methods. Please be careful to interpret parameter estimates in the case of a non-ultrametric tree.
+}
+\examples{
+\donttest{
+
+}
 }
 \author{
-daniel
+Daniel S. Caetano and Luke J. Harmon
+}
+\seealso{
+\code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
 }
 
