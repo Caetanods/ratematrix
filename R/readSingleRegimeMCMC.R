@@ -17,7 +17,11 @@ readSingleRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
         direct <- dir
     }
 
-    post <- seq(round(out$gen * burn)+1, out$gen+1, by=thin) ## First line is the header.
+    if( burn == 0 || burn < 0 ){
+        post <- seq(round(out$gen)+1, out$gen+1, by=thin)
+    } else{
+        post <- seq(round(out$gen * burn)+1, out$gen+1, by=thin) ## First line is the header.
+    }
 
     ## In this version the posterior is in a single file.
     mcmc <- read_lines( file=file.path(direct, paste(out$outname, ".", out$ID, ".mcmc", sep="")) )
