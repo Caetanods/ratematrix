@@ -1,15 +1,42 @@
-##' Make samples from the prior density.
+##' Generates samples from the prior distribution used in the MCMC chain.
 ##'
 ##' The function will inherit the same parameters from "make.prior.zhang" function.
 ##'
-##' This function is useful to generate a starting value for a MCMC chain and to plot the prior distribution for the model. When generating the starting value make sure to set n=1. To plot the prior distribution you should use a larger sample size to result in a nice-looking plot. For the starting value of a MCMC one can choose whether to sample the starting vector of standard deviations from its prior or to derive from the covariance matrix. Empirical trials show that the MCMC will start easier (the likelihood will behave better) if the vector of standard deviations is computed from the sampled variance covariance matrices rather than sampled independently from the respective prior densities (set sample.sd=FALSE). If using 'sample.sd=TRUE' the MCMC might have dificulties to accept moves related to the evolutionary rate matrices. However, both options are correct for starting the MCMC, it is just a practical matter.
-##' @title Sample from the prior
-##' @param n Numeric. Number of samples from the prior.
-##' @param prior List. The output from the "make.prior.zhang" function.
-##' @param sample.sd Whether the function should sample the vector of standard deviations independently from the samples of the covariance matrices. If set to FALSE then the standard deviations will be derived from the covariance matrices. If set to TRUE (default) then standard deviations are independent from the covariance matrices and are sampled from their correspondent prior density. See 'Details'.
-##' @return A list with the parameters draw from the prior. The structure is the same to be used as the "start" parameter of the MCMC chain.
+##' 
+##' @title Take samples from the prior distribution
+##' @param n number of samples to be generated.
+##' @param prior the object with the prior function. See 'makePrior' for more information.
+##' @param sample.sd whether the function should sample the vector of standard deviations independently from the correlation matrices. If set to FALSE, the samples for standard deviation will be derived from the covariance matrices. If set to TRUE (default) then standard deviations are independently sampled from the own prior distribution and are not derived from the samples of the correlation matrix.
+##' @return A list with samples from the prior distribution. The structure of this list is the same as required by the parameter 'start' of the 'ratematrixMCMC'.
 ##' @importFrom corpcor decompose.cov
+##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @export
+##' @seealso \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the samples from the prior.
+##' @examples
+##' \donttest{
+##' par.mu <- rbind( c(-10, 10), c(-10, 10), c(-10, 10) )
+##' par.sd <- c(0, 10)
+##' prior <- makePrior(r=3, p=1, par.mu=par.mu, par.sd=par.sd)
+##' ## Sample prior. Standard deviation sampled independently.
+##' samples.ind <- samplePrior(n=1000, prior=prior, sample.sd=TRUE)
+##' ## Now plot.
+##' plotRatematrix(samples.ind, set.xlim=c(-100,100))
+##' ## Sample prior. Now standard deviation is NOT sampled, just derived from the vcv matrices
+##' ##    sampled from the inverse-Wishart distribution.
+##' samples.cor <- samplePrior(n=1000, prior=prior, sample.sd=FALSE)
+##' ## Note how the inverse-Wishart is much more informative than the 'separation strategy'.
+##' ##    The x axis is the same.
+##' plotRatematrix(samples.cor, set.xlim=c(-100,100))
+##' 
+##' ## We can also use the sample from the prior to start the MCMC:
+##' par.mu <- rbind( c(-10, 10), c(-10, 10) )
+##' par.sd <- rbind( c(0, 10), c(0, 10) )
+##' prior <- makePrior(r=2, p=2, par.mu=par.mu, par.sd=par.sd)
+##' ## Need to take a single sample to be used as the starting point.
+##' start <- samplePrior(n=1, prior=prior)
+##' data(centrarchidae)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000, start=start)
+##' }
 samplePrior <- function(n, prior, sample.sd=TRUE){
     pars <- prior$pars
 
