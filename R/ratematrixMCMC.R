@@ -60,8 +60,8 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     cat("\n")
 
     ## Inform that default options are being used:
-    if( prior == "empirical_mean" ) cat("Using default prior. \n")
-    if( start == "prior_sample" ) cat("Using default starting point. \n")
+    if( inherits(prior, what="character") && prior == "empirical_mean" ) cat("Using default prior. \n")
+    if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
     if( v == 50 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.025 ) cat("Using default proposal settings. \n")
 
     ## Check if 'phy' is a single phylogeny or a list of phylogenies.
