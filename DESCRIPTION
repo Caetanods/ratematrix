@@ -48,7 +48,6 @@ Collate:
     "plotRatematrix.R"
     "plotPrior.R"
     "plotRootValue.R"
-    "makeRegimeMap.R"
     "makePriorBarnard.R"
     "makePriorIWish.R"
     "makePrior.R"
