@@ -2,30 +2,43 @@
 % Please edit documentation in R/readMCMC.R
 \name{readMCMC}
 \alias{readMCMC}
-\title{Read the output files from the MCMC.}
+\title{Read the output files from the MCMC}
 \usage{
-readMCMC(out, burn = 0.25, thin = 100, dir = NULL)
+readMCMC(handle, burn = 0.25, thin = 100, dir = NULL)
 }
 \arguments{
-\item{out}{the output object from the 'ratematrixMCMC' function.}
+\item{handle}{the output object from the 'ratematrixMCMC' function.}
 
 \item{burn}{the proportion of the burnin to be pruned from the MCMC chain. A number between 0 and 1 (default is 0.25).}
 
 \item{thin}{the thinning of the posterior distribution. A number with the interval between each MCMC step to be kept in the posterior distribution (default is 100).}
 
-\item{dir}{directory where output files from the MCMC run are stored. If 'NULL' (default), then files are read from the directory chose when running the MCMC chain using the argument 'dir' of the 'ratematrixMCMC' function. Otherwise function will read files from 'dir'.}
+\item{dir}{directory where output files from the MCMC run are stored. If 'NULL' (default), then files are read from the directory chosen when running the MCMC chain using the argument 'dir' of the 'ratematrixMCMC' function (stored on handle). Otherwise function will read files from 'dir'.}
 }
 \value{
-List with the MCMC chain for the phylogenetic mean (root value) and evolutionary rate matrices (R). 'root' are the values for the phylogenetic mean; 'matrix' is a list of length equal to the number of matrices fitted to the tree, each of those are lists with the chain of respective R matrices; 'log.lik' is the log likelihood (not posterior) for the chain.
+List with the MCMC chain for the phylogenetic mean (root value) and evolutionary rate matrices (R). *root* are the values for the phylogenetic mean in matrix format; *matrix* is a list of length equal to the number of matrices fitted to the tree, each of those are lists with the chain of respective R matrices.
 }
 \description{
-Read the results of a MCMC chain.
+Reads the output files from the MCMC with posterior distribution of the parameter estimates.
 }
-\details{
-Function will use 'readr' package to read the output files produced by the Markov chain Monte Carlo
-   analysis performed with the function 'ratematrixMCMC'.
+\examples{
+\donttest{
+## Load data
+data(centrarchidae)
+## Run MCMC. This is just a very short chain.
+handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+## Load posterior distribution, make plots and check the log.
+posterior <- readMCMC(handle, burn=0.25, thin=1)
+plotRatematrix(posterior)
+plotRootValue(posterior)
+plotPrior(handle)
+logAnalizer(handle)
+}
 }
 \author{
-daniel
+Daniel S. Caetano and Luke J. Harmon
+}
+\seealso{
+\code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
 }
 
