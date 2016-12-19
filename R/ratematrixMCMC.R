@@ -223,8 +223,6 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             }
         }
 
-        cat(paste0("chunk", chunk, "\n"))
-        cat(paste0("gen", gen, "\n"))
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
                                      , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
                                       , save.handle=save.handle)
