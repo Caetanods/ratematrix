@@ -16,11 +16,11 @@ mergePosterior <- function(..., p){
 
     if( p == 1 ){
         mcmc.join$matrix <- do.call(c, lapply(mcmc.list, function(x) x$matrix) )
+        class( mcmc.join ) <- "ratematrix_single_chain"
     } else{        
         mcmc.join$matrix <- lapply(1:p, function(y) do.call(c, lapply(mcmc.list, function(x) x$matrix[[y]]) ) )
+        class( mcmc.join ) <- "ratematrix_multi_chain"
     }
 
-    mcmc.join$log.lik <- do.call(c, lapply(mcmc.list, function(x) x$log.lik ) )
-    class( mcmc.join ) <- "ratematrix_merged_posterior"
     return( mcmc.join )
 }
