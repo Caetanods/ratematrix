@@ -7,25 +7,35 @@
 testRatematrix(chain, par = "all")
 }
 \arguments{
-\item{chain}{The MCMC chain produced by the read function.}
+\item{chain}{the posterior distribution of parameter estimates as output of the function 'readMCMC'.}
 
-\item{par}{This parameter sets the attribute of the R matrices that is checked by the test. Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (variance vector). Chose 'correlation' to test for the median overlap among the correlations (correlation matrix).}
+\item{par}{sets which of the attributes of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates'. Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (the variance vector). Chose 'correlation' to test for the median overlap among the correlations (the distribution of correlation matrices).}
 }
 \value{
 Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
 }
 \description{
-Test difference between fitted evolutionary rate matrices.
+Function uses summary statistics to test for differences betwwen the posterior distribution of parameter estimates for the evolutionary rate matrix regimes.
 }
 \details{
-This functions performs a test to check whether the posterior distribution of the fitted matrices are
-   different. When the test is significant this means that the posterior distribution of the elements
-   of the evolutionary rate matrices does not overlap more than 5%. This test is not a p value, since
-   this is not an estimate of a probability of deviance from a given null distribution. On the other hand,
-   the test relies on the median overlap of the posterior distribution. It assumes that when the posterior
-   distribution of two or more paramaters do not overlap, then there is a significative difference
-   between the parameters. Note that the test will applied to all pairwise combinations of the
-   matrices fitted to the tree. You can use the 'par' parameter to set which are the elements of the R matrix
-   you are interested in comparing.
+This functions performs a test to check whether the posterior distribution of the fitted matrices are different. When the test is significant this means that the posterior distribution of the elements of the evolutionary rate matrices does not overlap more than 5%. This test is not a p value, since this is not an estimate of a probability of deviance from a given null distribution. The test relies on the median overlap of the posterior distribution. It assumes that when the posterior distribution of two or more paramaters do not overlap, then there is a significative difference between the parameters. \cr
+\cr
+When a posterior distribution with more than two rate regimes is fitted to the data, the function performs all pairwise combinations tests.
+}
+\examples{
+\donttest{
+## Load data
+data(centrarchidae)
+## Run MCMC. This is just a very short chain.
+handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+## Load posterior distribution, make plots and check the log.
+posterior <- readMCMC(handle, burn=0.25, thin=1)
+testRatematrix(chain=posterior, par="all")
+testRatematrix(chain=posterior, par="rates")
+testRatematrix(chain=posterior, par="correlation")
+}
+}
+\author{
+Daniel S. Caetano and Luke J. Harmon
 }
 
