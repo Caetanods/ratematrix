@@ -2,31 +2,42 @@
 % Please edit documentation in R/estimateTimeMCMC.R
 \name{estimateTimeMCMC}
 \alias{estimateTimeMCMC}
-\title{Estimate the time needed to run the MCMC.}
+\title{Time estimate to complete a MCMC chain}
 \usage{
 estimateTimeMCMC(data, phy, gen, eval.times = 5, singlerate = FALSE)
 }
 \arguments{
 \item{data}{a matrix with the data. Each column is a different trait and species names need to be provided as rownames (rownames(data) == phy$tip.label).}
 
-\item{phy}{a phylogeny of the class "simmap" with the mapped regimes. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in phy. Regime names will also be used. See 'Details'.}
+\item{phy}{a phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.}
 
-\item{gen}{the number of generations of the MCMC to estime the time.}
+\item{gen}{number of generations of the complete MCMC chain. This is used to create the time estimate for the analysis.}
 
-\item{eval.times}{the number of replicates to account for uncertainty in computing times. The median of all evaluations will be used in the final estimate (default is 5).}
+\item{eval.times}{number of replicates to compute the likelihood (default is 5). A time average across replicates will be used in order to account for the uncertainty associated with computing times.}
 
 \item{singlerate}{whether the function should fit a single regime and ignore the number of regimes painted to the tree (default is FALSE).}
 }
 \value{
-a numeric value with the time in seconds and print a message with the result.
+Function returns a numeric value with the time estimate in hours and prints a message to the screen with the result.
 }
 \description{
 Estimate time needed to run the MCMC. Function will estimate the time based on the computation of the log-likelihood, prior density, and the Jacobian of the proposal step. The time estimated is a minimum bound based on the processing power of the current computer. Running the MCMC in different computers might change the time.
 }
 \details{
-Function will use the package 'microbenchmark' if present otherwise it will compute time using the 'proc.time' function.
+Function will use the package 'microbenchmark' if present, otherwise it will compute time using the 'proc.time' function. We recommend users to be sure that the available processors are free when running the time estimate for a more accurate estimate. It is important to note that the same analysis in different computers (or nodes of a server) might have different times.
+}
+\examples{
+## For two traits, two regimes and 27 species:
+data(centrarchidae)
+estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000000)
+## For four traits, two regimes and 125 species:
+data(anoles)
+estimateTimeMCMC(data=anoles$data[,1:4], phy=anoles$phy, gen=1000000)
 }
 \author{
-daniel
+Daniel S. Caetano and Luke J. Harmon
+}
+\seealso{
+\code{\link{ microbenchmark::microbenchmark }} for a precise function to estimate computing times.
 }
 
