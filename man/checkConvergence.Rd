@@ -20,7 +20,7 @@ Function perform convergence tests using the potential scale reduction factor (G
 \cr
 Multiple chains need to be replicates of the same analysis (e.g., multiple runs of the 'ratematrixMCMC' function with the same set of arguments, possibily with varying starting points). We recommend users to perform the Gelman's R test by providing two or more independent MCMC chains with different starting points. This test is more robust than the Heidelberger test. The advantage of the Heidelberger test is that it can be used with a single MCMC chain, so it can be useful for a preliminary test prior to running a full convergence analysis with multiple chains. \cr
 \cr
-See more information about each of these tests in the functions 'coda::gelman.diag' and 'coda::heidel.diag', both from the package 'coda'.
+The 'Gelman's R' test is based on the potential scale reduction factor which is expect to be equal to 1 when convergence is achieved whereas the Heidelberger is based on pass or fail of two statistics. See more information about each of these tests in the references below and in the documentation for the functions 'coda::gelman.diag' and 'coda::heidel.diag', both from the package 'coda'.
 }
 \examples{
 data(centrarchidae)
