@@ -8,7 +8,6 @@
 ##' @param R A named list of rate matrices. Names must match the regimes of the 'simmap' tree.
 ##' @param mu A vector of phylogenetic means.
 ##' @return Returns the log likelihood.
-##' @export
 mvLogLik <- function(X, phy, R, mu){
 
     k <- ncol(X) ## Number of traits.
