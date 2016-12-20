@@ -16,7 +16,20 @@
 ##' @param show.zero whether a vertical line should be plotted showing the position of the value 0 in the plot.
 ##' @return A plot with the posterior density for the root values of the MCMC analysis. Many characteristics of the plot can be controlled by the user.
 ##' @export
-##' @author daniel
+##' @author Daniel S. Caetano and Luke J. Harmon
+##' @examples
+##' \donttest{
+##' ## Load data
+##' data(centrarchidae)
+##' ## Run MCMC. This is just a very short chain.
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+##' ## Load posterior distribution, make plots and check the log.
+##' posterior <- readMCMC(handle, burn=0.25, thin=1)
+##' plotRatematrix(posterior)
+##' plotRootValue(posterior)
+##' plotPrior(handle)
+##' logAnalizer(handle)
+##' }
 plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, set.cex.axis=1.5, set.xlim=NULL, hpd=100, mfrow=1, vline.values=NULL, vline.color=NULL, vline.wd=NULL, show.zero=FALSE){
     ## Plot Root value. Will work just like the plotRatematrix.
     ntr <- ncol( chain$root )

@@ -40,7 +40,21 @@ A plot with the posterior density for the root values of the MCMC analysis. Many
 \description{
 Plot the posterior distribution of root values sampled from the MCMC analysis using 'ratematrixMCMC' function.
 }
+\examples{
+\donttest{
+## Load data
+data(centrarchidae)
+## Run MCMC. This is just a very short chain.
+handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+## Load posterior distribution, make plots and check the log.
+posterior <- readMCMC(handle, burn=0.25, thin=1)
+plotRatematrix(posterior)
+plotRootValue(posterior)
+plotPrior(handle)
+logAnalizer(handle)
+}
+}
 \author{
-daniel
+Daniel S. Caetano and Luke J. Harmon
 }
 
