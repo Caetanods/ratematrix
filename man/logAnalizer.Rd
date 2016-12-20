@@ -4,10 +4,12 @@
 \alias{logAnalizer}
 \title{Make analysis of the log file of the MCMC chain}
 \usage{
-logAnalizer(out, burn = 0.25, thin = 1, show.plots = TRUE,
+logAnalizer(handle, burn = 0.25, thin = 1, show.plots = TRUE,
   print.result = TRUE, dir = NULL)
 }
 \arguments{
+\item{handle}{the output object from the 'ratematrixMCMC' function.}
+
 \item{burn}{the proportion of burn-in. A numeric value between 0 and 1.}
 
 \item{thin}{the number of generations to skip when reading the posterior distribution.}
@@ -17,8 +19,6 @@ logAnalizer(out, burn = 0.25, thin = 1, show.plots = TRUE,
 \item{print.result}{whether to print the results of the acceptance ratio to the screen.}
 
 \item{dir}{the directory where to find the log file. If set to 'NULL' (default), the function will search for the files in the same directory that the MCMC chain was made (handle$dir).}
-
-\item{handle}{the output object from the 'ratematrixMCMC' function.}
 }
 \value{
 A named vector with the acceptance ratio for the whole MCMC and each of the parameters of the model. If a list of phylogenetic trees was provided to the MCMC chain, then the output is a list with the acceptance ratio for the parameters and a table showing the frequency in which each of the phylogenies was accepted in a move step.

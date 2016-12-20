@@ -29,19 +29,19 @@
 ##' plotPrior(handle)
 ##' logAnalizer(handle)
 ##' }
-logAnalizer <- function(out, burn=0.25, thin=1, show.plots=TRUE, print.result=TRUE, dir=NULL){
+logAnalizer <- function(handle, burn=0.25, thin=1, show.plots=TRUE, print.result=TRUE, dir=NULL){
     ## Need to read the log output. Then make some plots or such.
 
     ## Check the directory.
     if(is.null(dir)){
-        direct <- out$dir
+        direct <- handle$dir
     } else{
         direct <- dir
     }
 
     ## Read the log and create a matrix.
-    post <- seq(round(out$gen * burn)+1, out$gen+1, by=thin) ## First line is the header.
-    log.mcmc <- read_lines( file=file.path(direct, paste(out$outname, ".", out$ID, ".log", sep="")) )
+    post <- seq(round(handle$gen * burn)+1, handle$gen+1, by=thin) ## First line is the header.
+    log.mcmc <- read_lines( file=file.path(direct, paste(handle$outname, ".", handle$ID, ".log", sep="")) )
     header <- log.mcmc[1]
     header <- as.character( strsplit(x=header, split=";", fixed=TRUE)[[1]] )
     log.mcmc <- log.mcmc[post]
@@ -62,7 +62,7 @@ logAnalizer <- function(out, burn=0.25, thin=1, show.plots=TRUE, print.result=TR
     if( print.result==TRUE ){
         cat("Acceptance ratio for the MCMC and parameters:\n")
         print( accept )
-        if( is.list(out$phy[[1]]) ){
+        if( is.list(handle$phy[[1]]) ){
             cat("\n")
             cat("Acceptance ratio for each phylogeny:\n")
             print( mix.phylo )
@@ -87,7 +87,7 @@ logAnalizer <- function(out, burn=0.25, thin=1, show.plots=TRUE, print.result=TR
         par(old.par)
     }
 
-    if( is.list(out$phy[[1]]) ){
+    if( is.list(handle$phy[[1]]) ){
         return( list(accept.ratio=accept, mix.phylo=mix.phylo) )
     } else{
         return( accept.ratio=accept )
