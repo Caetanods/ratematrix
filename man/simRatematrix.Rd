@@ -2,26 +2,32 @@
 % Please edit documentation in R/simRatematrix.R
 \name{simRatematrix}
 \alias{simRatematrix}
-\title{Simulates multivariate trait evolution using a Brownian motion model.}
+\title{Simulates multivariate trait evolution using a Brownian motion model}
 \usage{
 simRatematrix(tree, vcv, anc = NULL, internal = FALSE)
 }
 \arguments{
-\item{tree}{phylo. A phylogenetic tree in 'ape' format.}
+\item{tree}{a phylogenetic tree of 'phylo' format.}
 
-\item{vcv}{matrix. A evolutionary rate matrix (R).}
+\item{vcv}{a variance covariance matrix (the evolutionary rate matrix).}
 
-\item{anc}{numeric. Vector of the same length as the number of traits to be simulated (same as the dimension of the 'vcv' matrix). This is used as the values for the root in the simulations. If 'NULL' then all traits have root value of 0.}
+\item{anc}{a vector of the same length as the number of traits to be simulated (same as the dimension of the 'vcv' matrix). This is used as the values for the root in the simulations. If 'NULL' then all traits have root value of 0.}
 
-\item{internal}{boolean. Whether to return the values simulated for the nodes in the phylogeny. Default only returns the values simulated for the tips.}
+\item{internal}{whether to return the values simulated for the nodes in the phylogeny. If FALSE (default), then only returns the values simulated for the tips.}
 }
 \value{
 Returns a matrix with each trait values for the tips. Traits are distributed in the rows and tips are distributed in the columns.
 }
 \description{
-Function to simulate correlated traits under a multivariate Brownian motion model.
+Funyction to simulate correlated traits under a multivariate Brownian motion model.
 }
 \details{
-This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other application please refer to the original implementation of 'sim.corrs' in the package 'phytools'. The function uses a covariance matrix (evolutionary rate matrix R) to indicate the rates of the traits.
+This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other applications please refer to the original implementation of 'sim.corrs' in the package 'phytools'. The function uses a covariance matrix (evolutionary rate matrix R) to indicate the rates of the traits.
+}
+\author{
+Daniel S. Caetano and Luke J. Harmon
+}
+\seealso{
+\code{\link{ phytools::sim.corrs }} for the original version of this function.
 }
 

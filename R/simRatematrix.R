@@ -1,13 +1,15 @@
-##' Function to simulate correlated traits under a multivariate Brownian motion model.
+##' Funyction to simulate correlated traits under a multivariate Brownian motion model.
 ##'
-##' This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other application please refer to the original implementation of 'sim.corrs' in the package 'phytools'. The function uses a covariance matrix (evolutionary rate matrix R) to indicate the rates of the traits.
-##' @title Simulates multivariate trait evolution using a Brownian motion model.
-##' @param tree phylo. A phylogenetic tree in 'ape' format.
-##' @param vcv matrix. A evolutionary rate matrix (R).
-##' @param anc numeric. Vector of the same length as the number of traits to be simulated (same as the dimension of the 'vcv' matrix). This is used as the values for the root in the simulations. If 'NULL' then all traits have root value of 0.
-##' @param internal boolean. Whether to return the values simulated for the nodes in the phylogeny. Default only returns the values simulated for the tips.
+##' This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other applications please refer to the original implementation of 'sim.corrs' in the package 'phytools'. The function uses a covariance matrix (evolutionary rate matrix R) to indicate the rates of the traits.
+##' @title Simulates multivariate trait evolution using a Brownian motion model
+##' @param tree a phylogenetic tree of 'phylo' format.
+##' @param vcv a variance covariance matrix (the evolutionary rate matrix).
+##' @param anc a vector of the same length as the number of traits to be simulated (same as the dimension of the 'vcv' matrix). This is used as the values for the root in the simulations. If 'NULL' then all traits have root value of 0.
+##' @param internal whether to return the values simulated for the nodes in the phylogeny. If FALSE (default), then only returns the values simulated for the tips.
 ##' @return Returns a matrix with each trait values for the tips. Traits are distributed in the rows and tips are distributed in the columns.
 ##' @export
+##' @author Daniel S. Caetano and Luke J. Harmon
+##' @seealso \code{\link{ phytools::sim.corrs }} for the original version of this function.
 simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
     if (!inherits(tree, "phylo")) 
         stop("tree should be an object of class \"phylo\".")
