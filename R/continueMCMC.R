@@ -1,21 +1,37 @@
-##' That
+##' Function to continue an unfinished MCMC chain or to append new generation to a previously finished MCMC. It works by reading the last state of the chain and the tunning parameters of the previous chain, then continuing it from this step.
 ##'
-##' This
-##' @title Make the thing!
-##' @param handle 
-##' @param add.gen 
-##' @param save.handle 
-##' @return The thing!
+##' The function will append the new generations to the files created by the prior run of the 'ratematrixMCMC' function. The function will search for these files in the same directory that the previous run was performed. You should double-check if the files are in the path set in 'handle$dir'. If the files are not in the same location, you can provide a new path (relative or absolute path) to the argument 'dir'. The path provided to 'dir' will override the path pointed by 'handle$dir'. The new 'handle' output from 'continueMCMC' will have a updated total number of generations and will also update the directory path, if required.
+##' @title Continue unfinished MCMC chain or add more generations
+##' @param handle the output of 'ratematrixMCMC'.
+##' @param add.gen number of generations to be added to the chain. This is used after the chain finished the previously set number of generations, but more generations are needed. If 'NULL' (default), the function will only continue unfinished chains.
+##' @param save.handle whether to save the updated 'handle' object to the directory.
+##' @param dir an optional path to the posterior chain and log files. See 'Details'.
+##' @return Function will write the parameter values for each generation and the log to files. The new generations will be appended to the same files created by 'ratematrixMCMC'.
 ##' @export
 ##' @importFrom corpcor decompose.cov
-##' @author daniel
-continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE){
+##' @author Daniel S. Caetano and Luke J. Harmon
+##' @examples
+##' ## Continue unfinished run.
+##' data(centrarchidae)
+##' ## Run the next line. Then quickly stop R from running to simulate an unexpected termination.
+##' set.seed(1234)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=4000)
+##' ## Now continue the same MCMC chain. First we need to read the 'handle' from file, because
+##' ##    the MCMC chain did not finished properly and the 'handle' object was not created.
+##' handle ## 'object not found'.
+##' handle <- readRDS(file="ratematrixMCMC.85636.mcmc.handle.rds")
+##' handle.cont <- continueMCMC(handle=handle)
+##' ## We can also add some generations to this same chain:
+##' handle.add <- continueMCMC(handle=handle.cont, add.gen=1000)
+continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
     ## Need to use the elements of the handle to continue the mcmc.
     ## The point here is that the file for the MCMC and for the log need to be the same as the one before.
     ## So we need to open the connection to keep appending to it.
     ## Also need to read the last line of the MCMC file and use it as the starting state.
     ## No special step is needed to write to the same file. Just need to take care and not open it again or write
     ##    another header to the same file. This might need another argument for the single and multi MCMC functions.
+
+    if( !is.null(dir) ) handle$dir <- dir
 
     if( handle$p == 1 ){
 
