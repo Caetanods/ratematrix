@@ -2,7 +2,7 @@
 % Please edit documentation in R/mergeSimmap.R
 \name{mergeSimmap}
 \alias{mergeSimmap}
-\title{Merge two or more regimes of a 'simmap' tree.}
+\title{Merge two or more regimes of a 'simmap' tree}
 \usage{
 mergeSimmap(phy, merge.regimes = NULL, new.regime = NULL,
   drop.regimes = FALSE)
@@ -12,7 +12,7 @@ mergeSimmap(phy, merge.regimes = NULL, new.regime = NULL,
 
 \item{merge.regimes}{a vector with the names of the regimes to be merged.}
 
-\item{new.regime}{the name of the new regime}
+\item{new.regime}{the name of the new regime.}
 
 \item{drop.regimes}{whether to simply drop all information about the regimes and return a phylogeny of class 'phylo'.}
 }
@@ -20,16 +20,39 @@ mergeSimmap(phy, merge.regimes = NULL, new.regime = NULL,
 A phylogeny of the format 'simmap' with merged regimes.
 }
 \description{
-Function will merge regimes to form a new regime. The distribution of the regimes across the tree will not change. The function only re-label the regimes such that two or more regime are now recognized as a unique new regime. The function can also drop all information about regimes and return a phylogeny of the class 'phylo'.
+Function will merge regimes to form a new regime. The distribution of the regimes across the tree will not change. The function only re-label the regimes such that two or more regime are now recognized as an unique new regime (with a new label). The function can also drop all information about regimes and return a phylogeny of the class 'phylo'.
 }
 \details{
-Function takes the elements of 'merge.regimes' and collapse all those regimes into a single one. The branch length associated with 'merge.regimes' are summed and assigned to the regime correspondent to the first element of the 'merge.regimes' vector. Then this new regime is renamed as 'new.regime'.\cr
+Function takes the elements of the 'merge.regimes' vector and collapse all those regimes into a single one. The branch length associated with 'merge.regimes' are summed and assigned to the regime correspondent to the first element of the 'merge.regimes' vector. Then this new regime is renamed as 'new.regime'.\cr
 \cr
-The original distribution of the regimes across the branches of the phylogeny will not change. This function only manipulate the labels of the regimes.\cr
+The original distribution of the regimes across the branches of the phylogeny will not change. This function only manipulates the labels of the regimes.\cr
 \cr
 If the original phylogeny has only two regimes or if 'drop.regimes' is set to TRUE, then function will drop all the information about regimes and the phylogeny will be of class 'phylo' only.
 }
+\examples{
+\donttest{
+library( phytools ) ## Need phytools for this example.
+data(centrarchidae)
+plot( centrarchidae$phy.map )
+class( centrarchidae$phy.map )
+## Now drop all regime information:
+no.regime.phy <- mergeSimmap(centrarchidae$phy.map, drop.regimes=TRUE)
+plot( no.regime.phy )
+class( no.regime.phy )
+## Create a new regime with three states:
+dt <- c(rep( c("water","earth"), each=10 ), rep("fire", times=7))
+names(dt) <- no.regime.phy$tip.label
+map.phy <- phytools::make.simmap(tree=no.regime.phy, x=dt)
+plot( map.phy )
+## Merge two regimes:
+merged.phy <- mergeSimmap(phy=map.phy, merge.regimes=c("water","earth"), new.regime="mud")
+plot( merged.phy )
+}
+}
 \author{
-daniel
+Daniel S. Caetano and Luke J. Harmon
+}
+\seealso{
+\code{\link{ phytools::make.simmap }} for mapping rate regimes to phylogenetic trees.
 }
 
