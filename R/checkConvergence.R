@@ -1,28 +1,77 @@
 ##' Make convergence test for the MCMC chain.
 ##'
-##' This function makes convergence test for the MCMC chains. It uses the Heidel test or the potential scale reduction factor (Gelman's R), both from the package 'coda'.
-##' To calculate the convergence this function will check if each value of each cell of the matrices have
-##'    converged.
-##' @title Convergence test.
-##' @param mcmc.chain The MCMC chain. Output of the function to read the chain. It works with any number of matrices fitted to the tree. If 'method="gelman"' the argument need to be a list of the MCMC chain results. Each element of the list will be the result of an independent MCMC run starting from a different starting position.
-##' @param p numeric. The number of evolutionary rate matrices fitted to the tree.
-##' @param method The method to be used to check convergence. If 'method="heidel"' then the Heidelberger and Welch diagnostic for convergence will be conducted. This test requires a single MCMC chain. If 'method="gelman"' then the potential scale reduction factor will be calculated. This method requires at least two MCMC chains for the same model starting from different starting points. The later is recommended.
-##' @param multivariate logical. Whether the 'gelman.diag' function from the package 'coda' should perform the diagnostics using the multivariate version. The default value is TRUE. However, for some matrix configurations the function can return an error that the '(...) leading (...) of order (...) is not positive definite'. Then, setting this argument as FALSE will solve the issue.
-##' @return Function returns a list with two elements. If the 'method="heidel"' the first element of the list is a matrix with colums varying dependent of the number of matrices fitted to the tree. This matrix has two lines, each is a component of the Heidel diagnostic. TRUE is when the convergence test passed and FALSE is when it falied. If the 'method="gelman"' the first element of the list is another list with the results of the 'gelman.diag' function. This list will have length equal to 1+p: first element is the result for the root value and the following elements are results for the fitted R matrices. The second element of the list returned by the function is a matrix with the effective sample sizes for the root and each cell of the fitted R matrices.
+##' Function perform convergence tests using the potential scale reduction factor (Gelman's R) or the Heidelberger test. The Gelman's R test will be performed if two or more MCMC cains are provided as imput. If only one MCMC chain is provided, then the function will perform only the Heidelberger test. \cr
+##' \cr
+##' Multiple chains need to be replicates of the same analysis (e.g., multiple runs of the 'ratematrixMCMC' function with the same set of arguments, possibily with varying starting points). We recommend users to perform the Gelman's R test by providing two or more independent MCMC chains with different starting points. This test is more robust than the Heidelberger test. The advantage of the Heidelberger test is that it can be used with a single MCMC chain, so it can be useful for a preliminary test prior to running a full convergence analysis with multiple chains. \cr
+##' \cr
+##' The 'Gelman's R' test is based on the potential scale reduction factor which is expect to be equal to 1 when convergence is achieved whereas the Heidelberger is based on pass or fail of two statistics. See more information about each of these tests in the references below and in the documentation for the functions 'coda::gelman.diag' and 'coda::heidel.diag', both from the package 'coda'.
+##' @title Performs convergence tests
+##' @param ... posterior(s) distribution(s) of parameter estimates. This can be a single MCMC chain or multiple independent chains from the same model. The type of convergence analysis will be dependent on the number of MCMC chains provided as imput. See 'Details'.
+##' @return The format of the output depends of the type of test performed. The Gelman's R test will return a list with two elements. The first element is a list with the results for the potential scale reduction factor for the root values and the evolutionary rate matrices. The test for the R matrices is performed element by element, the names of the columns show the number of the row and column for each element. The length of this list will depend on the number of rate regimes fitted to the phylogenetic tree. The Heidelberger test also returns a list with two elements, the first element is a table with one column for the root values and each evolutionary rate matrix regime fitted to the tree. The colnames show the type of diagnostic used, the values are whether the test passed or not. The second element of the list, independent of the type of convergence test, is a estimate of the Effective Sample Size for each parameter of the model.
 ##' @export
+##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @importFrom coda mcmc effectiveSize mcmc.list gelman.diag
-checkConvergence <- function(mcmc.chain, p, method=c("heidel","gelman"), multivariate=TRUE){
+##' @examples
+##' data(centrarchidae)
+##' handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000)
+##' posterior1 <- readMCMC(handle1, burn=0.25, thin=1)
+##' handle2 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000)
+##' posterior2 <- readMCMC(handle2, burn=0.25, thin=1)
+##' ## Note that these are VERY short chains used as example only.
+##' ## A convergence test using 'Gelman's R' calculated from two independent MCMC chains.
+##' checkConvergence(posterior1, posterior2)
+##' ## A convergence test using 'Heidelberger test' calculated from a single MCMC chain.
+##' checkConvergence(posterior1)
+##' @references
+##' \describe{
+##'   \item{}{Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, Statistical Science, 7, 457-511.}
+##'   \item{}{Heidelberger, P and Welch, PD (1983) Simulation run length control in the presence of an initial transient. Opns. Res., 31, 1109-44.}
+##' }
+checkConvergence <- function(...){
+
+    chains <- list(...)
+
+    ## Test if all the posteriors provided are of the same class.
+    ## Then calculate the value of p, if necessary and proceed.
+    ## The type of convergence test will be given by the class of the posterior.
+    
+    if( sum( sapply(chains, function(x) inherits(x, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ) ) == length(chains) ){
+        
+        if( length( unique( sapply(chains, function(x) class(x) ) ) ) > 1 ) stop("Posterior chains need to belong to the same model. \n")
+        
+        if( length(chains) == 1 ){
+            method <- "heidel"
+            if( inherits(chains[[1]], what=c("ratematrix_single_chain")) ){
+                p <- 1
+            } else{
+                p <- length( chains[[1]]$matrix )
+            }
+        }
+        
+        if( length(chains) > 1 ){
+            method <- "gelman"
+            if( inherits(chains[[1]], what=c("ratematrix_single_chain")) ){
+                p <- 1
+            } else{
+                p <- length( chains[[1]]$matrix )
+            }
+        }
+        
+    } else{
+        stop("Arguments need to be output of 'readMCMC' function. Of class 'ratematrix_single_chain' or 'ratematrix_multi_chain'. \n")
+    }
 
     if(p == 1){
+        k <- ncol( chains[[1]]$matrix[[1]] )
         if(method == "heidel"){
-            root.mcmc <- coda::mcmc( mcmc.chain[[1]] )
-            matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]], c) ) )
+            root.mcmc <- coda::mcmc( chains[[1]][[1]] )
+            matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(chains[[1]][[2]], c) ) )
             ## Using the Heidelberger and Welch diagnostic for convergence.
             ## Note that better would be to use Gelman's R. But we only have one chain.
-            hei.root <- .checkHeidelTest(root.mcmc)
-            ess.root <- coda::effectiveSize(root.mcmc)
-            hei.matrix <- .checkHeidelTest(matrix.mcmc)
-            ess.matrix <- coda::effectiveSize(matrix.mcmc)
+            hei.root <- checkHeidelTest(root.mcmc)
+            ess.root <- effectiveSize(root.mcmc)
+            hei.matrix <- checkHeidelTest(matrix.mcmc)
+            ess.matrix <- effectiveSize(matrix.mcmc)
             ess <- c(ess.root, ess.matrix)
             names(ess) <- c( paste("root_",1:length(ess.root),sep=""), paste("matrix_cel_",1:length(ess.matrix),sep=""))
             diag <- data.frame(hei.root, hei.matrix)
@@ -30,69 +79,72 @@ checkConvergence <- function(mcmc.chain, p, method=c("heidel","gelman"), multiva
             return( list(heidel=diag,ess=ess) )
         }
         if(method == "gelman"){
-            root.mcmc <- lapply(mcmc.chain, function(x) coda::mcmc( x[[1]] ) )
-            root.mcmc.list <- coda::mcmc.list(root.mcmc)
-            matrix.mcmc <- lapply(mcmc.chain, function(x) coda::mcmc( do.call(rbind, lapply(x[[2]], c) ) ) )
-            matrix.mcmc.list <- coda::mcmc.list(matrix.mcmc)
-            diag.root <- coda::gelman.diag(root.mcmc.list, autoburnin=FALSE, multivariate=multivariate)
-            diag.matrix <- coda::gelman.diag(matrix.mcmc.list, autoburnin=FALSE, multivariate=multivariate)
-            ess.root <- coda::effectiveSize(root.mcmc.list)
-            ess.matrix <- coda::effectiveSize(matrix.mcmc.list)
+            root.mcmc <- lapply(chains, function(x) coda::mcmc( x[[1]] ) )
+            root.mcmc.list <- mcmc.list(root.mcmc)
+            matrix.mcmc <- lapply(chains, function(x) coda::mcmc( do.call(rbind, lapply(x[[2]], c) ) ) )
+            matrix.mcmc.list <- mcmc.list(matrix.mcmc)
+            diag.root <- gelman.diag(root.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
+            diag.matrix <- gelman.diag(matrix.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
+            nm <- expand.grid(1:k, 1:k)
+            rownames(diag.matrix$psrf) <- sprintf('%s,%s', nm[,2], nm[,1])
+            ess.root <- effectiveSize(root.mcmc.list)
+            ess.matrix <- effectiveSize(matrix.mcmc.list)
             ess <- c(ess.root, ess.matrix)
-            names(ess) <- c( paste("root_",1:length(ess.root),sep=""), paste("matrix_cel_",1:length(ess.matrix),sep=""))
-            return( list(diag_root=diag.root, diag_matrix=diag.matrix, ess=ess) )
-        } else {
-            stop("'method' need to be one of 'heidel' or 'gelman'.")
+            names(ess) <- c( colnames(chains[[1]]$root), paste("matrix_cel_", sprintf('%s,%s', nm[,2], nm[,1]), sep=""))
+            gelman.diag <- list(root=diag.root, ratematrix=diag.matrix)
+            return( list(gelman=gelman.diag, ess=ess) )
         }
     }
+    
     if(p > 1){
+        k <- ncol( chains[[1]]$matrix[[1]][[1]] )
         if(method == "heidel"){
-            root.mcmc <- coda::mcmc( mcmc.chain[[1]] )
-            hei.root <- .checkHeidelTest(root.mcmc)
-            ess.root <- coda::effectiveSize(root.mcmc)
+            root.mcmc <- coda::mcmc( chains[[1]][[1]] )
+            hei.root <- checkHeidelTest(root.mcmc)
+            ess.root <- effectiveSize(root.mcmc)
             hei.root <- data.frame(hei.root)
             diag <- list()
             ess.matrix <- list()
             for(i in 1:p){
-                matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(mcmc.chain[[2]][[i]], c) ) )
-                hei.matrix <- .checkHeidelTest(matrix.mcmc)
-                ess.matrix[[i]] <- coda::effectiveSize(matrix.mcmc)
+                matrix.mcmc <- coda::mcmc( do.call(rbind, lapply(chains[[1]][[2]][[i]], c) ) )
+                hei.matrix <- checkHeidelTest(matrix.mcmc)
+                ess.matrix[[i]] <- effectiveSize(matrix.mcmc)
                 diag[[i]] <- data.frame(hei.matrix)
             }
             res.mat <- do.call(cbind, diag)
             diag.res <- cbind(hei.root, res.mat)
-            colnames(diag.res) <- c("root", paste("matrix_", 1:p, sep="") )
-            nn <- rep(NA, times= length(ess.matrix[[1]]) )
+            colnames(diag.res) <- c("root", names( chains[[1]]$matrix ) )
+            nn <- rep(NA, times=length(ess.matrix[[1]]) )
             ess.matrix.mat <- do.call(cbind, ess.matrix)
             nn[1:length(ess.root)] <- ess.root
             ess <- cbind(nn, ess.matrix.mat)
-            colnames(ess) <- c("root", paste("matrix_", 1:p, sep="") )
+            colnames(ess) <- c("root", names( chains[[1]]$matrix ) )
             return(list(heidel=diag.res,ess=ess))
         }
         if(method == "gelman"){
-            root.mcmc <- lapply(mcmc.chain, function(x) coda::mcmc( x[[1]] ) )
+            root.mcmc <- lapply(chains, function(x) coda::mcmc( x[[1]] ) )
             root.mcmc.list <- coda::mcmc.list(root.mcmc)
-            diag.root <- coda::gelman.diag(root.mcmc.list, autoburnin=FALSE, multivariate=multivariate)
-            ess.root <- coda::effectiveSize(root.mcmc.list)
+            diag.root <- gelman.diag(root.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
+            ess.root <- effectiveSize(root.mcmc.list)
             diag.matrix <- list()
             ess.matrix <- list()
             for(i in 1:p){
-                matrix.mcmc <- lapply(mcmc.chain, function(x) coda::mcmc( do.call(rbind, lapply(x[[2]][[i]], c))))
-                matrix.mcmc.list <- coda::mcmc.list(matrix.mcmc)
-                ess.matrix[[i]] <- coda::effectiveSize(matrix.mcmc.list)
-                diag.matrix[[i]] <- coda::gelman.diag(matrix.mcmc.list,autoburnin=FALSE,multivariate=multivariate)
+                matrix.mcmc <- lapply(chains, function(x) coda::mcmc( do.call(rbind, lapply(x[[2]][[i]], c))))
+                matrix.mcmc.list <- mcmc.list(matrix.mcmc)
+                ess.matrix[[i]] <- effectiveSize(matrix.mcmc.list)
+                diag.matrix[[i]] <- gelman.diag(matrix.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
+                nm <- expand.grid(1:k, 1:k)
+                rownames(diag.matrix[[i]]$psrf) <- sprintf('%s,%s', nm[,2], nm[,1])
             }
-            names(diag.matrix) <- paste("diag_matrix_",1:p,sep="")
+            names(diag.matrix) <- names( chains[[1]]$matrix )
             res.root <- list(diag_root=diag.root)
             res <- c(res.root, diag.matrix)
-            nn <- rep(NA, times= length(ess.matrix[[1]]) )
+            nn <- rep(NA, times=length(ess.matrix[[1]]) )
             ess.matrix.mat <- do.call(cbind, ess.matrix)
             nn[1:length(ess.root)] <- ess.root
             ess <- cbind(nn, ess.matrix.mat)
-            colnames(ess) <- c("root", paste("matrix_", 1:p, sep="") )            
+            colnames(ess) <- c("root", names( chains[[1]]$matrix ) )            
             return( list( gelman=res, ess=ess ) )
-            } else {
-            stop("'method' need to be one of 'heidel' or 'gelman'.")
         }
     }
 }

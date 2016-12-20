@@ -2,29 +2,45 @@
 % Please edit documentation in R/checkConvergence.R
 \name{checkConvergence}
 \alias{checkConvergence}
-\title{Convergence test.}
+\title{Performs convergence tests}
 \usage{
-checkConvergence(mcmc.chain, p, method = c("heidel", "gelman"),
-  multivariate = TRUE)
+checkConvergence(...)
 }
 \arguments{
-\item{mcmc.chain}{The MCMC chain. Output of the function to read the chain. It works with any number of matrices fitted to the tree. If 'method="gelman"' the argument need to be a list of the MCMC chain results. Each element of the list will be the result of an independent MCMC run starting from a different starting position.}
-
-\item{p}{numeric. The number of evolutionary rate matrices fitted to the tree.}
-
-\item{method}{The method to be used to check convergence. If 'method="heidel"' then the Heidelberger and Welch diagnostic for convergence will be conducted. This test requires a single MCMC chain. If 'method="gelman"' then the potential scale reduction factor will be calculated. This method requires at least two MCMC chains for the same model starting from different starting points. The later is recommended.}
-
-\item{multivariate}{logical. Whether the 'gelman.diag' function from the package 'coda' should perform the diagnostics using the multivariate version. The default value is TRUE. However, for some matrix configurations the function can return an error that the '(...) leading (...) of order (...) is not positive definite'. Then, setting this argument as FALSE will solve the issue.}
+\item{...}{posterior(s) distribution(s) of parameter estimates. This can be a single MCMC chain or multiple independent chains from the same model. The type of convergence analysis will be dependent on the number of MCMC chains provided as imput. See 'Details'.}
 }
 \value{
-Function returns a list with two elements. If the 'method="heidel"' the first element of the list is a matrix with colums varying dependent of the number of matrices fitted to the tree. This matrix has two lines, each is a component of the Heidel diagnostic. TRUE is when the convergence test passed and FALSE is when it falied. If the 'method="gelman"' the first element of the list is another list with the results of the 'gelman.diag' function. This list will have length equal to 1+p: first element is the result for the root value and the following elements are results for the fitted R matrices. The second element of the list returned by the function is a matrix with the effective sample sizes for the root and each cell of the fitted R matrices.
+The format of the output depends of the type of test performed. The Gelman's R test will return a list with two elements. The first element is a list with the results for the potential scale reduction factor for the root values and the evolutionary rate matrices. The test for the R matrices is performed element by element, the names of the columns show the number of the row and column for each element. The length of this list will depend on the number of rate regimes fitted to the phylogenetic tree. The Heidelberger test also returns a list with two elements, the first element is a table with one column for the root values and each evolutionary rate matrix regime fitted to the tree. The colnames show the type of diagnostic used, the values are whether the test passed or not. The second element of the list, independent of the type of convergence test, is a estimate of the Effective Sample Size for each parameter of the model.
 }
 \description{
 Make convergence test for the MCMC chain.
 }
 \details{
-This function makes convergence test for the MCMC chains. It uses the Heidel test or the potential scale reduction factor (Gelman's R), both from the package 'coda'.
-To calculate the convergence this function will check if each value of each cell of the matrices have
-   converged.
+Function perform convergence tests using the potential scale reduction factor (Gelman's R) or the Heidelberger test. The Gelman's R test will be performed if two or more MCMC cains are provided as imput. If only one MCMC chain is provided, then the function will perform only the Heidelberger test. \cr
+\cr
+Multiple chains need to be replicates of the same analysis (e.g., multiple runs of the 'ratematrixMCMC' function with the same set of arguments, possibily with varying starting points). We recommend users to perform the Gelman's R test by providing two or more independent MCMC chains with different starting points. This test is more robust than the Heidelberger test. The advantage of the Heidelberger test is that it can be used with a single MCMC chain, so it can be useful for a preliminary test prior to running a full convergence analysis with multiple chains. \cr
+\cr
+See more information about each of these tests in the functions 'coda::gelman.diag' and 'coda::heidel.diag', both from the package 'coda'.
+}
+\examples{
+data(centrarchidae)
+handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000)
+posterior1 <- readMCMC(handle1, burn=0.25, thin=1)
+handle2 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000)
+posterior2 <- readMCMC(handle2, burn=0.25, thin=1)
+## Note that these are VERY short chains used as example only.
+## A convergence test using 'Gelman's R' calculated from two independent MCMC chains.
+checkConvergence(posterior1, posterior2)
+## A convergence test using 'Heidelberger test' calculated from a single MCMC chain.
+checkConvergence(posterior1)
+}
+\author{
+Daniel S. Caetano and Luke J. Harmon
+}
+\references{
+\describe{
+  \item{}{Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, Statistical Science, 7, 457-511.}
+  \item{}{Heidelberger, P and Welch, PD (1983) Simulation run length control in the presence of an initial transient. Opns. Res., 31, 1109-44.}
+}
 }
 
