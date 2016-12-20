@@ -87,7 +87,7 @@ Collate:
     "logLikSingleRegime.R"
     "slideWindowPositive.R"
     "slideWindow.R"
-    "testRateMatrix.R"
+    "testRatematrix.R"
     "writeToFile.R"
     "writeToMultFile.R"
 RoxygenNote: 5.0.1
