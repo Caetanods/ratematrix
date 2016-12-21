@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.ratematrix_prior_function.R
 \name{print.ratematrix_prior_function}
 \alias{print.ratematrix_prior_function}
-\title{Print method for the "ratematrix_prior_sample" class.}
+\title{Print method for the "ratematrix_prior_function" class.}
 \usage{
 \method{print}{ratematrix_prior_function}(x)
 }
@@ -10,7 +10,7 @@
 \item{x}{The object.}
 }
 \description{
-Print method for the "ratematrix_prior_sample" class.
+Print method for the "ratematrix_prior_function" class.
 }
 \details{
 Print information about object.
