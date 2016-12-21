@@ -1,20 +1,36 @@
-##' Function uses the output object from the MCMC chain performed by 'ratematrixMCMC' to plot samples from the prior distribution.
+##' Function plots the prior distribution used in the MCMC analysis.
 ##'
-##' 
-##' @title Plot the prior distribution used in the MCMC analysis.
-##' @param out the output object from the 'ratematrixMCMC' function.
+##' The prior distribution often has a range of parameter values order of magnitude larger than the posterior distribution. In this case, it is important to observe the scale of the x axis when comparing the prior and the posterior distribution. One can use 'set.xlim' parameter to restrict the x axis for plotting the prior to be similar to the posterior distribution. However, often the region of parameter space of the posterior distribution has a low likelihood under the prior. This results in problems to take samples from that region to make the plot. This problem can be identified when the 'set.xlim' argument is changed and the plot shows only a few samples. \cr
+##' \cr
+##' A solution for this issue will be implemented on future versions of the package. By now, pay attention to the scale of the axis when comparing plots!
+##' @title Plot the prior distribution used in the MCMC analysis
+##' @param handle the output object from the 'ratematrixMCMC' function.
 ##' @param n number of samples from the prior to be plotted (default is 1000).
-##' @param color color for the plot.
-##' @param ... parameters to be passed to the function 'plotRatematrix'. See help for 'plotRatematrix' for list of possible parameters.
+##' @param color color for the plot (default is "black").
+##' @param ... other parameters to be passed to the function 'plotRatematrix'. See help page of 'plotRatematrix' for list of possible parameters.
 ##' @return A plot similar to 'plotRatematrix'.
 ##' @export
-##' @author daniel
-plotPrior <- function(out, n=1000, color="black", ...){
+##' @author Daniel S. Caetano and Luke J. Harmon
+##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
+##' @examples
+##' \donttest{
+##' ## Load data
+##' data(centrarchidae)
+##' ## Run MCMC. This is just a very short chain.
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+##' ## Load posterior distribution, make plots and check the log.
+##' posterior <- readMCMC(handle, burn=0.25, thin=1)
+##' plotRatematrix(posterior)
+##' plotRootValue(posterior)
+##' plotPrior(handle)
+##' logAnalizer(handle)
+##' }
+plotPrior <- function(handle, n=1000, color="black", ...){
     ## Right now it assumes that the prior for the p regimes fitted to the tree are the same. This does not need to be the case. Need to extend the function so that one can plot the prior when the prior is different between regimes.
     ## Take samples from the prior and use plotRatematrix to plot it.
 
     ## samplePriorSeparationLimits need to be implemented and used here.
     
-    samples <- samplePrior(n=n, prior=out$prior, sample.sd=TRUE)
+    samples <- samplePrior(n=n, prior=handle$prior, sample.sd=TRUE)
     plotRatematrix(chain=samples, p=1, colors=color, ...)
 }
