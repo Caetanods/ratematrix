@@ -1,41 +1,68 @@
-##' Make a grid plot with the posterior distribution of the evolutionary rate matrix (R). Function works with one or two matrices fitted to the same tree and will superpose the results.
+##' Generate and plot a plate with plots showing the posterior distribution of evolutionary rate matrices. Function creates many plots, it can take some time depending on the data and number of generations.
 ##'
-##' The upper-tri plots are the posterior density for the off-diagonal elements of the
-##'     R evolutionary matrix. The diagonal plots are the posterior elements of the evolutionary
-##'     rates for each of the traits. The lower-tri plots are ellipse plots for the rates of correlated
-##'     evolution.\cr
+##' The plots are divided into three groups. Upper-diagonal plots show histogras with the posterior distribution for the covariance values between each pairwise combination of the traits. Diagonal plots show histograms with the evolutionary rate posterior distribution for each trait. Lower-diagonal plots show ellipses which represent the 95\% quantile of the pairwise bivariate distribution between traits. \cr
 ##' \cr
-##' Two posterior distributions of matrices can be plotted in the same grid if a distribution for
-##'     'mat2' is also provided (optional). Otherwise only 'mat1' is plotted.\cr
+##' Lower-diagonal plots are ideal to visualize the evolutionary correlation and variance between two traits. The orientation of the ellipses show whether there is a positive, negative or lack of correlation (horizontal or vertical orientation) between traits. The shape of the ellipses show the major axis of variation between traits. A 'cigar-shaped' ellipse indicates that one of the traits show faster evolutionary rates than the other, so one axis of variation is much larger than the other whereas a more circular (round) ellipse is a result of comparable rates of evolution between the two traits. A completely circular shape denotes lack of evolutionary correlation between the two traits. It might help to think of the ellipses as bivariate distributions seen from the top.
 ##' \cr
-##' If a second distribution of matrices is provided ('mat2') the function will check whether the number
-##'      of matrices in each list is the same. If not, the first elements of the lengthier list will be pruned
-##'      to match the length of the shorter list.\cr
+##' The function provides the option to plot a single evolutionary rate matrix on top of the posterior distribution of each regime as a vertical line on the upper-diagonal and diagonal histogram plots and as an ellipse on the lower-diagonal plots. This can be set using the argument 'point.matrix' (as well as the 'point.color' and 'point.wd' options). One can use this option to contrast the posterior with some point estimate or summary statistics. \cr
 ##' \cr
-##' Function use 'par()' to set graphical parameters. It may take some time to create all the plots if
-##'      the number of traits is large. Thinning the posterior distribution of matrices before plotting is
-##'      recommended.
-##' @title Plot posterior distribution of rate matrices.
-##' @param chain The MCMC chain loaded from the files.
-##' @param p A vector with the regimes to be plotted. If not provided, the function will plot all regimes in the chain.
-##' @param colors A vector with colors. Same length as p. If not provided, the function will use pre-selected colors.
-##' @param alphaOff Transparency of the off-diagonals plots. Numeric between 0 and 1.
-##' @param alphaDiag Transparency of the diagonals plots. Numeric between 0 and 1.
-##' @param alphaEll Transparency of the ellipses lines. Numeric between 0 and 1.
-##' @param ell.wd The width of the ellipses lines.
-##' @param point.matrix Optional. A list with matrices of length equal to p. This will be plotted as lines in the grid.plot.
-##' @param point.color Optional. A vector of colors with length equal to p. This is a alternative color vector to the 'colors' argument to be used with the point matrices. If not provided then the colors of the point matrices will be equal to 'colors'.
-##' @param point.wd Optional. The width of the lines for the vertical and ellipses of the point matrices.
-##' @param set.leg string. Legend for the traits. Vector need to have length equal to the dimension of the R matrix.
-##' @param l.cex numeric. 'cex' parameter for 'set.leg'. See 'help(par)' for more information on 'cex'.
-##' @param hpd numeric. Set the proportion of the highest posterior density (HPD) to be highlighted in the plot. If set .95 the distributions and the ellipses within the 95\% HPD will be highlighted in the plot. Default value does not show highlighted region.
-##' @param show.zero logical. Whether to plot a 'blue' vertical line at 0.
-##' @param set.xlim numeric. Two elements vector to set the 'xlim' [see 'help(hist)'] for the density plots manually. If 'NULL', the default value, then the limits are calculated from the data.
-##' @param n.lines numeric. Number of lines to be displayed in the ellipsed plots.
-##' @param n.points Number of points to make the ellipse.
-##' @return Plot a grid of charts.
+##' Colors provided can be as color names recognized by R-base plot functions or in the HEX format.
+##' @title Plot distribution of evolutionary rate matrices
+##' @param chain the posterior distribution of parameter estimates as produced by 'readMCMC'.
+##' @param p a numeric vector with the regimes to be plotted. This parameter can be used to subset the rate regimes to be plotted as well as control the order of the plotting. If 'NULL' (default), then function plot all rate regimes fitted to the data. See 'Examples'.
+##' @param colors a vector with colors for each rate regime. Vector need to have the same length p, if p=NULL then 'colors' need to have the same length as the number of evolutionary rate matrices fitted to the data. If not provided, the function will provide pre-selected colors up to 8 regimes.
+##' @param set.xlim user limits for the x axes. Need to be a vector with two elements, the minimum and the maximum.
+##' @param set.leg user defined legends of the plot. A character vector with same length as the number of traits in the model. If 'NULL' the plot function will use trait names defined by the MCMC and extrated from the data.
+##' @param l.cex a number for the 'cex' parameter for legends of the plot. See 'help(par)' for more information on 'cex'. Default is 0.7 .
+##' @param ell.wd a number for the width of the ellipse lines. Default is 0.5 .
+##' @param alphaOff a number between 0 and 1 with the transparency of the off-diagonal plots. Default is 1.
+##' @param alphaDiag a number between 0 and 1 with the transparency of the diagonal plots. Default is 1.
+##' @param alphaEll a number between 0 and 1 with the transparency of the lines of the ellipse plots. Using transparency in the lines might enhance the visualization of regions of more overlap. Default is 1.
+##' @param hpd a number between 0 and 100 to set the proportion of the highest posterior density (HPD) to be highlighted in the plot. For example, if set to 95 the histograms will plot the region outside the 95\% HPD in white and ellipse lines will only be showed if within the 95\% HPD of the posterior distribution. If the region chosen is too small (~10\% or lower), the plot might return in an error. If this happens, try to choose a more inclusive percentage. The default is 100 (no highlight is performed and ellipse lines are not restricted).
+##' @param show.zero whether to plot a thin blue line showing the position of the 0 value on the histograms.
+##' @param n.lines number of lines to be displayed in the ellipse plots. The lines showed by the ellipse plots (lower-diagonal) are a sample from the posterior distribution. The user can set this number as the number of generations in the posterior distribution to plot all the lines. More lines will take more time to plot. Default is 50 lines.
+##' @param n.points number of points used to plot the ellipse. Each ellipse is plotted using an approximation based on point coordinates, this argument sets the number of points used to approximate the ellipse format. 
+##' @param point.matrix optional argument. A list of variance-covariance matrices with length equal to p. If p=NULL then length need to be equal to the number of rate regimes fitted to the data. Each element of the list will be plotted as a single line on top of the distribution of parameter estimates.
+##' @param point.color optional argument. A vector with color names for the matrices set in 'point.matrix'. The vector need to have same length as 'point.matrix. If not provided, the colors of the lines will be equal to the colors of the distribution (argument 'colors').
+##' @param point.wd optional argument. The width of the lines plotted using 'point.matrix'. Default is 0.5 .
+##' @return A plate with a grid of plots with dimension equal to the number of traits fitted to the data.
 ##' @export
-plotRatematrix <- function(chain, p=NULL, colors=NULL, alphaOff=1, alphaDiag=1, alphaEll=1, ell.wd=0.5, point.matrix=NULL, point.color=NULL, point.wd=0.5, set.leg=NULL, l.cex=0.7, hpd=100, show.zero=FALSE, set.xlim=NULL, n.lines=50, n.points=200){
+##' @author Daniel S. Caetano and Luke J. Harmon
+##' @seealso \code{\link{ readMCMC }} for reading the posterior distribution from the MCMC analisis, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRootValue }} for plotting the posterior for the root values.
+##' @examples
+##' \donttest{
+##' ## Run and plot a very short MCMC chain:
+##' data(anoles)
+##' ## This might take some minutes.
+##' handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles$phy, gen=2000)
+##' posterior <- readMCMC(handle)
+##' plotRatematrix(posterior)
+##' 
+##' ## Load a complete MCMC chain for a better plot.
+##' data(anolesPost)
+##' plotRatematrix(anolesPost$chain)
+##' 
+##' ## Set some custom options:
+##' plotRatematrix(anolesPost$chain, colors=c("green3","orange"), set.xlim=c(0,2)
+##'              , set.leg=c("SVL","Tail","Head"), l.cex=1, alphaOff=0.5
+##'              , alphaDiag=0.5, alphaEll=0.5)
+##' ## Same plot, but with inverted superposition of rate regimes. Set argument 'p'.
+##' plotRatematrix(anolesPost$chain, p=c(2,1), colors=c("orange","green3")
+##'              , set.xlim=c(0,2), set.leg=c("SVL","Tail","Head"), l.cex=1
+##'              , alphaOff=0.5, alphaDiag=0.5, alphaEll=0.5)
+##' 
+##' ## We can also highlight the 95% HPD of the posterior distribution:
+##' ## Bars in the tails of the distribution and plotted in white are outside the 95% HPD.
+##' plotRatematrix(anolesPost$chain, colors=c("green3","orange"), set.xlim=c(0,2)
+##'              , set.leg=c("SVL","Tail","Head"), l.cex=1, alphaOff=0.5
+##'              , alphaDiag=0.5, alphaEll=0.5, hpd=95)
+##' 
+##' ## We can increase the number of ellipses from the posterior showed in the plots.
+##' plotRatematrix(anolesPost$chain, colors=c("green3","orange"), set.xlim=c(0,2)
+##'              , set.leg=c("SVL","Tail","Head"), l.cex=1, alphaOff=0.5
+##'              , alphaDiag=0.5, alphaEll=0.5, hpd=95, n.lines=500)
+##' }
+plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NULL, l.cex=0.7, ell.wd=0.5, alphaOff=1, alphaDiag=1, alphaEll=1, hpd=100, show.zero=FALSE, n.lines=50, n.points=200, point.matrix=NULL, point.color=NULL, point.wd=0.5){
 
     ## Check if the sample is larger than 'n.lines'. Otherwise, it needs to be equal to.
     if( n.lines > nrow( chain[[1]] ) ){
