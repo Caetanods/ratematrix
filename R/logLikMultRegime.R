@@ -8,6 +8,7 @@
 ##' @param R list. List of the R matrices.
 ##' @return numeric. The log likelhood.
 ##' @references Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
+##' @noRd
 logLikMultRegime <- function(data, chain, root, R){
     ## Try to keep the same parameters for the likelihood function. Make it easier for the MCMC to run as it is now.
     ## Default method is "rpf"

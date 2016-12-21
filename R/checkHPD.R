@@ -9,6 +9,7 @@
 ##' @author Daniel S. Caetano, \email{caetanods1@@gmail.com}
 ##' @seealso \code{\link{make.grid.plot}}
 ##' @keywords utilities
+##' @noRd
 checkHPD <- function(mat, qq, dd){
     ## Function to get a matrix and check if all elements are in the region.
     ## This should be an internal function to be used with make.grid.plot .

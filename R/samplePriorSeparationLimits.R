@@ -12,6 +12,7 @@
 ##' @return A list with the parameters draw from the prior. The structure is the same to be used as the "start" parameter of the MCMC chain.
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
+##' @noRd
 samplePriorSeparationLimits <- function(n, prior, mean.limits, rate.limits, sample.sd=TRUE){
     ## At the moment the function works. The problem is that the likelihood to sample a value is low on the regions of the posterior of the MCMC. Thus the rejection sampling takes a lot of time to run. Will set this aside for another time.
 

@@ -14,6 +14,7 @@
 ##' @param n.phy The index for the phylogeny used in this evaluation of the log lik.
 ##' @return Return a modified 'cache.chain'.
 ##' @importFrom MASS mvrnorm
+##' @noRd
 makePropMeanForMultList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files, n.phy){
 
     ## Choose the phylogeny to be used in this evaluation of the liklihood:

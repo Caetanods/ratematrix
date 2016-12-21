@@ -5,6 +5,7 @@
 ##' @param x numeric. The current value.
 ##' @param w numeric. The width of the proposal.
 ##' @return A updated value based on 'x'.
+##' @noRd
 slideWindow <- function(x, w){
     ## Sliding window proposal for unbounded trait.
     ## x = the current value.

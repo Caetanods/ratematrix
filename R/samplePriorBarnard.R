@@ -7,6 +7,7 @@
 ##' @param max numeric. maximum value for the uniform prior on the variance.
 ##' @return Returns a covariance matrix.
 ##' @importFrom corpcor rebuild.cov
+##' @noRd
 samplePriorBarnard <- function(k, min=0, max=100){
     ## Function to sample from the prior. Using the separation strategy of Barnard.
     ## k = the dimension of the matrix.

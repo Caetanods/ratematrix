@@ -4,6 +4,7 @@
 ##' @param v numeric. Degrees of freedom.
 ##' @param S matrix. The scale matrix.
 ##' @return matrix. Returns a sample from a inverse-Wishart distribution.
+##' @noRd
 riwish <- function(v, S){
     S <- solve(S)
     if (!is.matrix(S)) S <- matrix(S)

@@ -8,6 +8,7 @@
 ##' @param n.points numeric. The number of points used to approximate the shape of the ellipse.
 ##' @return List of coordinates to plot the ellipses.
 ##' @author Daniel S. Caetano, \email{caetanods1@@gmail.com}
+##' @noRd
 getEllipseAllMatrix <- function(mat, center=c(0,0), traits, n.points=200){
     ## Function is just like 'get.vcv.ellipse.matrix'. However there is no sample of the matrices.
     ## Points are calculated for all the matrices.

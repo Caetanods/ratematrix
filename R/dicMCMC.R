@@ -13,6 +13,7 @@
 ##' @importFrom ape vcv.phylo as.phylo
 ##' @importFrom phytools multiC
 ##' @importFrom corpcor make.positive.definite
+##' @noRd
 dicMCMC <- function(out, post){
     cache.data <- list()
     cache.data$C <- vcv.phylo(out$phy)

@@ -11,6 +11,7 @@
 ##' @return The chain cache.
 ##' @author daniel
 ##' @importFrom corpcor decompose.cov rebuild.cov
+##' @noRd
 makePropMultSigma <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files) {
     ## This is going to be the step for the correlation matrix and the vector of standard deviations.
     ## The moves for the correlation matrix now are independent of the moves for the standard deviations.

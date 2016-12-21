@@ -9,6 +9,7 @@
 ##' @return A list of matrices. Each element is a simulation of datasets. Using the same model and parameter estimates from the joint posterior distribution.
 ##' @seealso \code{read.single.R.iwish} or \code{read.multi.R.iwish} or \code{mergePosterior}
 ##' @importFrom phytools sim.corrs
+##' @noRd
 postPredicSims <- function(mcmc.chain, out, n.samples=100, mc.cores=NULL){
     lchain <- dim(mcmc.chain$root)[1]
     ss <- sample(1:lchain, size = n.samples) ## Take samples from the (joint) posterior.

@@ -7,6 +7,7 @@
 ##' @param sigma matrix. Variance covariance matrix parameter.
 ##' @return numeric. Log density.
 ##' @author Daniel S. Caetano, \email{caetanods1@@gmail.com}
+##' @noRd
 logDensityMvNorm <- function(x, mu, sigma = diag(length(x))){
     ## The log density for the multivariate normal distribution.
     ## x = vector of means.

@@ -13,6 +13,7 @@
 ##' @param files the path to write to the log file.
 ##' @return Return a modified 'cache.chain'.
 ##' @importFrom MASS mvrnorm
+##' @noRd
 makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files){
 
     ## make.prop.mean is a function to make sliding window proposal moves.

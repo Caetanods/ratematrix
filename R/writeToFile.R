@@ -6,6 +6,7 @@
 ##' @param cache.chain The object with the MCMC generations.
 ##' @param chunk The interval of generations when this function should be called to write parameter states to file and clean memory.
 ##' @return Return a updated version of cache.chain. This chain will now only have the last state in the chain. Function writes to file the content in 'cache.chain'. This function will append the new generations to the previous chunk.
+##' @noRd
 writeToFile <- function(files, cache.chain, chunk){
     ## Write cache.chain to files.
     ll <- chunk+1

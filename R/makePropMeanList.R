@@ -12,6 +12,7 @@
 ##' @param count Used to track the accept and reject steps of the MCMC.
 ##' @param w The width parameter for the sliding-window proposal step of the phylogenetic mean.
 ##' @return Updated version of the cache.chain.
+##' @noRd
 makePropMeanList <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count, files, phy, n.phy){
 
     ## Choose the phylogeny to be used in this evaluation of the liklihood:

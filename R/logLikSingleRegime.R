@@ -10,6 +10,7 @@
 ##' @references Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
 ##' @references Ho, L. si T., and C. Ané. 2014. A Linear-Time Algorithm for Gaussian and Non-Gaussian Trait Evolution Models. Syst Biol 63:397–408.
 ##' @importFrom phylolm three.point.compute
+##' @noRd
 logLikSingleRegime <- function(data, chain, phy, root, R){
     ## X.c are the residuals. We can think of the root as the intercept of a linear regression.
     ## This standardize the data. So we can apply the 'three.point.compute'.

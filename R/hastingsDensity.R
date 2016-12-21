@@ -8,6 +8,7 @@
 ##' @param v numeric. Variance parameter of the inverse wishart distrubution.
 ##' @return numeric. The log Hastings ratio for the inverse wishart based proposal distribution.
 ##' @author Daniel S. Caetano, \email{caetanods1@@gmail.com}
+##' @noRd
 hastingsDensity <- function(curr.vcv, prop.vcv, p, v){
     ## Calculates the log Hastings ratio by dividing p(curr|prop)/p(prop|curr) densities.
     center.curr <- (v-p-1) * curr.vcv

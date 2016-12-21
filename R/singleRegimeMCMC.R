@@ -22,6 +22,7 @@
 ##' @importFrom geiger treedata
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
+##' @noRd
 singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5
                            , traits, save.handle, continue=NULL, add.gen, ID=NULL){
 

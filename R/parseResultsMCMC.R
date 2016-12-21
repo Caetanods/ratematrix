@@ -9,6 +9,7 @@
 ##' @param chain.two The MCMC chain two.
 ##' @param flag Name for the run.
 ##' @return Plots and etc.
+##' @noRd
 parseResultsMCMC <- function(out.one, out.two, chain.one, chain.two, flag=NULL){
     ## Function to read and parse the results from the simulations.
     ## This also make plots. The function creates a directory to store all the plots and outputs.

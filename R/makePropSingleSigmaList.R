@@ -12,6 +12,7 @@
 ##' @param count Description
 ##' @return The chain cache.
 ##' @importFrom corpcor decompose.cov rebuild.cov
+##' @noRd
 makePropSingleSigmaList <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count, files, phy, n.phy) {
 
     which.phy <- sample(1:n.phy, size = 1) ## The index for the phy used for the log.lik.

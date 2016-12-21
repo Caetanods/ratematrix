@@ -12,6 +12,7 @@
 ##' @param n.points numeric. The number of points used to approximate the shape of the ellipse.
 ##' @return List of coordinates to plot the ellipses.
 ##' @author Daniel S. Caetano, \email{caetanods1@@gmail.com}
+##' @noRd
 getEllipseMatrix <- function(mat, center=c(0,0), traits, sample.line=50, n.points=200){
 
     if( is.matrix(mat) ){
