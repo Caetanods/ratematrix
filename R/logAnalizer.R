@@ -27,9 +27,9 @@
 ##' plotRatematrix(posterior)
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
-##' logAnalizer(handle)
+##' logAnalizer(handle, burn=0.25, thin=1)
 ##' }
-logAnalizer <- function(handle, burn=0.25, thin=1, show.plots=TRUE, print.result=TRUE, dir=NULL){
+logAnalizer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.result=TRUE, dir=NULL){
     ## Need to read the log output. Then make some plots or such.
 
     ## Check the directory.

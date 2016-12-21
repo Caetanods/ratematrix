@@ -4,7 +4,7 @@
 \alias{logAnalizer}
 \title{Make analysis of the log file of the MCMC chain}
 \usage{
-logAnalizer(handle, burn = 0.25, thin = 1, show.plots = TRUE,
+logAnalizer(handle, burn = 0.25, thin = 100, show.plots = TRUE,
   print.result = TRUE, dir = NULL)
 }
 \arguments{
@@ -44,7 +44,7 @@ posterior <- readMCMC(handle, burn=0.25, thin=1)
 plotRatematrix(posterior)
 plotRootValue(posterior)
 plotPrior(handle)
-logAnalizer(handle)
+logAnalizer(handle, burn=0.25, thin=1)
 }
 }
 \author{
