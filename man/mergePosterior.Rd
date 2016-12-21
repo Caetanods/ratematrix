@@ -2,22 +2,31 @@
 % Please edit documentation in R/mergePosterior.R
 \name{mergePosterior}
 \alias{mergePosterior}
-\title{Merge posteriors}
+\title{Merge posterior distributions}
 \usage{
-mergePosterior(..., p)
+mergePosterior(...)
 }
 \arguments{
-\item{...}{Any number of posterior distributions as produced by the function 'read.multi.R.iwish' or 'read.single.R.iwish'}
-
-\item{p}{Number of R matrices (regimes) fitted to the tree.}
+\item{...}{Any number of posterior distributions as produced by the function 'readMCMC'.}
 }
 \value{
 A merged posterior distribution in the same format.
 }
 \description{
-Merge two or more posterior distributions
+Join two or more independent MCMC chains from the same data and phylogenetic trees by appending them together into a single chain.
 }
-\details{
-Merge two or more posterior distributions based in the same dataset. If you have multiple MCMC chains for the same dataset you can merge them.
+\examples{
+## Run two (very short) chains and merge results.
+data(centrarchidae)
+handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+posterior1 <- readMCMC(handle1, burn=0.25, thin=1)
+handle2 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+posterior2 <- readMCMC(handle2, burn=0.25, thin=1)
+merged <- mergePosterior(posterior1, posterior2)
+merged ## Summary of the chain
+plotRatematrix(merged)
+}
+\author{
+Daniel S. Caetano and Luke J. Harmon
 }
 
