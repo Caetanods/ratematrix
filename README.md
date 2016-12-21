@@ -57,17 +57,11 @@ plotRootValue(posterior)
 plotRatematrix(posterior, colors=c("blue","brown"), alphaDiag=0.7, alphaOff=0.7, point.matrix=rates
               , point.color=c("green","green"), point.wd=3)
 ```
-\\
-\\
-\\
+<br><br>
 ![ ](trace_plot.png)
-\\
-\\
+<br><br>
 Figure shows the trace plot for the log-likelihood of the model and the acceptance ratio. Note that first few generations of the acceptance ratio trace plot suffer from a smaller sample size and, as a result, behave in a strange manner.
-\\
-\\
-\\
+<br><br>
 ![ ](example.png)
-\\
-\\
+<br><br>
 Figure shows the posterior distribution of rates of evolution for each trait in the diagonal histograms. Upper-diagonal histograms are the posterior distribution for the pairwise covariated evolution among traits. Lower-diagonal plots show ellipses with the bivariate distribution among traits.
