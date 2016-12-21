@@ -54,7 +54,8 @@ plotRatematrix(posterior, colors=c("blue","brown"), , alphaDiag=0.7, alphaOff=0.
 plotRootValue(posterior)
 
 ## A quick check of how good the posterior is compared to the true values:
-plotRatematrix(posterior, colors=c("blue","brown"), alphaDiag=0.7, alphaOff=0.7, point.matrix=rates, point.color=c("green","green"), point.wd=3)
+plotRatematrix(posterior, colors=c("blue","brown"), alphaDiag=0.7, alphaOff=0.7, point.matrix=rates
+              , point.color=c("green","green"), point.wd=3)
 ```
 \
 \
