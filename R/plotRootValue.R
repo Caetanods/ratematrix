@@ -34,9 +34,9 @@ plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, se
     ## Plot Root value. Will work just like the plotRatematrix.
     ntr <- ncol( chain$root )
 
-    ## Create legend if set.xlab is NULL:
-    if( is.null( set.xlab ) ){
-        set.xlab <- paste("trait_", 1:ntr, sep="")
+    ## If custom legend is not provided, then use the names of the traits.
+    if(is.null(set.leg)){
+       set.leg <- colnames( chain$root )
     }
 
     ## Calculate the xlim from the data:
