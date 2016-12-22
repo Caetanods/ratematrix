@@ -36,7 +36,7 @@ plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, se
 
     ## If custom legend is not provided, then use the names of the traits.
     if(is.null(set.leg)){
-       set.leg <- colnames( chain$root )
+       set.xlab <- colnames( chain$root )
     }
 
     ## Calculate the xlim from the data:
