@@ -35,7 +35,7 @@ plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, se
     ntr <- ncol( chain$root )
 
     ## If custom legend is not provided, then use the names of the traits.
-    if(is.null(set.leg)){
+    if(is.null(set.xlab)){
        set.xlab <- colnames( chain$root )
     }
 
