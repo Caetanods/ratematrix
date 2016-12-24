@@ -125,7 +125,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
 
     ## Check if 'chunk' is a divisible of the generation number, if not, adjust.
     ## Default is: gen/100
-    if( chunk > gen ){
+    if( chunk > gen || chunk < 1){
         chunk <- gen
     }        
     if( gen %% chunk > 0 ){ ## Check the remainder of the division
@@ -202,6 +202,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         start_run <- start
         if( inherits(start, what="character") ){
             if(start == "prior_sample"){
+                cat( "Taking sample from prior as starting point. \n" )
                 start_run <- samplePrior(n=1, prior=prior_run, sample.sd=FALSE)
             }
             if(start == "mle"){ ## This will break if the phylogeny is a list.
@@ -269,6 +270,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         start_run <- start
         if( inherits(start, what="character") ){
             if(start == "prior_sample"){
+                cat( "Taking sample from prior as starting point. \n" )
                 start_run <- samplePrior(n=1, prior=prior_run, sample.sd=FALSE)
             }
             if(start == "mle"){ ## Need to deal with the list of matrices here.
