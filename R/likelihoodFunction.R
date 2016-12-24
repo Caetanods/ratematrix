@@ -23,10 +23,20 @@
 ##' ## Compute the log-likelihood.
 ##' likelihoodFunction(data=centrarchidae$data, phy=centrarchidae$phy.map, root=sample.prior$mu, R=R)
 likelihoodFunction <- function(data, phy, root, R){
+
+    ## 'data' needs to be a class matrix.
+    data <-  as.matrix( data )
+
+    ## Correct the format for the root.
+    root <- as.numeric( root )
+    
     ## Check if R is a matrix or a list.
     if( is.list(phy[[1]]) ) stop( "Function does not accept a list of phylo." )
     
     if( is.list(R) ){ ## The case with multiple regimes.
+
+        ## Correct format to matrix:
+        R <- lapply(R, function(x) as.matrix(x) )
         
         if( !inherits(phy, what="simmap") ) stop( "R is a list or matrices but phy is not of type 'simmap'." )
         k <- ncol(data) ## Number of traits.
@@ -52,6 +62,9 @@ likelihoodFunction <- function(data, phy, root, R){
         return(loglik)
         
     } else{ ## The case of a single regime.
+
+        ## Correct the format for the matrix:
+        R <- as.matrix( R )
         
         ## Creates data and chain cache:
         cache.data <- list()
