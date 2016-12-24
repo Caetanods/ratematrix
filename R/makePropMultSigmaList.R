@@ -39,7 +39,7 @@ makePropMultSigmaList <- function(cache.data, cache.chain, prior, v, w_sd, w_mu,
 
         ## Rebuild the matrix to calculate the likelihood.
         ## No need for the Jacobian in this move.
-        decom <- decompose.cov( cache.chain$chain[[iter-1]][[2]][[Rp]] )
+        decom <- decompose.cov( cache.chain$chain[[iter-1]][[4]][[Rp]] )
         ## prop.vcv is the covariance matrix to calculate the likelihood and the parameter for the posterior.
         prop.vcv <- rebuild.cov( r=decom$r, v=prop.sd^2 ) ## We are making moves to the standard deviation.
         ## This part will not work with the 'log.dmvnorm' function from the 'ratematrix' package.
