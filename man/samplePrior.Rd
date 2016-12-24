@@ -4,7 +4,7 @@
 \alias{samplePrior}
 \title{Take samples from the prior distribution}
 \usage{
-samplePrior(n, prior, sample.sd = TRUE)
+samplePrior(n, prior, sample.sd = TRUE, rebuild.R = FALSE)
 }
 \arguments{
 \item{n}{number of samples to be generated.}
@@ -12,6 +12,8 @@ samplePrior(n, prior, sample.sd = TRUE)
 \item{prior}{the object with the prior function. See 'makePrior' for more information.}
 
 \item{sample.sd}{whether the function should sample the vector of standard deviations independently from the correlation matrices. If set to FALSE, the samples for standard deviation will be derived from the covariance matrices. If set to TRUE (default) then standard deviations are independently sampled from the own prior distribution and are not derived from the samples of the correlation matrix.}
+
+\item{rebuild.R}{whether the prior sample should return a evolutionary rate matrix rather than a correlation matrix and a vector of standard deviations (default is FALSE).}
 }
 \value{
 A list with samples from the prior distribution. The structure of this list is the same as required by the parameter 'start' of the 'ratematrixMCMC'.

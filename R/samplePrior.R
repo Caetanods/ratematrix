@@ -7,6 +7,7 @@
 ##' @param n number of samples to be generated.
 ##' @param prior the object with the prior function. See 'makePrior' for more information.
 ##' @param sample.sd whether the function should sample the vector of standard deviations independently from the correlation matrices. If set to FALSE, the samples for standard deviation will be derived from the covariance matrices. If set to TRUE (default) then standard deviations are independently sampled from the own prior distribution and are not derived from the samples of the correlation matrix.
+##' @param rebuild.R whether the prior sample should return a evolutionary rate matrix rather than a correlation matrix and a vector of standard deviations (default is FALSE).
 ##' @return A list with samples from the prior distribution. The structure of this list is the same as required by the parameter 'start' of the 'ratematrixMCMC'.
 ##' @importFrom corpcor decompose.cov
 ##' @author Daniel S. Caetano and Luke J. Harmon
@@ -37,7 +38,7 @@
 ##' data(centrarchidae)
 ##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000, start=start)
 ##' }
-samplePrior <- function(n, prior, sample.sd=TRUE){
+samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
     pars <- prior$pars
 
     ## Sample phylogenetic means:
@@ -152,7 +153,36 @@ samplePrior <- function(n, prior, sample.sd=TRUE){
             }
         }
     }
+    
+    ## Check if need to return the R matrix instead of the components.
+    if(rebuild.R == TRUE){
+        if( n == 1 ){
+            if(pars$p == 1){
+                R <- rebuild.cov(cov2cor(vcv), v=sd)
+            } else{
+                R <- lapply(1:pars$p, function(x) rebuild.cov(cov2cor(vcv[[x]]), v=(sd[[x]])^2 ) )
+            }
+        } else{
+            if(pars$p == 1){
+                R <- lapply(1:n, function(x) rebuild.cov(cov2cor(vcv[[x]]), v=(sd[x,])^2 ) )
+            } else{
+                R <- list()
+                for(i in 1:pars$p){
+                    R[[i]] <- list()
+                    for(j in 1:n){
+                        R[[i]][[j]] <- rebuild.cov(cov2cor(vcv[[i]][[j]]), v=(sd[[i]][j,])^2 )
+                    }
+                }
+            }
+        }
+        
+        out <- list( mu=mu, R=R )
+        class( out ) <- "ratematrix_prior_sample_rebuild"
+        return( out )
+        
+    }
+    
     out <- list( mu=mu, matrix=vcv, sd=sd )
     class( out ) <- "ratematrix_prior_sample"
-    return( out )    
+    return( out )
 }
