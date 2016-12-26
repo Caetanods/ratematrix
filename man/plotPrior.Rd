@@ -4,16 +4,18 @@
 \alias{plotPrior}
 \title{Plot the prior distribution used in the MCMC analysis}
 \usage{
-plotPrior(handle, n = 1000, color = "black", ...)
+plotPrior(handle, n = 1000, root = FALSE, color = "black", ...)
 }
 \arguments{
 \item{handle}{the output object from the 'ratematrixMCMC' function.}
 
 \item{n}{number of samples from the prior to be plotted (default is 1000).}
 
+\item{root}{whether to plot the prior for the root value instead of the evolutionary rate matrix (default is FALSE).}
+
 \item{color}{color for the plot (default is "black").}
 
-\item{...}{other parameters to be passed to the function 'plotRatematrix'. See help page of 'plotRatematrix' for list of possible parameters.}
+\item{...}{other parameters to be passed to the function 'plotRatematrix' or 'plotRootValue'. See help page for list of possible parameters.}
 }
 \value{
 A plot similar to 'plotRatematrix'.
@@ -22,6 +24,8 @@ A plot similar to 'plotRatematrix'.
 Function plots the prior distribution used in the MCMC analysis.
 }
 \details{
+Function will make a plot of the prior for the evolutionary rate matrix by default. One can plot the prior for the root value instead by setting 'root' to TRUE. \cr
+\cr
 The prior distribution often has a range of parameter values order of magnitude larger than the posterior distribution. In this case, it is important to observe the scale of the x axis when comparing the prior and the posterior distribution. One can use 'set.xlim' parameter to restrict the x axis for plotting the prior to be similar to the posterior distribution. However, often the region of parameter space of the posterior distribution has a low likelihood under the prior. This results in problems to take samples from that region to make the plot. This problem can be identified when the 'set.xlim' argument is changed and the plot shows only a few samples. \cr
 \cr
 A solution for this issue will be implemented on future versions of the package. By now, pay attention to the scale of the axis when comparing plots!
@@ -37,6 +41,7 @@ posterior <- readMCMC(handle, burn=0.25, thin=1)
 plotRatematrix(posterior)
 plotRootValue(posterior)
 plotPrior(handle)
+plotPrior(handle, root=TRUE)
 logAnalizer(handle)
 }
 }
