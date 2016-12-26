@@ -49,6 +49,7 @@
 ##' plotRatematrix(posterior)
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
+##' plotPrior(handle, root=TRUE)
 ##' logAnalizer(handle)
 ##' }
 ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=FALSE, save.handle=TRUE){

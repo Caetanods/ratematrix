@@ -28,6 +28,7 @@
 ##' plotRatematrix(posterior)
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
+##' plotPrior(handle, root=TRUE)
 ##' logAnalizer(handle)
 ##' }
 plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, set.cex.axis=1.5, set.xlim=NULL, hpd=100, mfrow=1, vline.values=NULL, vline.color=NULL, vline.wd=NULL, show.zero=FALSE){

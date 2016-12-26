@@ -71,7 +71,7 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
                 vcv <- list()
                 for(i in 1:pars$p){ vcv[[i]] <- riwish(v=pars$nu[i], S=pars$Sigma[[i]]) }
             }
-            if( !is.matrix(pars$Sigma) && !is.list(pars$Sigma) ) stop("Error. Check if the parameter 'Sigma' in function 'make.prior.zhang' is of class 'matrix' or class 'list'. Check if length of 'Sigma', if a list, is equal to 'p'.")
+            if( !is.matrix(pars$Sigma) && !is.list(pars$Sigma) ) stop("Error. Check if the parameter 'Sigma' in function 'makePrior' is of class 'matrix' or class 'list'. Check if length of 'Sigma', if a list, is equal to 'p'.")
         }
 
         if(sample.sd == TRUE){    
@@ -115,7 +115,7 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
                 vcv <- list()
                 for(i in 1:pars$p){ vcv[[i]] <- lapply(1:n, function(x) riwish(v=pars$nu[i], S=pars$Sigma[[i]]) ) }
             }
-            if( !is.matrix(pars$Sigma) && !is.list(pars$Sigma) ) stop("Error. Check if the parameter 'Sigma' in function 'make.prior.zhang' is of class 'matrix' or class 'list'. Check if length of 'Sigma', if a list, is equal to 'p'.")
+            if( !is.matrix(pars$Sigma) && !is.list(pars$Sigma) ) stop("Error. Check if the parameter 'Sigma' in function 'makePrior' is of class 'matrix' or class 'list'. Check if length of 'Sigma', if a list, is equal to 'p'.")
         }
 
         if(sample.sd == TRUE){    
@@ -176,13 +176,13 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
             }
         }
         
-        out <- list( mu=mu, R=R )
+        out <- list( root=mu, R=R )
         class( out ) <- "ratematrix_prior_sample_rebuild"
         return( out )
         
     }
     
-    out <- list( mu=mu, matrix=vcv, sd=sd )
+    out <- list( root=mu, matrix=vcv, sd=sd )
     class( out ) <- "ratematrix_prior_sample"
     return( out )
 }

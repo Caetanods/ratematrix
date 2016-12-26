@@ -21,6 +21,7 @@
 ##' plotRatematrix(posterior)
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
+##' plotPrior(handle, root=TRUE)
 ##' logAnalizer(handle)
 ##' }
 readMCMC <- function(handle, burn=0.25, thin=100, dir=NULL){

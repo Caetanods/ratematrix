@@ -27,6 +27,7 @@
 ##' plotRatematrix(posterior)
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
+##' plotPrior(handle, root=TRUE)
 ##' logAnalizer(handle, burn=0.25, thin=1)
 ##' }
 logAnalizer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.result=TRUE, dir=NULL){
