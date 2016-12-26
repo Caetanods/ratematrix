@@ -15,7 +15,7 @@ print.ratematrix_multi_chain <- function(x){
     cat("Number of regimes: ", p, "\n")
     cat("Number of posterior samples: ", post.length, "\n")
     cat("\n")
-    cat("Use 'make.grid.plot' to plot the distribution.", "\n")
+    cat("Use 'plotRatematrix' and 'plotRootValue' to plot the distribution.", "\n")
     cat("Use 'checkConvergence' to verify convergence.", "\n")
     cat("Use 'mergePosterior' to merge two or more posterior chains.", "\n")
     cat("Check 'names' for more details.", "\n")

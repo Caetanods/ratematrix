@@ -18,6 +18,6 @@ print.ratematrix_multi_mcmc <- function(x){
         cat("Files directory: ", x$dir, "\n")
     }
     cat("\n")
-    cat("Use 'readMultRegimeMCMC' to load the MCMC chain.", "\n")
+    cat("Use 'readMCMC' to load the MCMC chain.", "\n")
     cat("Check 'names' for more details.", "\n")
 }
