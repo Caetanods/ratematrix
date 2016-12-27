@@ -8,7 +8,7 @@ For more information on the kind of models implemented here, please refer to "Re
 
 This package is under development. Although most of the functionality is already working without any problems, please contact the author (caetanods1[at]gmail.com) if you are interested in using this package for any publication.
 
-Here is a quick example of how to run a MCMC chain. [Please check the wiki page for extended documentation and tutorials](https://github.com/Caetanods/ratematrix/wiki/Home)<br/>). You will need the package 'devtools' to perform the installation.
+Here is a quick example of how to run a MCMC chain. [Please check the wiki page for extended documentation and tutorials](https://github.com/Caetanods/ratematrix/wiki/Home). You will need the package 'devtools' to perform the installation.
 ```{r,R.options=list(max.print=20)}
 install.packages("devtools")
 library(devtools)
