@@ -80,7 +80,6 @@ Collate:
     "riwish.R"
     "samplePrior.R"
     "samplePriorSeparationLimits.R"
-    "simTrees.R"
     "samplePriorBarnard.R"
     "makePropSingleSigma.R"
     "simRatematrix.R"
