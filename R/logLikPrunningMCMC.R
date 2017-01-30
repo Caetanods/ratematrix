@@ -1,5 +1,13 @@
 logLikPrunningMCMC <- function(X, k, nodes, des, anc, mapped.edge, R, mu){
     ## This is a function to be used with the MCMC. The processing of the tree into the objects that have the information needed for traversing the tree will be computed prior to the call of this function.
+    ## X is a matrix.
+    ## k is a int with the number of traits.
+    ## nodes is a vector
+    ## anc is a vector
+    ## mapped.edge is a matrix with number of columns equal to the number of regimes.
+    ## R is a list of data matrices
+    ## mu is a vector
+    
     ## Create vectors to store results.
     X0 <- matrix(nrow = k, ncol = length(nodes)+1)
     V0 <- array(dim=c(k,k,length(nodes)+1))
