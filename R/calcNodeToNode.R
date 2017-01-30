@@ -9,7 +9,9 @@ calcNodeToNode <- function(X, k, des, anc, mapped.edge, R, node.id, cache){
     Rs1 <- Rs1 + cache$V0[,,key.id[1]] ## The additional variance.
     Rs2 <- Rs2 + cache$V0[,,key.id[2]] ## The additional variance.
     Rinv <- chol2inv(chol(Rs1+Rs2))
-    cache$ll <- c(cache$ll, logLikNode(ss, Rs1+Rs2, Rinv, k))
+
+    cache$ll <- c(cache$ll, logLikNode(ss, Rs1+Rs2, Rinv, k)) ## Incremental sum. Do not need to store.
+
     cache$key <- c(cache$key, anc[node.id[1]]) ## 'key' for both X0 and V0. This is the node number.
     cache$X0[,length(cache$key)] <- ((Rs2 %*% Rinv) %*% cache$X0[,key.id[1]]) + ((Rs1 %*% Rinv) %*% cache$X0[,key.id[2]])
     cache$V0[,,length(cache$key)] <- chol2inv(chol( chol2inv(chol(Rs1)) + chol2inv(chol(Rs2)) ))
