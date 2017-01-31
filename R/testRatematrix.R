@@ -5,7 +5,7 @@
 ##' When a posterior distribution with more than two rate regimes is fitted to the data, the function performs all pairwise combinations tests.
 ##' @title Test for difference between evolutionary rate matrix estimates
 ##' @param chain the posterior distribution of parameter estimates as output of the function 'readMCMC'.
-##' @param par sets which of the attributes of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates'. Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (the variance vector). Chose 'correlation' to test for the median overlap among the correlations (the distribution of correlation matrices).
+##' @param par sets which of the attributes of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates' (default is 'all'). Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (the variance vector). Chose 'correlation' to test for the median overlap among the correlations (the distribution of correlation matrices).
 ##' @return Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
@@ -21,7 +21,9 @@
 ##' testRatematrix(chain=posterior, par="rates")
 ##' testRatematrix(chain=posterior, par="correlation")
 ##' }
-testRatematrix <- function(chain, par="all"){
+testRatematrix <- function(chain, par=c("all","correlation","rates")){
+
+    par <- match.arg(par)
 
     if( inherits(chain, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ){
         if( inherits(chain, what=c("ratematrix_single_chain")) ){
@@ -36,7 +38,7 @@ testRatematrix <- function(chain, par="all"){
     comb <- combn(1:p, 2)
     median.diff <- list()
     if(par == "all"){
-        for(i in ncol(comb)){
+        for(i in 1:ncol(comb)){
             mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c(x) ) )
             mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c(x) ) )
             mat.diff <- mat1 - mat2
@@ -44,7 +46,7 @@ testRatematrix <- function(chain, par="all"){
         }
     }
     if(par == "rates"){
-        for(i in ncol(comb)){
+        for(i in 1:ncol(comb)){
             mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( diag(x) ) ) )
             mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( diag(x) ) ) )
             mat.diff <- mat1 - mat2
@@ -55,7 +57,7 @@ testRatematrix <- function(chain, par="all"){
         ## This part will break if the rate matrix is 2x2. The median do not need to be calculated.
         if( ncol( chain$matrix[[1]][[1]] ) > 2 ){
             upper <- upper.tri( chain$matrix[[1]][[1]] )
-            for(i in ncol(comb)){
+            for(i in 1:ncol(comb)){
                 mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( cov2cor(x)[upper] ) ) )
                 mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( cov2cor(x)[upper] ) ) )
                 mat.diff <- mat1 - mat2
@@ -63,10 +65,10 @@ testRatematrix <- function(chain, par="all"){
             }
         } else{
             upper <- upper.tri( chain$matrix[[1]][[1]] )
-            for(i in ncol(comb)){
+            for(i in 1:ncol(comb)){
                 mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( cov2cor(x)[upper] ) ) )
                 mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( cov2cor(x)[upper] ) ) )
-                median.diff[[1]] <- mat1 - mat2 ## Not a real 'median', because there is only one correlation.
+                median.diff[[i]] <- mat1 - mat2 ## Not a real 'median', because there is only one correlation.
             }
         }
     }

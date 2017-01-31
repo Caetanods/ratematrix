@@ -4,12 +4,12 @@
 \alias{testRatematrix}
 \title{Test for difference between evolutionary rate matrix estimates}
 \usage{
-testRatematrix(chain, par = "all")
+testRatematrix(chain, par = c("all", "correlation", "rates"))
 }
 \arguments{
 \item{chain}{the posterior distribution of parameter estimates as output of the function 'readMCMC'.}
 
-\item{par}{sets which of the attributes of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates'. Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (the variance vector). Chose 'correlation' to test for the median overlap among the correlations (the distribution of correlation matrices).}
+\item{par}{sets which of the attributes of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates' (default is 'all'). Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (the variance vector). Chose 'correlation' to test for the median overlap among the correlations (the distribution of correlation matrices).}
 }
 \value{
 Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
