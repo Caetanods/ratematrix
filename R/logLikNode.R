@@ -1,4 +1,4 @@
-logLikNode <- function(ss, sigma_len ,sigma_len_inv, k){
+logLikNode <- function(ss, sigma_len , sigma_len_inv, k){
     ## Internal function to calculate the log likelihood at each node.
     ## ss = contrast.
     ## sigma_len = Sigma * branch length
