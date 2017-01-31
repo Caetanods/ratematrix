@@ -75,19 +75,14 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
     ## Maybe add test for the correct parameter values? Would improve user experience.
 
     ## Note that the user will need to always specify the number of parameters equal to the number of the traits in the model.
+    ## There was a problem in this part. The list of function with level 2 was having a strange behavior due to some environment thing.
+
     if(den.mu == "unif"){
-        mn_trait <- list()
-        for( i in 1:r ){
-            mn_trait[[i]] <- function(x) dunif(x, min=par.mu[i,1], max=par.mu[i,2], log=TRUE)
-        }
+        mn <- function(x) sum( sapply(1:r, function(i) dunif(x[i], min=par.mu[i,1], max=par.mu[i,2], log=TRUE) ) )
     }
     if(den.mu == "norm"){
-        mn_trait <- list()
-        for( i in 1:r ){
-            mn_trait[[i]] <- function(x) dnorm(x, mean=par.mu[i,1], sd=par.mu[i,2], log=TRUE)
-        }
+        mn <- function(x) sum( sapply(1:r, function(i) dnorm(x[i], mean=par.mu[i,1], sd=par.mu[i,2], log=TRUE) ) )
     }
-    mn <- function(x) sum( sapply(1:r, function(i) mn_trait[[i]](x[i]) ) )
 
     if( p == 1 ){
         if(den.sd == "unif"){
@@ -97,20 +92,15 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
             sd <- function(x) sum( dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
         }
     } else{
-
+        ## This thing below might solve the problem:
         if(den.sd == "unif"){
-            sd_regime <- list()
-            for(i in 1:p){
-                sd_regime[[i]] <- function(x) sapply(x, function(y) dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE))
-            }
+            ## The 'x' elements need to match with 'par.sd' rows.
+            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE) ) ) )
         }
         if(den.sd == "lnorm"){
-            sd_regime <- list()
-            for(i in 1:p){
-                sd_regime[[i]] <- function(x) sapply(x, function(y) dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE))
-            }
+            ## The 'x' elements need to match with 'par.sd' rows.
+            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE) ) ) )
         }
-        sd <- function(x) sum( sapply(1:p, function(i) sd_regime[[i]](x[[i]]) ) )
     }
 
     if(unif.corr == TRUE){
