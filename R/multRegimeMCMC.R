@@ -89,8 +89,8 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         cache.data$anc <- anc ## This need to come with the names.
     }
     
-    cache.data$p <- length( start[[2]] ) ## Number of R matrices to be fitted. Do I need this?
-
+    cache.data$p <- length( start[[2]] ) ## Number of R matrices to be fitted.
+    
     ## Creates MCMC chain cache:
     cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
     cache.chain$chain[[1]] <- start ## Starting value for the chain.
@@ -102,14 +102,16 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Need to calculate the initial log.lik with the single tree or with a random tree from the sample:
     if( is.list( phy[[1]] ) ){
-        rd.start.tree <- sample(1:n.phy, size = 1)
-        cache.chain$lik[1] <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes[[rd.start.tree]], cache.data$des[[rd.start.tree]]
+        rd.start.tree <- sample(1:n.phy, size = 1) ## Choose a starting tree from the pool of trees.
+        cache.chain$lik[1] <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes[[rd.start.tree]]
+                                               , cache.data$des[[rd.start.tree]]
                                                , cache.data$anc[[rd.start.tree]], cache.data$mapped.edge[[rd.start.tree]]
                                                , R=cache.chain$chain[[1]][[4]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
         cat( paste("Starting point log-likelihood: ", cache.chain$lik[1], "\n", sep="") )
     }
     if( !is.list( phy[[1]] ) ){
-        cache.chain$lik[1] <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+        cache.chain$lik[1] <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes, cache.data$des
+                                               , cache.data$anc, cache.data$mapped.edge
                                                , R=cache.chain$chain[[1]][[4]], mu=as.vector(cache.chain$chain[[1]][[1]]) )
         cat( paste("Starting point log-likelihood: ", cache.chain$lik[1], "\n", sep="") )
     }

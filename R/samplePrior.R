@@ -44,9 +44,13 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
     ## Sample phylogenetic means:
     mu <- matrix(nrow=n, ncol=pars$r)
     if(pars$den.mu == "unif"){
-        for(i in 1:pars$r){ mu[,i] <- runif(n=n, min=pars$par.mu[i,1], max=pars$par.mu[i,2]) }
+        for(i in 1:pars$r){
+            mu[,i] <- runif(n=n, min=pars$par.mu[i,1], max=pars$par.mu[i,2])
+        }
     } else{
-        for(i in 1:pars$r){ mu[,i] <- rnorm(n=n, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2]) }
+        for(i in 1:pars$r){
+            mu[,i] <- rnorm(n=n, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2])
+        }
     }
 
     if(n == 1){ mu <- as.numeric(mu[1,]) }

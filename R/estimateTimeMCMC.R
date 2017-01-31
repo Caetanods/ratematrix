@@ -99,7 +99,8 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cache.chain <- list()    
         cache.data$X <- data
         cache.data$data_cor <- cov2cor( var( data ) ) ## This is to use the correlation of the data to draw proposals for the root.
-        cache.data$k <- ncol(data) ## Number of traits.
+        cache.data$k <- r ## Number of traits.
+        cache.data$p <- p ## Number of regimes fitted to the tree.
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
         cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
         anc <- phy$edge[ord.id,1] ## Ancestral edges.
@@ -112,7 +113,6 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         names(anc)[which(anc %in% node.to.node)] <- 2
         names(anc)[which(anc %in% node.to.tip.node)] <- 3
         cache.data$anc <- anc ## This need to come with the names.
-        cache.data$p <- length( start[[2]] ) ## Number of R matrices to be fitted. Do I need this?
         cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
         cache.chain$chain[[1]] <- start ## Starting value for the chain.
         cache.chain$chain[[1]][[4]] <- list()
@@ -120,7 +120,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
 
         ## Function that evaluates the loglik, prior and Jacobian.
         evaluateStepMCMC <- function(){
-            logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+            logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
                              , R=cache.chain$chain[[1]][[2]], mu=as.vector(cache.chain$chain[[1]][[1]]) )    
             prior[[1]](cache.chain$chain[[1]][[1]])
             prior[[2]](cache.chain$chain[[1]][[4]])

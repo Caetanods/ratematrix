@@ -24,7 +24,7 @@ makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, i
     pp <- prop.root.prior - cache.chain$curr.root.prior
 
     ## Get log likelihood ratio.
-    prop.root.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+    prop.root.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
                               , R=cache.chain$chain[[iter-1]][[4]], mu=as.vector(prop.root) )
     ll <-  prop.root.lik - cache.chain$lik[iter-1]
     ## Get ratio in log space.

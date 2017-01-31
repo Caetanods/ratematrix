@@ -1,7 +1,8 @@
-logLikPrunningMCMC <- function(X, k, nodes, des, anc, mapped.edge, R, mu){
+logLikPrunningMCMC <- function(X, k, p, nodes, des, anc, mapped.edge, R, mu){
     ## This is a function to be used with the MCMC. The processing of the tree into the objects that have the information needed for traversing the tree will be computed prior to the call of this function.
     ## X is a matrix.
     ## k is a int with the number of traits.
+    ## p is a int with the number of regimes fitted to the tree.
     ## nodes is a vector
     ## anc is a vector
     ## mapped.edge is a matrix with number of columns equal to the number of regimes.
@@ -22,12 +23,14 @@ logLikPrunningMCMC <- function(X, k, nodes, des, anc, mapped.edge, R, mu){
 
     ## Traverse the tree.
     for (i in nodes) { ## Will visit all the internal nodes including the ROOT.
+        ## node.id are the nodes which ancestral is node 'i'. This will have length 2 assuming the tree is a bifurcating tree.
         node.id <- which(anc == i) ## The index for the 'des', 'anc', and 'mapped.edge (lines)'.
         type <- as.numeric( names(anc[node.id[1]]) )
         ## Next is a list of functions. Will return the updated cache for the tree traversal.
-        cache <- node_calc[[type]](X, k, des, anc, mapped.edge, R, node.id, cache)
+        cache <- node_calc[[type]](X, k, p, des, anc, mapped.edge, R, node.id, cache)
     }
 
+    ## Make the calculation for the root log-likelihood.
     cache$ll <- c(cache$ll, logLikNode(cache$X0[,length(cache$key)] - mu, cache$V0[,,length(cache$key)], solve(cache$V0[,,length(cache$key)]), k))
 
     return( sum(cache$ll) )

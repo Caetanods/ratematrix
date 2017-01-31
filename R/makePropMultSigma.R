@@ -42,7 +42,7 @@ makePropMultSigma <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, ite
         ## Only work with the one defined here.
         Rlik <- cache.chain$chain[[iter-1]][[4]] ## This log lik need both matrices.
         Rlik[[Rp]] <- prop.vcv
-        prop.sd.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+        prop.sd.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
                                 , R=Rlik, mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
         ll <-  prop.sd.lik - cache.chain$lik[iter-1]
         
@@ -81,7 +81,7 @@ makePropMultSigma <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, ite
         prop.vcv <- rebuild.cov( r=decom$r, v=cache.chain$chain[[iter-1]][[3]][[Rp]]^2 )
         Rlik <- cache.chain$chain[[iter-1]][[4]] ## This log lik need both matrices.
         Rlik[[Rp]] <- prop.vcv
-        prop.r.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
+        prop.r.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
                                , R=Rlik, mu=as.vector( cache.chain$chain[[iter-1]][[1]] ) )
         ll <- prop.r.lik - cache.chain$lik[iter-1]
         ## The hastings ratio.

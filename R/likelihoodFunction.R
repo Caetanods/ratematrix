@@ -37,6 +37,7 @@ likelihoodFunction <- function(data, phy, root, R){
 
         ## Correct format to matrix:
         R <- lapply(R, function(x) as.matrix(x) )
+        p <- length(R) ## The number of regimes fitted to the tree.
         
         if( !inherits(phy, what="simmap") ) stop( "R is a list or matrices but phy is not of type 'simmap'." )
         k <- ncol(data) ## Number of traits.
@@ -58,7 +59,7 @@ likelihoodFunction <- function(data, phy, root, R){
         names(anc)[which(anc %in% node.to.node)] <- 2
         names(anc)[which(anc %in% node.to.tip.node)] <- 3
 
-        loglik <- logLikPrunningMCMC(data, k, nodes, des, anc, mapped.edge, R=R, mu=root)
+        loglik <- logLikPrunningMCMC(data, k, p, nodes, des, anc, mapped.edge, R=R, mu=root)
         return(loglik)
         
     } else{ ## The case of a single regime.
