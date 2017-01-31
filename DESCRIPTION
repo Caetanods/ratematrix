@@ -18,8 +18,11 @@ Imports:
     readr
 Suggests:
     phytools,
-    microbenchmark
-VignetteBuilder: 
+    microbenchmark,
+    knitr,
+    rmarkdown
+VignetteBuilder: ,
+    knitr
 LinkingTo: 
 Collate:
     "sampleTreeClade.R"
