@@ -18,7 +18,7 @@ Return a matrix with the value of the test statistics. Values bellow 0.05 suppor
 Function uses summary statistics to test for differences betwwen the posterior distribution of parameter estimates for the evolutionary rate matrix regimes.
 }
 \details{
-This functions performs a test to check whether the posterior distribution of the fitted matrices are different. When the test is significant this means that the posterior distribution of the elements of the evolutionary rate matrices does not overlap more than 5%. This test is not a p value, since this is not an estimate of a probability of deviance from a given null distribution. The test relies on the median overlap of the posterior distribution. It assumes that when the posterior distribution of two or more paramaters do not overlap, then there is a significative difference between the parameters. \cr
+This functions performs a test to check whether the posterior distribution of the fitted matrices are different. When the test is significant this means that the posterior distribution of the elements of the evolutionary rate matrices does not overlap more than 5\%. This test is not a p value, since this is not an estimate of a probability of deviance from a given null distribution. The test relies on the median overlap of the posterior distribution. It assumes that when the posterior distribution of two or more paramaters do not overlap, then there is a significative difference between the parameters. \cr
 \cr
 When a posterior distribution with more than two rate regimes is fitted to the data, the function performs all pairwise combinations tests.
 }
