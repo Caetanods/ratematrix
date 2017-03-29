@@ -21,9 +21,10 @@ Suggests:
     microbenchmark,
     knitr,
     rmarkdown
-VignetteBuilder: ,
+VignetteBuilder:
     knitr
 LinkingTo: 
+LazyData: true
 Collate:
     "sampleTreeClade.R"
     "continueMCMC.R"
