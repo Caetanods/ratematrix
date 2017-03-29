@@ -40,6 +40,13 @@
 ##' plotRatematrix(posterior)
 makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.corr=TRUE, Sigma=NULL, nu=NULL){
 
+    ## Make a warning if 'unif.corr' is TRUE and 'Sigma' or 'nu' has values.
+    if( unif.corr ){
+        if( !is.null(Sigma) | !is.null(nu) ){
+            warning("Found values for 'Sigma' and 'nu', but 'unif.corr=TRUE'. Using uniform correlations.")
+        }
+    }
+    
     ## Save all parameters to use in subsequent functions.
     pars <- list()
     pars$r <- r ## Number of traits
