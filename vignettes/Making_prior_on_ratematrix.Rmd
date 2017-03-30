@@ -11,13 +11,13 @@ vignette: >
 
 # Using prior distributions with 'ratematrix'
 
-Here we are going to set uninformative and informative priors for each of the parameters of the model. This vignette will be divided into three sections, one for each parameter of the model. Please note that estimation is based on MCMC, so the analyses might take some time to run.
+Here we are going to set uninformative and informative priors for each of the parameters of the model. Please note that model estimation is based on Markov-chain Monte Carlo (MCMC), so the analyses described here might take some time to run.
 
 ## Priors on the root value
 
-The 'ratematrix' package estimates the root value and the evolutionary rate matrix for a multivariate Brownian-motion model. BM models have a property in which trait values for the nodes converge as we travel down from the tip to the root of the tree. The root value is going to be close to the mean of the tip data. Because of the properties of the model, we known a priori that the estimated root is not going to be outside the range of the observed tip values and likely close to the mean of the tip data.
+The 'ratematrix' package estimates the root value and the evolutionary rate matrix (**R**) for a multivariate Brownian-motion model (mvBM) with single or multiple rate regimes fitted to the same phylogenetic tree. The mvBM model (and also the single trait BM model) have the behavior that trait values estimated for the nodes approach the mean of the tip data as we traverse the nodes of the tree from the tips to the root. This happens because BM models have a fixed mean and the variance increases proportional to time. As a result, we known a priori that the estimated root is not going to be outside the range of the observed tip values and will be likely close to the mean of the tip data. Such information about the statistical behavior of the model, even if not directly related to biology, can help us design prior distributions to the Markov-chain Monte Carlo (MCMC) analysis.
 
-It is important to note that this behavior is expected for the **estimated root value** regardless of the true root value. The BM model (as well as many other models of trait evolution) requires information at the nodes of the phylogeny (such as fossil data) for a more accurate estimate of the root value.
+It is important to note that this behavior is expected for the *estimated root value* regardless of the true root value. The BM model, as well as many other phylogenetic comparative models of trait evolution, requires information at the nodes of the phylogeny for a more accurate estimate of the root value. Such information can come from fossil data, for example.
 
 Load required packages:
 ```{r}
@@ -25,7 +25,7 @@ library( ratematrix )
 library( geiger )
 ```
 
-Simulate some data:
+Simulate some data. Here we are using a phylogeny of 100 tips and two traits. However, it is straightforward to extend this analysis to more traits.
 ```{r}
 phy <- sim.bdtree(b=1, d=0, stop="taxa", n=100)
 R <- rbind(c(0.5, 0.2),
@@ -33,13 +33,13 @@ R <- rbind(c(0.5, 0.2),
 dat <- simRatematrix(tree=phy, vcv=R, anc=c(5,10))
 ```
 
-Now we will run three analysis, with a uniform prior, with a normally distributed prior centered in the mean of the tip data and with another informative prior, but centered far from the mean of the tip data.
+We will run two separated analysis using this data. One with a uniform prior for the root values and another with a normally distributed prior (informative prior) centered far from the true parameter value for the model. The objective of this exercise is to show how to set your own custom prior distribution and how the model will behave if this prior is misguided.
 
 ### Uniform prior on the root
 
-Set analysis. Here we will use the `makePrior()` function.
+First we need to set the prior. Although a uniform prior can be easily set using built-in options of the function `ratematrixMCMC`, here we 'manually' define the prior as a worked example using the function `makePrior()` .
 ```{r}
-## Create a matrix with the bounds for the uniform prior. 
+## Create a matrix the bounds for the uniform prior. 
 ## Here will use the max and min of the tip data as bounds.
 par.mu <- rbind( ceiling( range(dat[,1]) ), ceiling( range(dat[,2]) ) )
 ## Using a lognormal prior on the standard deviations, with log(mean)=0 and log(sd)=1.5.
@@ -49,7 +49,9 @@ unif.prior <- makePrior(r = 2, p = 1, den.mu = "unif", par.mu = par.mu, den.sd =
                         , par.sd = par.sd)
 ```
 
-Now we are ready to run the MCMC analysis using the prior we created. Here I slightly increased the frequency that the chain is sampling the root values.
+Now we are ready to run the MCMC analysis using the prior we created. Here I slightly increased the frequency that the chain is sampling the root values. Note that both the sampling frequencies for each parameter of the model (`prop`) and the width of the proposals (`w_sd` and `w_mu`) are parameters that can (and should!!) be tweaked by the user to maximize the efficiency of the sampler.
+
+The `ratematrixMCMC` function will write files to the working directory. The output is a handle object that stores the information of the MCMC run. The handle object (here named `handle.unif.root`) will be required by other functions.
 ```{r, eval=FALSE}
 handle.unif.root <- ratematrixMCMC(data=dat, phy=phy, prior=unif.prior, start="prior_sample"
                                    , gen=200000, outname="uniform_root_prior", prop=c(0.1,0.9) )
@@ -58,34 +60,38 @@ handle.unif.root <- ratematrixMCMC(data=dat, phy=phy, prior=unif.prior, start="p
 load( system.file("extdata", "unif.root.RData", package = "ratematrix") )
 ```
 
-This function will write files to the directory. The output is a handle object that stores the information of the MCMC run. The handle object will be required by other functions. The next code block will read the MCMC output from file and make a fast convergence analysis.
+The next code block will read the MCMC output from the files and make a fast convergence analysis.
 ```{r, eval=2}
 post.unif.root <- readMCMC(handle=handle.unif.root)
 checkConvergence(post.unif.root)
 ```
 
-This convergence analysis is only based on a single chain. Values of TRUE means that the chain passed the test. Please check the vignette about convergence for more details. Use function `browseVignettes("ratematrix")` for the list of vignettes.
-Now we can plot the prior used for this analysis. Note that the prior is flat with the specified range.
+This convergence analysis is based only on a single chain. The output table with TRUE/FALSE values are the result of the Heidel test (see package `coda` for more information). If provided with multiple chains, `checkConvergence` will compute the Gelman and Rubin (1992) potential reduction factor index, which is a much more robust test for convergence. The function `logAnalyzer` will make traceplots for the run.
+
+Now we can plot the prior used for this analysis. Note that the prior on the root values is flat within the specified range. Of course, the histogram is based on samples from the prior distribution, so the result is not completely flat.
 ```{r, fig.height=4, fig.width=6}
 plotPrior(handle=handle.unif.root, root=TRUE)
 ```
 
-Then we plot the posterior distribution of the root values. The red lines show the true parameter value used to simulate the data.
+In the same way, it is simple to make a quick check on the prior distribution for the evolutionary rate matrix (**R**)
+```{r, fig.height=4, fig.width=4}
+plotPrior(handle=handle.unif.root, set.xlim=c(-10,10))
+```
+
+Here we plot the posterior distribution for the vector of root values. Vertical red lines show the true parameter value used to simulate the data.
 ```{r, fig.height=4, fig.width=6}
 plotRootValue(post.unif.root, vline.values = c(5,10), vline.color = c("red","red"))
 ```
 
-Not bad! We can see that the posterior distribution of the root values include the true parameter values used for the simulations.
-
-
-We can see that the posterior distribution is centered around the true parameter values for the simulation. This is expected since we simulated data under the model.
+This plot makes it clear that the posterior distribution includes the true parameter value within its 95% highest posterior density (HPD) interval. This result is expected, since we simulated data under the model.
 
 ### Informative prior on the root
 
-What if the prior on the root value is informative? The two most common reasons to want this is when a) we have external information of the trait value at the root or b) we want to inform the parameter values to help the analysis achieve convergence. The first case is a obvious case for the use of priors. Priors can be used to input information we have about a model before the analysis even start. The second case is more technical. The idea is that some parameters of a model can be hard to estimate, so we can use prior distributions to help stabilize such estimates. This is not the case here, the multivariate Normal model is usually well-behaved. Check work by Uyeda and Harmon (A Novel Bayesian Method for Inferring and Interpreting the Dynamics of Adaptive Landscapes from Phylogenetic Comparative Data, 2014, Systematic Biology) for an interesting example on the use of informative priors.
+What if the prior on the root value is informative? The two most common reasons to implement informative priors are; a) use of external information such as trait values for the nodes (e.g., fossil data) or knowledge of the underlying genetic architecture of the traits under study, or b) to bond parameter values to a reasonable region of the parameter space when faced with difficulty in convergence. The first case is the most clear use of prior distributions. That is to inform our analysis based on extra information about the problem. The second case is more technical. The main point here is that when some of the parameters of a model are hard to be estimated or when there are not enough information in the data (maybe both!), the likelihood surface for the model might become flat on some regions and/or show some ridges. When the sampler gets stuck in some of these ridges the parameter values can become unrealistic (i.e., super large or small numbers with limited biological interpretation). In this case, even a weak prior distribution favoring reasonable parameter values can help the chain reach convergence. A useful analogy for this problem is the use of bounded maximum likelihood searches (see option "L-BFGS-B" in function `optim`). We suggest checking work by Uyeda and Harmon (A Novel Bayesian Method for Inferring and Interpreting the Dynamics of Adaptive Landscapes from Phylogenetic Comparative Data, 2014, Systematic Biology) for an interesting example on the use of informative priors.
 
-Here we are going to intentionally set a prior centered on values away from the true parameter values. Then we will explore the effect that this has on the analysis. First we generate the prior distribution, such steps are similar to what we did before:
+Here we are going to intentionally set a prior centered on values away from the true parameter values. This is an extreme example that will show the impact of the prior distribution on the posterior distribution. Then we will explore the effect that this has on the analysis results.
 
+First we generate the prior distribution with steps similar to what we did before. Then we run analysis and gather results.
 ```{r}
 ## Generate a matrix with the parameters for a normal distribution for the root values.
 ## Root_1: mean 0 and sd 1 and Root_2: mean 15 and sd 2.
@@ -96,13 +102,10 @@ par.sd <- c(0, 1.5)
 norm.prior <- makePrior(r = 2, p = 1, den.mu = "norm", par.mu = par.mu, den.sd = "lnorm"
                         , par.sd = par.sd)
 ```
-
-Now we run the analysis and gather results.
 ```{r, eval=FALSE}
 handle.norm.root <- ratematrixMCMC(data=dat, phy=phy, prior=norm.prior, start="prior_sample"
                                    , gen=200000, outname="normal_root_prior", prop=c(0.1,0.9) )
 ```
-
 ```{r, echo=FALSE}
 load( system.file("extdata", "norm.root.RData", package = "ratematrix") )
 ```
@@ -111,19 +114,15 @@ post.norm.root <- readMCMC(handle=handle.norm.root)
 checkConvergence(post.norm.root)
 ```
 
-We should check again the prior and the posterior.
+The Heidel test suggests the single chain reached convergence. Now we can make plots of the prior and posterior distributions.
 ```{r, fig.height=4, fig.width=6}
 plotPrior(handle=handle.norm.root, root=TRUE)
-```
-
-```{r, fig.height=4, fig.width=6}
 plotRootValue(post.norm.root, vline.values = c(5,10), vline.color = c("red","red"))
 ```
 
+Note how the true parameter value for root of trait_1 (red line) is away from the prior distributions whereas the root value for trait_2 is. Now compare the plot of the prior distribution with the plot for the posterior. While doing this pay attention to the x axes of the two plots, since the range is different. Both plotting functions have parameters to control the range of the x axis (see `set.xlim`). 
 
-Note how the prior distribution is away from the true parameter values of the model. Now compare the plot for the prior distribution with the plot for the posterior. Pay attention to the x axes of the two plots. The red lines show the true parameter values.
-
-The posterior distributions are not centered in the true parameter values for the model. The true value for trait_1 is not within the 95% HPD of the posterior distribution whereas trait_2 is. Also note that the true value for trait_1 is not within a high density of the prior whereas the true value for trait_2 is:
+Also note that the true value for trait_1 is not within a high density of the prior whereas the true value for trait_2 is:
 ```{r}
 ## Check the summary and quartiles for the prior distributions.
 ## Prior for trait 1:
@@ -132,32 +131,30 @@ summary( rnorm(1000, 0, 1) )
 summary( rnorm(1000, 15, 2) )
 ```
 
-The true value of trait_1 is way off the prior distribution. For trait_2 the true value is within the first quartile. Thus, the posterior distribution was updated in the direction of the true parameter value, but the effect of the prior was strong and biased the results.
+The true value of trait_1 is far from the prior distribution. For trait_2, the true value is within the first quartile of the prior. In this example the posterior distribution was updated in the direction of the true parameter value of the model, but the effect of the prior is strong and biased the results.
 
-Keep in mind that this is an extreme example to show the effect of an informative and wrong prior. However, this same effect can improve an analysis if the prior is properly created by using external data (such as fossils) or bounded on realistic parameter values for the model.
+This was an extreme example to show the effect of an informative prior centered away from the "true" parameter values for the model. On the other hand, such an effect can improve the biological interpretations of results if a prior is used to input external information about the data or help avoid unreasonable parameter values.
 
 ## Priors on the evolutionary rate matrix
 
-While the vector of root values represents the starting point for the multivariate Brownian-motion process walking along the branches of the tree, the evolutionary rate matrix (**R**) is the variance-covariance matrix of such process. Here we can set priors for both the rates of evolution for each trait and their evolutionary covariances.
+While the vector of root values represents the starting point for the multivariate Brownian-motion process walking along the branches of the tree from the root to the tips, the evolutionary rate matrix (**R**) is the variance-covariance matrix of such process. Here we will explore setting priors for both the rates of evolution for each trait and their evolutionary covariances, which together compose the **R** matrix.
 
-External information for the evolutionary covariances among traits can be results from studies of character correlations within or among populations or even knowledge about the underlying genetic architecture of the traits. It is possible to set informative (or uninformative) priors independently for the structure of evolutionary correlation among the traits and the rates of evolution of each trait. This flexibility is a result of the sampling strategy used in the MCMC.
+Results of studies on character correlations within or among populations and knowledge about the underlying genetic architecture of traits are examples of external information that can be used to set informative prior distributions on the structure of correlation among traits.
 
-In this part of the tutorial we will set a uninformative prior and compare the results with an informative prior. For simplicity, we will use the same data set and trees used in the previous section.
+Because of the sampler scheme implemented in `ratematrix`, it is possible to set independent prior distributions to the structure of evolutionary correlation among traits and the vector of evolutionary rates for each trait. In this part of the tutorial we will set a uninformative prior and compare the results with an informative prior. For simplicity, we will use the same data set and trees of the previous section.
 
 ### Uniformative priors on the evolutionary correlation
 
 First we will set a uninformative prior for the evolutionary correlation among traits. This analysis is identical to the first analysis conducted in this tutorial. So we will use the same results.
 
-This uninformative prior on the evolutionary covariances is a marginally uniform prior. In other words, the correlation among each two traits in the data has a uniform distribution when integrated over the uncertainty in all other elements of the **R** matrix.
+The uninformative prior on the evolutionary covariances is a marginally uniform prior. In other words, the correlation among each two traits in the data has a uniform distribution when integrated over the uncertainty in all other elements of the **R** matrix. We will make some plots to demonstrate this concept.
 
-First plot the prior for the entire **R** matrix:
+First plot the prior for the entire **R** matrix, which is a variance-covariance matrix.
 ```{r, fig.height=4, fig.width=4}
 plotPrior(handle.unif.root, n = 10000, root = FALSE, set.xlim=c(-10,10), alphaEll=0.5)
 ```
 
-Now, since this prior distribution is composed by a correlation matrix that describe the structure of evolutionary correlation among traits and a vector of variances (the rates of evolution for each trait), we can decompose the matrices plotted in the last figure and create independent plots.
-
-For this we need first to take some samples from the prior distribution. The `samplePrior` function can be used to take samples from a prior distribution. Options allow for generating **R** matrices from the sample or output the correlation matrix and vector of standard deviations independently. We will use the later option, so that we can prepare independent plots.
+Now we can decompose this distribution of variance-covariance matrices in a distribution of correlation matrices and another distribution of standard variations for each trait. For this, we will use the function `samplePrior` to take samples from the prior distribution on the correlation structure and standard deviations separately. One can also use this function to sample the variance-covariance matrices instead of their different components.
 ```{r, fig.height=4, fig.width=4, fig.show="hold"}
 ss <- samplePrior(n=1000, prior=unif.prior, sample.sd = TRUE, rebuild.R = FALSE)
 corr <- sapply(ss$matrix, function(x) cov2cor(x)[1,2] )
@@ -166,23 +163,25 @@ hist( ss$sd[,1], main="Standard deviation - trait 1")
 hist( ss$sd[,2], main="Standard deviation - trait 2")
 ```
 
-Note from these plots that the prior on the correlation is uniform and the standard deviations have a log-normal prior. It is difficult to see from the plot of the whole **R** matrix that the correlations are uniformly distributed, but this is made clear by decomposing the variance-covariance matrix.
+Note from these plots that the prior on the correlation is uniformly distributed between -1 and 1. On the other hand, the standard deviations show a log-normal distribution, just as we set it to be. It is difficult to see from the plot of the whole **R** matrix that the correlations are uniformly distributed, but this is made clearer by transforming the covariance into a correlation.
 
-We already performed the analysis using this data and prior. So we will just plot the posterior distribution for the **R** matrix:
+We already performed the analysis using this data and prior. So we will just plot the posterior distribution for the **R** matrix. Here note that the red lines show the **R** matrix used to generate the data.
 ```{r, fig.height=4, fig.width=4}
 plotRatematrix(chain=post.unif.root, set.leg = c("trait_1", "trait_2"), point.matrix = list(R)
                , point.color = "red", point.wd = 1.5)
 ```
 
-Here note that the red line show the **R** matrix used to generate the data. The posterior distribution in this case is nicely congruent with the true parameter value.
+Note that the posterior distribution in this case is congruent with the true parameter value used to generated the data.
 
 ### Using informative prior distributions on the structure of evolutionary correlation among traits
 
-Here we have external information about the pattern of evolutionary integration among traits. Perhaps we know that traits show positive correlation, negative correlation or we have a strong prior that no correlation should be observed.
+Here we will repeat the exercise of using a informative prior on the analysis, but now focusing on the structure of evolutionary correlation among traits.
 
-Note that I used a log-normal prior on the standard deviations of the previous analyses. Such prior puts more weight towards smaller values for the rates of evolution of the traits. This follows the notion that values for this parameter are usually not very large. Something between 0 and 10, but varying in function of the depth of the phylogeny. On the other hand, the marginally uniform prior set a uniform prior on the evolutionary correlation among the traits, so negative, positive and no correlation have the same weight (probability).
+Note that I used a log-normal prior on the standard deviations. Such prior puts more weight toward smaller values for the rates of evolution of the traits. This follows the notion that values for this parameter are usually not very large (and never negative). On the other hand, the marginally uniform prior applied to the correlation matrix sets a uniform prior on the correlation, so negative, positive and no correlation have the same weight (i.e., prior probability).
 
-Here we will set the prior such that most of the density is centered in no correlation. Note that it is important to set the option 'unif.corr' to FALSE in order to input different values for parameters 'Sigma' and 'nu'.
+Maybe we think that this is not a reasonable prior distribution and that strong correlations, either negative or positive, should have less prior probability than weak correlations. For this we will set the prior to be centered on 0 correlation and with most of the density within the -0.5 and 0.5 interval.
+
+Note that here we need to set the option 'unif.corr' to FALSE in order for the function to use the custom input values for the parameters 'Sigma' and 'nu'.
 ```{r}
 ## Create a matrix with the bounds for the uniform prior. 
 ## Here will use the max and min of the tip data as bounds.
@@ -201,7 +200,7 @@ corr.prior <- makePrior(r = 2, p = 1, den.mu = "unif", par.mu = par.mu, den.sd =
                         , par.sd = par.sd, unif.corr = FALSE, Sigma = Sigma, nu = nu)
 ```
 
-We can take samples of this prior. Here separating the standard deviations from the correlation matrix.
+We can take samples of this prior and make independent plots for the distribution of correlations and standard deviations.
 ```{r, fig.height=4, fig.width=4, fig.show="hold"}
 ss.corr <- samplePrior(n = 1000, prior=corr.prior, sample.sd = TRUE, rebuild.R = FALSE)
 corr.p <- sapply(ss.corr$matrix, function(x) cov2cor(x)[1,2] )
@@ -210,19 +209,21 @@ hist( ss.corr$sd[,1], main="Standard deviation - trait 1")
 hist( ss.corr$sd[,2], main="Standard deviation - trait 2")
 ```
 
-Notice how the distribution for the standard deviations has not changed, but the prior on the correlation is not centered on the zero value. Also pay attention to the x axis on the plot, the true value of the correlation is:
+Notice how the distribution of standard deviations has not changed even after modifying the prior on the correlation. This allows for great flexibility for setting prior distributions when using the `ratematrix` package. Note that we successfully set the prior on the correlations as intended (nice!).
+
+The chosen prior is very informative and is does not span the true parameter value for the simulation. The true correlation value used in the simulations is:
 ```{r}
 cov2cor(R)[1,2]
 ```
 
-Now take samples of **R** matrices from the prior. This time not separating into different elements. To do this we just need to pass the prior samples to the plotting function. The plotting function will take care of rebuilding the **R** matrix from the vector of standard deviations and the correlation matrix.
+After sampling from the prior distribution using `samplePrior` we can apply the function `plotRatematrix` to make a plot of the distribution of **R** matrices. The function `plotratematrix` will rebuild the variance-covariance matrices from the joint distribution of correlation matrices and standard deviations prior to making the plot. This is possible because `samplePrior` produces output in the same format as the `readMCMC` function.
 ```{r, fig.height=4, fig.width=4, fig.show="hold"}
 plotRatematrix(ss.corr, set.xlim = c(-10,10), show.zero = TRUE)
 ```
 
-Comparing this prior distribution with the previous analysis it is possible to see how the covariance term is much more tightly distributed around 0.
+We can compare this prior distribution with the prior distribution used in the previous analysis. It is possible to see how the covariance term is much more tightly distributed around 0.
 
-Now we can set and run the analysis with this prior, then check convergence and plot the posterior distribution.
+Now we can set and run the analysis using this prior, then check convergence and plot the posterior distribution.
 ```{r, echo=FALSE}
 load( system.file("extdata", "corr.zero.RData", package = "ratematrix") )
 ```
@@ -235,7 +236,11 @@ plotRatematrix(post.corr.zero, point.matrix = list(R), point.color = "red", poin
                , show.zero = TRUE)
 ```
 
-Now we can see a result that is similar to when we set a informative prior to the vector of root values. The posterior distribution for the evolutionary covariance among traits is not centered in the true parameter value whereas it was in the previous analysis with the marginally uniform prior. The bias is also predictable, the posterior distribution has shifted towards the zero value.
+The result is similar to when we set an informative prior to the vector of root values. The posterior distribution for the evolutionary covariance among traits is not centered in the true parameter value whereas it was in the previous analysis with the marginally uniform prior. The bias is also predictable; the posterior distribution has shifted towards the zero value.
+
+## Final considerations
+
+It is important to note that in empirical studies there is no such thing as "true parameter values". While it is straightforward to show the impact of the prior distribution using simulations, it is much harder with empirical data. For this reason, we recommend that users actively explore different prior distributions. Also, a Maximum Likelihood Estimate (MLE) can be performed with packages such as `mvMORPH` and `phytools`. The MLE result should be compared with the Bayesian posterior distribution. If the MLE is not congruent with the MCMC analysis, some questions need to be answered before moving forward; does the MLE reached a global solution? Is the prior distribution away from the MLE? Have the MCMC really converged?
 
 > "And a lean, silent figure slowly fades into the gathering darkness, aware at last that in this world, with great power there must also come -- great responsibility!"
 (Stan Lee and Steve Ditko, 1962. Amazing Fantasy #15)
