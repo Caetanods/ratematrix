@@ -15,7 +15,7 @@
 ##' @return A named vector with the acceptance ratio for the whole MCMC and each of the parameters of the model. If a list of phylogenetic trees was provided to the MCMC chain, then the output is a list with the acceptance ratio for the parameters and a table showing the frequency in which each of the phylogenies was accepted in a move step.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
+##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
 ##' \donttest{
 ##' ## Load data
@@ -28,9 +28,9 @@
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
 ##' plotPrior(handle, root=TRUE)
-##' logAnalizer(handle, burn=0.25, thin=1)
+##' logAnalyzer(handle, burn=0.25, thin=1)
 ##' }
-logAnalizer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.result=TRUE, dir=NULL){
+logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.result=TRUE, dir=NULL){
     ## Need to read the log output. Then make some plots or such.
 
     ## Check the directory.

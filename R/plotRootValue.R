@@ -29,7 +29,7 @@
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
 ##' plotPrior(handle, root=TRUE)
-##' logAnalizer(handle)
+##' logAnalyzer(handle)
 ##' }
 plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, set.cex.axis=1.5, set.xlim=NULL, hpd=100, mfrow=1, vline.values=NULL, vline.color=NULL, vline.wd=NULL, show.zero=FALSE){
     ## Plot Root value. Will work just like the plotRatematrix.

@@ -14,7 +14,7 @@
 ##' @return A plot similar to 'plotRatematrix'.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
+##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
 ##' \donttest{
 ##' ## Load data
@@ -27,7 +27,7 @@
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
 ##' plotPrior(handle, root=TRUE)
-##' logAnalizer(handle)
+##' logAnalyzer(handle)
 ##' }
 plotPrior <- function(handle, n=1000, root=FALSE, color="black", ...){
     

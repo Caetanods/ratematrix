@@ -16,7 +16,7 @@
 ##' @return List of density functions that calculated the log-likelihood given parameter values, the log-likelihood of the prior is equal to the sum of the prior for the root value (first element), the prior for the correlation matrix (second element), and the prior for the vector of standard deviations (third element). The fourth element of the list is a list with the parameters used to specify the prior.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
+##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
 ##' ## Set the prior, take a sample from it and compute the log-likelihood.
 ##' par.mu <- rbind( c(-10, 10), c(-10, 10) )

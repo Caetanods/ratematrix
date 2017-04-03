@@ -9,7 +9,7 @@
 ##' @return List with the MCMC chain for the phylogenetic mean (root value) and evolutionary rate matrices (R). *root* are the values for the phylogenetic mean in matrix format; *matrix* is a list of length equal to the number of matrices fitted to the tree, each of those are lists with the chain of respective R matrices.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
+##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
 ##' \donttest{
 ##' ## Load data
@@ -22,7 +22,7 @@
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
 ##' plotPrior(handle, root=TRUE)
-##' logAnalizer(handle)
+##' logAnalyzer(handle)
 ##' }
 readMCMC <- function(handle, burn=0.25, thin=100, dir=NULL){
     

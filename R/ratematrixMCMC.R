@@ -4,7 +4,7 @@
 ##' \cr
 ##' The function will print a series of messages to the screen. Those provide details of the setup of the chain, the unique identifier for the files and the log-likelihood of the starting value of the chain. Up to now these messages cannot be disabled. \cr
 ##' \cr
-##' SAMPLE OF TREES: The MCMC chain can integrate the phylogenetic uncertainty or the uncertainty in the rate regimes by randomly sampling a phylogenetic tree from a list of trees. To activate this option, provide a list of 'simmap' or 'phylo' trees as the 'phy' argument. The MCMC will randomly sampled a tree each time the likelihood of the proposal is evaluated. Check the 'logAnalizer' function for more information. \cr
+##' SAMPLE OF TREES: The MCMC chain can integrate the phylogenetic uncertainty or the uncertainty in the rate regimes by randomly sampling a phylogenetic tree from a list of trees. To activate this option, provide a list of 'simmap' or 'phylo' trees as the 'phy' argument. The MCMC will randomly sampled a tree each time the likelihood of the proposal is evaluated. Check the 'logAnalyzer' function for more information. \cr
 ##' \cr
 ##' MCMC DOES NOT START: It is possible that the starting point shows a very low likelihood value, resulting in the collapse of the chain. This might be a result of a random sample from a very unlikely region of the prior. We suggest that another sample of the prior is taken or, if this does not solve the issue, that the starting point be the maximum likelihood estimate or set manually. \cr
 ##' \cr
@@ -37,7 +37,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom ape is.ultrametric
 ##' @importFrom phytools rescaleSimmap
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalizer }} to read and analyze the log file.
+##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
 ##' \donttest{
 ##' ## Load data
@@ -50,7 +50,7 @@
 ##' plotRootValue(posterior)
 ##' plotPrior(handle)
 ##' plotPrior(handle, root=TRUE)
-##' logAnalizer(handle)
+##' logAnalyzer(handle)
 ##' }
 ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=FALSE, save.handle=TRUE){
 
