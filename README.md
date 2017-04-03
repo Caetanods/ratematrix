@@ -12,9 +12,13 @@ Here is a quick example of how to run a MCMC chain. [Please check the wiki page 
 ```{r,R.options=list(max.print=20)}
 install.packages("devtools")
 library(devtools)
-install_github("Caetanods/ratematrix")
+install_github("Caetanods/ratematrix", build_vignettes = TRUE)
 ```
 
+In case you are working with an older version of R and have problems to install the package using 'devtools', try to set this option as a workaround:
+```{r,R.options=list(max.print=20)}
+options(download.file.method = "wget")
+```
 Short tutorial to show the usage of the package:
 ```{r,R.options=list(max.print=20)}
 ## Load packages.
