@@ -15,7 +15,8 @@ Imports:
     corpcor,
     MASS,
     phylolm,
-    readr
+    readr,
+    mvMORPH
 Suggests:
     phytools,
     microbenchmark,
