@@ -28,7 +28,7 @@ LazyData: true
 Collate:
     "sampleTreeClade.R"
     "continueMCMC.R"
-    "logAnalizer.R"
+    "logAnalyzer.R"
     "likelihoodFunction.R"
     "makePropSingleSigmaList.R"
     "makePropMeanList.R"
