@@ -15,4 +15,3 @@ Print method for the "ratematrix_prior_sample" class.
 \details{
 Print information about object.
 }
-

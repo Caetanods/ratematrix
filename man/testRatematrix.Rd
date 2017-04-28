@@ -38,4 +38,3 @@ testRatematrix(chain=posterior, par="correlation")
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }
-

@@ -15,4 +15,3 @@ Print method for the "ratematrix_multi_mcmc" class.
 \details{
 Print information about object.
 }
-

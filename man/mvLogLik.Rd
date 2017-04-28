@@ -25,4 +25,3 @@ Calculates the log likelihood of a tree, rates and phylogenetic mean. Applies to
 This function uses the pruning algorithm. This avoids the calculation of the inverse and the determinant of large matrices. Also it makes calculation much more stable, so the likelihood can be calculated even for very large matrices. This function is to be used outside of the MCMC, since one can precaulculate some quantities that are constant given the tree and the data.
 The regimes in the 'simmap' tree need to be named to assume the proper match between the rate matrices and the tree.
 }
-

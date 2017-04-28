@@ -41,4 +41,3 @@ likelihoodFunction(data=centrarchidae$data, phy=centrarchidae$phy.map, root=samp
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }
-

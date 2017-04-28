@@ -50,10 +50,9 @@ data(centrarchidae)
 handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000, start=start)
 }
 }
-\author{
-Daniel S. Caetano and Luke J. Harmon
-}
 \seealso{
 \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the samples from the prior.
 }
-
+\author{
+Daniel S. Caetano and Luke J. Harmon
+}

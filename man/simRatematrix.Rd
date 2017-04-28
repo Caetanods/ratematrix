@@ -24,10 +24,9 @@ Funyction to simulate correlated traits under a multivariate Brownian motion mod
 \details{
 This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other applications please refer to the original implementation of 'sim.corrs' in the package 'phytools'. The function uses a covariance matrix (evolutionary rate matrix R) to indicate the rates of the traits.
 }
-\author{
-Daniel S. Caetano and Luke J. Harmon
-}
 \seealso{
 \code{\link{ phytools::sim.corrs }} for the original version of this function.
 }
-
+\author{
+Daniel S. Caetano and Luke J. Harmon
+}

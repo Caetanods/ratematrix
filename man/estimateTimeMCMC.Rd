@@ -34,10 +34,9 @@ estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000000
 data(anoles)
 estimateTimeMCMC(data=anoles$data[,1:4], phy=anoles$phy, gen=1000000)
 }
-\author{
-Daniel S. Caetano and Luke J. Harmon
-}
 \seealso{
 \code{\link{ microbenchmark::microbenchmark }} for a precise function to estimate computing times.
 }
-
+\author{
+Daniel S. Caetano and Luke J. Harmon
+}

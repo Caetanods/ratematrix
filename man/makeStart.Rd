@@ -33,4 +33,3 @@ plotRatematrix(posterior)
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }
-

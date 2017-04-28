@@ -52,10 +52,9 @@ plotRatematrix(posterior)
 plotRootValue(posterior)
 plotPrior(handle)
 plotPrior(handle, root=TRUE)
-logAnalizer(handle)
+logAnalyzer(handle)
 }
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }
-

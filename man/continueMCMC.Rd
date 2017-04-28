@@ -41,4 +41,3 @@ handle.add <- continueMCMC(handle=handle.cont, add.gen=1000)
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }
-

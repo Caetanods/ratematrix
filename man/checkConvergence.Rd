@@ -34,13 +34,12 @@ checkConvergence(posterior1, posterior2)
 ## A convergence test using 'Heidelberger test' calculated from a single MCMC chain.
 checkConvergence(posterior1)
 }
-\author{
-Daniel S. Caetano and Luke J. Harmon
-}
 \references{
 \describe{
   \item{}{Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, Statistical Science, 7, 457-511.}
   \item{}{Heidelberger, P and Welch, PD (1983) Simulation run length control in the presence of an initial transient. Opns. Res., 31, 1109-44.}
 }
 }
-
+\author{
+Daniel S. Caetano and Luke J. Harmon
+}

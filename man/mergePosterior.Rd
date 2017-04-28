@@ -29,4 +29,3 @@ plotRatematrix(merged)
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }
-

@@ -15,4 +15,3 @@ Print method for the "ratematrix_prior_function" class.
 \details{
 Print information about object.
 }
-
