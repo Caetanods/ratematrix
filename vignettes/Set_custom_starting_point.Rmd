@@ -1,0 +1,143 @@
+---
+title: "Set custom starting point with 'ratematrix'"
+author: "Daniel S. Caetano"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Set custom starting point}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Set custom starting point with 'ratematrix'
+
+Here we are going to set a custom starting point distribution for the Markov-chain Monte Carlo (MCMC) run. Please note that model estimation is based on MCMC, so the analyses described here might take some time to run.
+
+## General comments
+
+The default behavior of the 'ratematrix' package is randomly draw staring points from the prior do the model. This is defined by the argument `start` of the function `ratematrixMCMC`. This argument accepts three possible values: `"prior_sample"`, `"mle"`, and a list object with a custom starting point. In this tutorial I will show how to set up this list object with a custom starting point. As an exercise we will use the best posterior value from a previous MCMC chain to start a new chain.
+
+## Structure of the starting point list
+
+The starting point is a object of type list with three elements: a vector of root values, a correlation matrix, and a vector of variance elements. The correlation matrix and the vector of variance elements will be used to recompose the evolutionary rate matrix (**R**).
+
+Here I will take samples from the default prior distribution used in the `ratematrix` package using the function `makeStart`. This function is mostly used internally to set the initial point when runing `ratematrixMCMC` with `start = "prior_sample"`. Then, I will use the output to show examples of the format necessary to set custom starting points.
+
+Load package:
+```{r}
+library( ratematrix )
+```
+
+Generate a sample from the prior:
+```{r}
+( one.regime.sample <- makeStart(k = 3, p = 1) )
+```
+
+Note that the result is a list with three elements. `one.regime.sample[[1]]` is a vector of root values, `one.regime.sample[[2]]` is a matrix with a correlation matrix and, finally, `one.regime.sample[[3]]` is a vector of variance components. This is the format for a model with 3 traits (`k=3`) and 1 regime (`p=1`). Now let's increase the number of regimes to 2 and see the format of the sample.
+
+```{r}
+( two.regime.sample <- makeStart(k = 3, p = 2) )
+```
+
+Now the format looks a little different, but the structure is the same. The first element of the list is the vector of root values. Since we will always have just one root value for each trait in the model independent of the number of rate regimes, this is still a numeric vector. The second element now is a list. `two.regime.sample[[2]]` is a list with two correlation matrices; one for each fitted regime in the model. Of course, all correlation matrices for the `p` regimes need to have the same dimension; with the number of rows and number of columns equal to the number of traits in the model. The third element is also now a list. `two.regime.sample[[3]]` is a list with two elements; the vector of variance components for each of the `p` regimes of the model. The order of the list elements of `two.regimes.sample[[1]]` and `two.regimes.sample[[2]]` need to match.
+
+This structure holds for any number of regimes and any number of trait in the model. With a larger number of regimes the number of elements will increase.
+
+## Order of the regimes in the start point object
+
+The order of the regimes is the same as in the `simmap` format phylogeny. Here I will use the dataset provided with the package as an example:
+
+```{r}
+data( anoles )
+anoles$phy
+```
+
+Here `data$phy` is a `simmap` tree with two regimes. The regimes are `island` and `mainland`. The order of the correlation matrices and vectors of variance components is the same; first the correlation and variance associated with `island` and second the one for `mainland`.
+
+Although the order for the regimes is the same as the `simmap` tree, there is no need to name the elements of the list. As a matter of fact, the package `ratematrix` will not verify if the names of the list match the regimes in the tree. (Although this seems an intelligent thing to implement in the future!)
+
+# Worked example
+
+Here I will walk through an application example. Imagine we have a large phylogeny with several regimes. There is a change that the MCMC will take a long time to reach convergence, because the parameter space and number of dimensions of the model is very large. In this case, starting from a random sample from the prior might not be a good idea, since the starting point for the MCMC might be very far from the region of the highest density of the posterior distribution.
+
+One of the solutions to this problem is to start with the Maximum likelihood estimate (MLE) for the model. We can easily do that by setting the parameter `start = "mle"` in the function `ratematrixMCMC`. This option will make the estimate of the MLE for the model first, then use this estimate as the starting point for the MCMC.
+
+If our data show a pattern in which most of the tree is associated with a single regime (call it the *background regime*) and all other regimes are restricted to isolated, relativelly small clades, there is another possible strategy to improve the convergence of the model. Since the *background regime* is present in the majority of the tree and the fact that we can compute the likelihood for the model by traversing each branch of the tree, we can deduct that most of the likelihood of the model will be driven by this *backgroud regime*. Thus, we could produce a rough guess of where the posterior for the model is in this this vast, multidimentional space by performing a preliminary MCMC analysis with a single regime only.
+
+In this example the preliminary MCMC analysis with a single regime will start from the prior distribution and work its way to the posterior distribution of a model that assumes a single evolutionary rate matrix for the whole tree. This posterior will be, roughly, a mean across the evolutionary rate matrices for each `p` regimes of the full model. Thus, if we take samples from this posterior distribution and use it as a starting point for each of the evolutionary rate matrix regimes, it might be a better initial guess than the default behavior of taking a sample from the prior, specially if the prior is uninformative.
+
+To show how to do this I will perform a short MCMC analysis with a small dataset. However, the procedure would be the same with a larger dataset.
+
+
+```{r, eval=FALSE}
+handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles$phy, gen=500000, singlerate=TRUE)
+handle <- readRDS( "ratematrixMCMC.23182.mcmc.handle.rds" )
+mcmc <- readMCMC(handle, thin = 200)
+```
+```{r, echo=FALSE}
+load( system.file("extdata", "mcmc.start.point.tutorial.RData", package = "ratematrix") )
+```
+```{r}
+plotRatematrix(mcmc)
+```
+
+It is clear from this plot that the MCMC chain is not yet converged. One should run it for more generations. But this might be good enough for the present tutorial.
+
+Now we can get two random samples from this distribution and use it to set the initial state for the second MCMC run comprising the two regimes (`island` and `mainland`).
+
+Check the structure of the `mcmc` object:
+```{r}
+mcmc
+```
+```{r}
+names( mcmc )
+```
+```{r}
+class( mcmc$root )
+dim( mcmc$root )
+```
+
+Here `mcmc$root` is a matrix with the root value for each trait in the columns and each row is a sample from the posterior distribution.
+
+```{r}
+class( mcmc$matrix )
+length( mcmc$matrix )
+mcmc$matrix[[1]]
+```
+
+Here `mcmc$matrix` is a list object with number of elements equal to the number of rows of `mcmc$root`. Each element of the list is a evolutionary rate matrix. A variance-covariance matrix that describes the evolutionary pattern among the three traits on the branches of the phylogeny under multivariate Brownian-motion.
+
+Now we get one sample for the root values and a number of random samples equal to the rate regimes:
+```{r}
+id <- sample(x = 1:length(mcmc$matrix), size = 2)
+( root <- as.numeric( mcmc$root[id[1],] ) ) ## Just one sample.
+( R <- mcmc$matrix[id] ) ## Two samples in our case.
+```
+
+We are almost there. Note that the samples we took here are in a different format from the start point for the `ratematrixMCMC` function described above. We need to transform the variance-covariance matrices into correlation matrices and variance vectors.
+
+Transform the matrices using the package `corp.cor`. Then compose the starting point object.
+```{r}
+library( corpcor )
+corr <- lapply(R, function(x) decompose.cov(x)[[1]] )
+var <- lapply(R, function(x) decompose.cov(x)[[2]] )
+( start <- list(root, corr, var) )
+```
+
+Now we check whether it works:
+```{r, eval=FALSE}
+handle.unif.root <- ratematrixMCMC(data=dat, phy=phy, prior=unif.prior, start="prior_sample"
+                                   , gen=200000, outname="uniform_root_prior", prop=c(0.1,0.9) )
+```
+```{r, echo=FALSE}
+load( system.file("extdata", "unif.root.RData", package = "ratematrix") )
+```
+```{r, eval=FALSE}
+( custom.start.handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles$phy, start=start, gen=1000) )
+```
+```{r, echo=FALSE}
+load( system.file("extdata", "handle.start.point.tutorial.RData", package = "ratematrix") )
+custom.start.handle
+```
+
+Great!
