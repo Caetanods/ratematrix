@@ -6,7 +6,9 @@ R package for the study of patterns of evolutionary correlation among two or mor
 
 For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article available at (http://biorxiv.org/content/early/2017/01/25/102939)
 
-This package is under development. Although most of the functionality is already working without any problems, please contact the author (caetanods1[at]gmail.com) if you are interested in using this package for any publication. 
+If you use the package please cite "Caetano, D. S., and L. J. Harmon. 2017. ratematrix: an R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecolology and Evolution http://dx.doi.org/10.1111%2F2041-210X.12826 "
+
+Please contact the author (caetanods1[at]gmail.com) if you have any question, problem or suggestion for the package. The authors also watch and update the github 'issues' tab.
 
 Installation depends on 'devtools'.
 ```{r,R.options=list(max.print=20)}
