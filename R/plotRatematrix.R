@@ -81,7 +81,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
     }
     if( is.null(colors) ){
         np <- length(p)
-        if( np > 9 ) stop("Unable to generate colors for more than 9 regimes. Please chose color vector for the 'colors' argument.") 
+        if( np > 9 ) stop("Unable to generate colors for more than 9 regimes. Please define color vector using 'colors' argument.") 
         if( np == 1 ){
             colors <- "black"
         } else{
@@ -91,7 +91,6 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         }
     }
             
-
     ## Check if there is only one regime to be plotted:
     if(length(p) == 1){ ## Nothing to check here, because of single regime.        
         if( is.list(chain$matrix) & is.matrix(chain$matrix[[p]][[1]]) ){ ## The first level is a list.
@@ -220,11 +219,11 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         for( w in 1:length(p) ){
             ell.data.count <- 1 ## A counter.
             ell.data[[w]] <- list()
-            for(i in 2:dd){
-                for(j in 1:(i-1)){                    
+            for(j in 2:dd){
+                for(i in 1:(j-1)){                    
                     ell.data[[w]][[ell.data.count]] <- getEllipseAllMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ]
-                                                                         , traits=c(i,j), n.points=n.points)
-                    ell.data.count <- ell.data.count + 1 ## Update the counter.
+                                                                        , traits=c(i,j), n.points=n.points)
+                    ell.data.count <- ell.dta.count + 1 ## Update the counter.
                 }
             }
         }
@@ -242,8 +241,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             for( w in 1:length(p) ){
                 ell.point[[w]] <- list()
                 ell.point.count <- 1
-                for(i in 2:dd){
-                    for(j in 1:(i-1)){
+                for(j in 2:dd){
+                    for(i in 1:(j-1)){
                         ell.point[[w]][[ell.point.count]] <- getEllipseMatrix( mat=point.matrix[[w]], traits=c(i,j)
                                                                             , sample.line=n.lines, n.points=n.points)
                         ell.point.count <- ell.point.count + 1
@@ -433,8 +432,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         for( w in 1:length(p) ){
             ell.data[[w]] <- list()
             ell.data.count <- 1    
-            for(i in 2:dd){
-                for(j in 1:(i-1)){
+            for(j in 2:dd){
+                for(i in 1:(j-1)){
                     ell.data[[w]][[ell.data.count]] <- getEllipseMatrix(mat=chain$matrix[[ p[w] ]], traits=c(i,j)
                                                                       , sample.line=n.lines, n.points=n.points )
                     ell.data.count <- ell.data.count + 1
@@ -451,8 +450,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             for( w in 1:length(p) ){
                 ell.point[[w]] <- list()
                 ell.point.count <- 1
-                for(i in 2:dd){
-                    for(j in 1:(i-1)){
+                for(j in 2:dd){
+                    for(i in 1:(j-1)){
                         ell.point[[w]][[ell.point.count]] <- getEllipseMatrix( mat=point.matrix[[w]], traits=c(i,j)
                                                                             , sample.line=n.lines, n.points=n.points)
                         ell.point.count <- ell.point.count + 1
