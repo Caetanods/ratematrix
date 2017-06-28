@@ -2,6 +2,13 @@
 
 *Daniel S. Caetano and Luke J. Harmon*
 
+## News and updates
+
+**Jun-2017 (v 0.25):** Add package 'vignette' with tutorial for setting a custom starting point for the MCMC.
+**Jun-2017 (v 0.26):** Fix problem with 'plotRatematrix'. The ellipse lines had the x and y axes inverted. The problem is now fixed.
+
+## Description
+
 R package for the study of patterns of evolutionary correlation among two or more traits using phylogenetic trees. 'ratematrix' offers a suite of tools to estimate the evolutionary rate matrix (R) incorporating uncertainty in the form of a posterior distribution using Markov-chain Monte Carlo. The package allows for quick set-up and run of MCMC chain while also providing tools for users to customize their own MCMC chains.
 
 For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article available at (http://biorxiv.org/content/early/2017/01/25/102939)
