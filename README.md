@@ -1,10 +1,11 @@
-## R package 'ratematrix'
+# R package 'ratematrix'
 
 *Daniel S. Caetano and Luke J. Harmon*
 
 ## News and updates
 
 **Jun-2017 (v 0.25):** Add package 'vignette' with tutorial for setting a custom starting point for the MCMC.
+
 **Jun-2017 (v 0.26):** Fix problem with 'plotRatematrix'. The ellipse lines had the x and y axes inverted. The problem is now fixed.
 
 ## Description
