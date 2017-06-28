@@ -30,4 +30,9 @@ In case you are working with an older version of R and have problems to install 
 options(download.file.method = "wget")
 ```
 
+The package offers some tutorials in form of 'vignettes'. To access use:
+```{r,R.options=list(max.print=20)}
+browseVignettes("ratematrix")
+```
+
 [Please check the wiki page for documentation and tutorials](https://github.com/Caetanods/ratematrix/wiki/Home).
