@@ -18,17 +18,21 @@ readSingleRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
         direct <- dir
     }
 
-    if( burn == 0 || burn < 0 ){
-        post <- seq(round(out$gen)+1, out$gen+1, by=thin)
-    } else{
-        post <- seq(round(out$gen * burn)+1, out$gen+1, by=thin) ## First line is the header.
-    }
-
     ## In this version the posterior is in a single file.
     mcmc <- read_lines( file=file.path(direct, paste(out$outname, ".", out$ID, ".mcmc", sep="")) )
     header <- mcmc[1]
     header <- as.character( strsplit(x=header, split=";", fixed=TRUE)[[1]] )
+
+    ## Apply thinning and burnin.
+    obs.gen <- length( mcmc )-1 ## Compute observed number of samples (Fix for unfinished chains.) Note that header is first line.
+    if( burn <= 0 ){
+        post <- seq(2, obs.gen+1, by=thin) ## First line is the header.
+    } else{
+        post <- seq(round(obs.gen * burn)+1, obs.gen+1, by=thin) ## First line is the header.
+    }
     mcmc <- mcmc[post]
+
+    ## Parse the posterior samples.
     mcmc <- sapply(mcmc, function(x) as.numeric( strsplit(x=x, split=";", fixed=TRUE)[[1]] )
                  , USE.NAMES=FALSE)
     
