@@ -212,9 +212,9 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                     rr <- sample(1:length(phy), size=1)
                     cat( paste("Using phylogeny number ", rr, " to estimate the MLE.\n", sep="") )
                     phy.sample <- phy[[rr]]
-                    mle.fit <- mvBM(tree=phy.sample, data=data, model="BM1", method="pic", echo=FALSE)
+                    mle.fit <- mvBM(tree=phy.sample, data=data, model="BM1", method="pic", echo=FALSE, diagnostic=FALSE)
                 } else{                      
-                    mle.fit <- mvBM(tree=phy, data=data, model="BM1", method="pic", echo=FALSE)
+                    mle.fit <- mvBM(tree=phy, data=data, model="BM1", method="pic", echo=FALSE, diagnostic=FALSE)
                 }
                 cat("\n")
                 decomp.R <- decompose.cov( mle.fit$sigma )
@@ -280,9 +280,9 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                     rr <- sample(1:length(phy), size=1)
                     cat( paste("Using phylogeny number ", rr, " to estimate the MLE.\n", sep="") )
                     phy.sample <- phy[[r]]
-                    mle.fit <- mvBM(tree=phy.sample, data=data, model="BMM", method="rpf", echo=FALSE)
+                    mle.fit <- mvBM(tree=phy.sample, data=data, model="BMM", method="rpf", echo=FALSE, diagnostic=FALSE)
                 } else{
-                    mle.fit <- mvBM(tree=phy, data=data, model="BMM", method="rpf", echo=FALSE)
+                    mle.fit <- mvBM(tree=phy, data=data, model="BMM", method="rpf", echo=FALSE, diagnostic=FALSE)
                 }
                 cat( "\n")
                 decomp.r <- list()
