@@ -33,6 +33,7 @@ mergePosterior <- function(...){
                 p <- 1
             } else{
                 p <- length( chains[[1]]$matrix )
+                regimes <- names( chains[[1]]$matrix )
             }
         }
         
@@ -41,6 +42,7 @@ mergePosterior <- function(...){
                 p <- 1
             } else{
                 p <- length( chains[[1]]$matrix )
+                regimes <- names( chains[[1]]$matrix )
             }
         }
         
@@ -57,6 +59,7 @@ mergePosterior <- function(...){
         class( mcmc.join ) <- "ratematrix_single_chain"
     } else{        
         mcmc.join$matrix <- lapply(1:p, function(y) do.call(c, lapply(chains, function(x) x$matrix[[y]]) ) )
+        names( mcmc.join$matrix ) <- regimes
         class( mcmc.join ) <- "ratematrix_multi_chain"
     }
 
