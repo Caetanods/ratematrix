@@ -41,17 +41,22 @@ logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.resu
     }
 
     ## Read the log and create a matrix.
-    post <- seq(round(handle$gen * burn)+1, handle$gen+1, by=thin) ## First line is the header.
     log.mcmc <- read_lines( file=file.path(direct, paste(handle$outname, ".", handle$ID, ".log", sep="")) )
     header <- log.mcmc[1]
     header <- as.character( strsplit(x=header, split=";", fixed=TRUE)[[1]] )
+
+    ## Compute the posterior based on the observed samples.
+    obs.gen <- length( log.mcmc )-1 ## Compute observed number of samples (Fix for unfinished chains.) Note that header is first line.
+    post <- seq(round(obs.gen * burn)+1, obs.gen+1, by=thin) ## First line is the header.
     log.mcmc <- log.mcmc[post]
+
+    ## Parse the samples.
     log.mcmc <- t( sapply(log.mcmc, function(x) as.numeric( strsplit(x=x, split=";", fixed=TRUE)[[1]] )
                         , USE.NAMES=FALSE) )
     colnames( log.mcmc ) <- header
 
     ## Make analyses:
-    accept <- sapply(1:4, function(x) sum(log.mcmc[,x]) / dim(log.mcmc)[1] )
+    accept <- sapply(1:4, function(x) sum( as.logical( log.mcmc[,x]) ) / dim(log.mcmc)[1] )
     names(accept) <- c("All", "correlation", "sd", "root")
 
     mix.phylo <- table( log.mcmc[ which(log.mcmc[,1] == 1), 5] ) / length( log.mcmc[ log.mcmc[,1],5 ] )
