@@ -14,7 +14,7 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
 
 \item{phy}{a phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used. 'phy' can also be a list of phylogenies. See 'Details'.}
 
-\item{prior}{the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default), (iii) the output of the "makePrior" function or (iv) a list of functions. See more information on 'makePrior' function.}
+\item{prior}{the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default, see 'Details'), (iii) the output of the "makePrior" function or (iv) a list of functions. See more information on 'makePrior' function.}
 
 \item{start}{the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See more information on 'makeStart' function.}
 
@@ -52,6 +52,8 @@ Function runs a MCMC chain to estimate the posterior distribution of the evoluti
 The MCMC chain works by proposing values for the evolutionary rate matrices (R) fitted to the tree and the vector of root values (or phylogenetic mean). The proposal for the R matrices works by separating the variance-covariance matrix into a correlation matrix and a vector of standard deviations and making independent proposals for each. This scheme is called the 'separation strategy' and significantly improves the mix of the chain and also provide a intuitive distinction between the evolutionary correlation among the traits (correlation matrix) and the rates of evolution (standard deviation vector). The proposal for the root values are made all in a single step. \cr
 \cr
 The function will print a series of messages to the screen. Those provide details of the setup of the chain, the unique identifier for the files and the log-likelihood of the starting value of the chain. Up to now these messages cannot be disabled. \cr
+\cr
+DEFAULT PRIOR: The default prior distribution ('empirical_mean') is composed by a normal distribution on the root values, with mean equal to the mean of the tip data for each trait and standard deviation equal to two times (2x) the standard deviation of the tip data. For the evolutionary rate matrix, this prior sets a uniform distribution on the correlations (spanning all possible correlation structures) and also a uniform distribution on the vector of standard deviations with interval between 0 and 100. This default prior distribution might not be the best for your dataset. Keep in mind that the default behavior of the MCMC is to draw a starting point from the prior distribution. Please check the 'makePrior' function for more information on priors and to make a custom prior distribution.\cr
 \cr
 SAMPLE OF TREES: The MCMC chain can integrate the phylogenetic uncertainty or the uncertainty in the rate regimes by randomly sampling a phylogenetic tree from a list of trees. To activate this option, provide a list of 'simmap' or 'phylo' trees as the 'phy' argument. The MCMC will randomly sampled a tree each time the likelihood of the proposal is evaluated. Check the 'logAnalyzer' function for more information. \cr
 \cr

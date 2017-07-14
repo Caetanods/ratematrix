@@ -4,6 +4,8 @@
 ##' \cr
 ##' The function will print a series of messages to the screen. Those provide details of the setup of the chain, the unique identifier for the files and the log-likelihood of the starting value of the chain. Up to now these messages cannot be disabled. \cr
 ##' \cr
+##' DEFAULT PRIOR: The default prior distribution ('empirical_mean') is composed by a normal distribution on the root values, with mean equal to the mean of the tip data for each trait and standard deviation equal to two times (2x) the standard deviation of the tip data. For the evolutionary rate matrix, this prior sets a uniform distribution on the correlations (spanning all possible correlation structures) and also a uniform distribution on the vector of standard deviations with interval between 0 and 100. This default prior distribution might not be the best for your dataset. Keep in mind that the default behavior of the MCMC is to draw a starting point from the prior distribution. Please check the 'makePrior' function for more information on priors and to make a custom prior distribution.\cr
+##' \cr
 ##' SAMPLE OF TREES: The MCMC chain can integrate the phylogenetic uncertainty or the uncertainty in the rate regimes by randomly sampling a phylogenetic tree from a list of trees. To activate this option, provide a list of 'simmap' or 'phylo' trees as the 'phy' argument. The MCMC will randomly sampled a tree each time the likelihood of the proposal is evaluated. Check the 'logAnalyzer' function for more information. \cr
 ##' \cr
 ##' MCMC DOES NOT START: It is possible that the starting point shows a very low likelihood value, resulting in the collapse of the chain. This might be a result of a random sample from a very unlikely region of the prior. We suggest that another sample of the prior is taken or, if this does not solve the issue, that the starting point be the maximum likelihood estimate or set manually. \cr
@@ -16,7 +18,7 @@
 ##' @title Estimate the evolutionary rate matrix using Markov-chain Monte Carlo
 ##' @param data a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait. Names for the columns is used as trait labels. If labels are not provided, the function will use default labels.
 ##' @param phy a phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used. 'phy' can also be a list of phylogenies. See 'Details'.
-##' @param prior the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default), (iii) the output of the "makePrior" function or (iv) a list of functions. See more information on 'makePrior' function.
+##' @param prior the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default, see 'Details'), (iii) the output of the "makePrior" function or (iv) a list of functions. See more information on 'makePrior' function.
 ##' @param start the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See more information on 'makeStart' function.
 ##' @param gen number of generations for the chain.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.)
@@ -191,7 +193,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             }
             if(prior == "empirical_mean"){
                 mn <- colMeans(data)
-                ssd <- apply(data, 2, sd)
+                ssd <- apply(data, 2, sd) * 2
                 par.mu <- as.matrix( cbind(mn, ssd) )
                 par.sd <- c(0,100)
                 prior_run <- makePrior(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
