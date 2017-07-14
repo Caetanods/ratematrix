@@ -47,7 +47,11 @@ logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.resu
 
     ## Compute the posterior based on the observed samples.
     obs.gen <- length( log.mcmc )-1 ## Compute observed number of samples (Fix for unfinished chains.) Note that header is first line.
-    post <- seq(round(obs.gen * burn)+1, obs.gen+1, by=thin) ## First line is the header.
+    if( burn <= 0 ){
+        post <- seq(2, obs.gen+1, by=thin) ## First line is the header.
+    } else{
+        post <- seq(round(obs.gen * burn)+1, obs.gen+1, by=thin) ## First line is the header.
+    }
     log.mcmc <- log.mcmc[post]
 
     ## Parse the samples.
