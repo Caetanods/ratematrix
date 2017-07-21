@@ -84,6 +84,15 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         } else{
             no_phymap <- FALSE
         }
+        ## Check if data match the tree. If not, break and return error message.
+        equaln <- sapply(phy, function(x) Ntip( x ) == nrow( data ) )
+        if( !sum(equaln, na.rm=TRUE) == length(phy) ) stop("Number of species in data not equal to tree.")
+        same.spp <- sapply(phy, function(x) sum(x$tip.label %in% rownames( data ), na.rm=TRUE) == nrow(data) )
+        if( !sum(same.spp) == length(phy) ) stop("Rownames of data does not match the tip labels of the tree.")
+        ## Reorder the data to be the same order as the tip labels.
+        mm <- match(phy[[1]]$tip.label, rownames(data))
+        data <- data[mm,]
+        
     } else{ ## Is a single phylogeny.
         ## Check if the tree is ultrametric, also rescale the tree if needed.
         if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
@@ -98,6 +107,14 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         } else{
             no_phymap <- FALSE
         }
+        ## Check if data match the tree. If not, break and return error message.
+        equaln <- Ntip( phy ) == nrow( data )
+        if( !equaln ) stop("Number of species in data not equal to tree.")
+        same.spp <- sum(phy$tip.label %in% rownames( data ), na.rm=TRUE) == nrow(data)
+        if( !same.spp ) stop("Rownames of data does not match the tip labels of the tree.")
+        ## Reorder the data to be the same order as the tip labels.
+        mm <- match(phy$tip.label, rownames(data))
+        data <- data[mm,]
     }
 
     ## Make a quick check down the road to see if the prior is working.
