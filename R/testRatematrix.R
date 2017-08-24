@@ -27,7 +27,7 @@ testRatematrix <- function(chain, par=c("all","correlation","rates")){
 
     if( inherits(chain, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ){
         if( inherits(chain, what=c("ratematrix_single_chain")) ){
-            p <- 1
+            stop("Cannot perform test with a single regime. \n")
         } else{
             p <- length( chain$matrix )
         }
