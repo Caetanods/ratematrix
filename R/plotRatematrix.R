@@ -90,6 +90,11 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             colors <- unlist(cols[check])[1:np]
         }
     }
+
+    ## If custom legend is not provided, then use the names of the traits.
+    if(is.null(set.leg)){
+        set.leg <- colnames( chain$root )
+    }
             
     ## Check if there is only one regime to be plotted:
     if(length(p) == 1){ ## Nothing to check here, because of single regime.        
@@ -158,11 +163,6 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                 chain$matrix[[i]] <- rb.matrix
             }
         }
-    }
-
-    ## If custom legend is not provided, then use the names of the traits.
-    if(is.null(set.leg)){
-        set.leg <- colnames( chain$root )
     }
 
     ## ######################################################################################
