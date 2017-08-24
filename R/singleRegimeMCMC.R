@@ -110,13 +110,12 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
 
     ## Build the update.function list:
     ## Now this will have two options. This is the part that the function needs to be updated.
-    ## Need to make sure that the proposal distributions will be tunned by the w_sd and w_mu parameters.
     if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
-        cat("MCMC chain using a single tree/regime configuration.\n")
+        cat("MCMC chain using multiple trees/regime configurations.\n")
         update.function <- list( function(...) makePropMeanList(..., n.phy=n.phy), function(...) makePropSingleSigmaList(..., n.phy=n.phy) )
     }
     if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
-        cat("MCMC chain using multiple trees/regime configurations.\n")
+        cat("MCMC chain using a single tree/regime configuration.\n")
         update.function <- list( makePropMean, makePropSingleSigma )
     }
 
