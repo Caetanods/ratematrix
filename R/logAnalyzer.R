@@ -59,15 +59,25 @@ logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.resu
                         , USE.NAMES=FALSE) )
     colnames( log.mcmc ) <- header
 
-    ## Make analyses:
-    accept <- sapply(1:4, function(x) sum( as.logical( log.mcmc[,x]) ) / dim(log.mcmc)[1] )
-    names(accept) <- c("All", "correlation", "sd", "root")
+    ## Make analyses.
 
-    mix.phylo <- table( log.mcmc[ which(log.mcmc[,1] == 1), 5] ) / length( log.mcmc[ log.mcmc[,1],5 ] )
+    ## The accept ratio for all parameters:
+    accept.all <- sum( as.logical( log.mcmc[,1]) ) / nrow(log.mcmc)
+    ## Compute the cumulative acceptance ratio for all the parameters across the generations. This is based on the log after burn-in and thinning.
+    cum.accept <- cumsum(log.mcmc[,1]) / 1:length(log.mcmc[,1])
+    ## The accept ratio for each of the parameters in separate.
+    accept.par <- sapply(2:4, function(x) sum( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) / length( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) )
+    ## Make report object:
+    accept <- c(accept.all, accept.par)
+    names(accept) <- c("all", "correlation", "sd", "root")
+    
+    ## The proportion of times that each phylo of the list was present when a proposal was accepted.
+    ## This is the 'mixing' for the pool of phylogenetic trees.
+    mix.phylo <- table( log.mcmc[ as.logical(log.mcmc[,1]), 5] ) / length( log.mcmc[ as.logical(log.mcmc[,1]), 5 ] )
 
+    ## Create object to help making the plot.
     at.gen <- round( seq(from=1, to=length(post), length.out = 5) )
     labels.gen <- round( seq(from=post[1], to=post[length(post)], length.out = 5) )
-    cum.accept <- cumsum(log.mcmc[,1]) / 1:length(log.mcmc[,1])
 
     if( print.result==TRUE ){
         cat("Acceptance ratio for the MCMC and parameters:\n")
@@ -85,10 +95,10 @@ logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.resu
 
         par( mfrow = c(2,1) )
         par(mar = c(1, 0, 0, 0), oma = c(3, 4, 2, 0))
-        plot(x=1:dim( log.mcmc )[1], y=log.mcmc[,6], type="l", axes=FALSE, xlab="", ylab="")
+        plot(x=1:nrow( log.mcmc ), y=log.mcmc[,6], type="l", axes=FALSE, xlab="", ylab="")
         axis(side=2)
         mtext("Log-likelihood", side=2, line=2, cex=1)
-        plot(x=1:dim( log.mcmc )[1], y=cum.accept, type="l", axes=FALSE, xlab="", ylab="")
+        plot(x=1:nrow( log.mcmc ), y=cum.accept, type="l", axes=FALSE, xlab="", ylab="")
         axis(side=2)
         axis(side=1, at=at.gen, labels=labels.gen)
         mtext("Generations", side=1, line=2, cex=1)
