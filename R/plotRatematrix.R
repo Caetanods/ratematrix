@@ -223,7 +223,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                 for(i in 1:(j-1)){                    
                     ell.data[[w]][[ell.data.count]] <- getEllipseAllMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ]
                                                                         , traits=c(i,j), n.points=n.points)
-                    ell.data.count <- ell.dta.count + 1 ## Update the counter.
+                    ell.data.count <- ell.data.count + 1 ## Update the counter.
                 }
             }
         }
