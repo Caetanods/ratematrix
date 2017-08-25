@@ -23,7 +23,8 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, i
 
     if( up == 1 ){
         ## Update the vector of standard deviations.
-        prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]], function(x) slideWindowPositive(x, w_sd) )
+        to.update.sd <- cache.chain$chain[[iter-1]][[3]]
+        prop.sd <- sapply(1:length(to.update.sd), function(x) slideWindowPositive(to.update.sd[x], w_sd[x]) )
         prop.sd.prior <- prior[[3]]( prop.sd ) ## The third prior function. New prior works on list format.
         pp <- prop.sd.prior - cache.chain$curr.sd.prior
 

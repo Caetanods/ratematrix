@@ -16,7 +16,8 @@
 makePropMean <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, iter, count, files, phy){
 
     ## make.prop.mean is a function to make sliding window proposal moves.
-    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
+    to.update.mu <- cache.chain$chain[[iter-1]][[1]]
+    prop.root <- sapply(1:length(to.update.mu), function(x) slideWindow(to.update.mu[x], w_mu[x]) )
     ## select <- "both (ignore NAs)" ## This is to write the accept reject to the log. Not implemented for the single matrix case.
 
     ## make.prop.mean is a function to make sliding window proposal moves.

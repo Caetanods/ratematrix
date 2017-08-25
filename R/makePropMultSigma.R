@@ -25,8 +25,8 @@ makePropMultSigma <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, ite
     if( up == 1 ){
         
         ## Update the vector of standard deviations.
-        ## Need to expand this in order to let each trait have its own width.
-        prop.sd <- sapply(cache.chain$chain[[iter-1]][[3]][[Rp]], function(x) slideWindowPositive(x, w_sd) )
+        to.update.sd <- cache.chain$chain[[iter-1]][[3]][[Rp]]
+        prop.sd <- sapply(1:length(to.update.sd), function(x) slideWindowPositive(to.update.sd[x], w_sd[x]) )
         ## Need to put the parameters together for the prior.
         prop.sd.full <- cache.chain$chain[[iter-1]][[3]]
         prop.sd.full[[Rp]] <- prop.sd

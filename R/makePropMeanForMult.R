@@ -17,7 +17,8 @@
 makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files){
 
     ## make.prop.mean is a function to make sliding window proposal moves.
-    prop.root <- sapply(cache.chain$chain[[iter-1]][[1]], function(x) slideWindow(x, w_mu) )
+    to.update.mu <- cache.chain$chain[[iter-1]][[1]]
+    prop.root <- sapply(1:length(to.update.mu), function(x) slideWindow(to.update.mu[x], w_mu[x]) )
 
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
     prop.root.prior <- prior[[1]](prop.root)
