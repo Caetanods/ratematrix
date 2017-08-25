@@ -22,8 +22,8 @@
 ##' @param start the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See more information on 'makeStart' function.
 ##' @param gen number of generations for the chain.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.)
-##' @param w_sd value for the width of the uniform proposal distribution for the vector of standard deviations.
-##' @param w_mu value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean).
+##' @param w_sd value for the width of the uniform proposal distribution for the vector of standard deviations. This can be a single value to be used for the sd of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
+##' @param w_mu value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
 ##' @param prop the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.
 ##' @param chunk number of generations that the MCMC chain will be kept in the computer memory before writing to file. Larger values will use more RAM memory. If 'chunk' is less than 'gen', then 'chunk = gen'. If 'gen' is not divisible by 'chunk', then the remainder of the integer division will be subtracted from 'gen'. (default is 'gen/100')
 ##' @param dir path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
@@ -55,7 +55,7 @@
 ##' plotPrior(handle, root=TRUE)
 ##' logAnalyzer(handle)
 ##' }
-ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.025,0.975), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=FALSE, save.handle=TRUE){
+ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05,0.95), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, singlerate=FALSE, rescaletree=FALSE, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -66,8 +66,21 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     ## Inform that default options are being used:
     if( inherits(prior, what="character") && prior == "empirical_mean" ) cat("Using default prior. \n")
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
-    if( v == 50 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.025 ) cat("Using default proposal settings. \n")
+    if( v == 25 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.05 ) cat("Using default proposal settings. \n")
 
+    ## Check if 'w_sd' and 'w_mu' are vectors or not.
+    if( length( w_sd ) > 1 ){
+        if( !length(w_sd) == ncol(data) ) stop("Length of 'w_sd' need to be 1 or equal to number of columns in 'data'.")
+    } else{
+        w_sd <- rep(w_sd, times=ncol(data))
+    }
+    
+    if( length( w_mu ) > 1 ){
+        if( !length(w_mu) == ncol(data) ) stop("Length of 'w_mu' need to be 1 or equal to number of columns in 'data'.")
+    } else{
+        w_mu <- rep(w_mu, times=ncol(data))
+    }
+    
     ## Check if 'phy' is a single phylogeny or a list of phylogenies.
     if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
         ## Check if the tree is ultrametric, also rescale the tree if needed.
