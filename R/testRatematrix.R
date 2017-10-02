@@ -1,27 +1,32 @@
-##' Function uses summary statistics to test for differences betwwen the posterior distribution of parameter estimates for the evolutionary rate matrix regimes.
+##' Function uses summary statistics to test for differences between the posterior distribution of parameter estimates for the evolutionary rate matrix regimes.
 ##'
-##' This functions performs a test to check whether the posterior distribution of the fitted matrices are different. When the test is significant this means that the posterior distribution of the elements of the evolutionary rate matrices does not overlap more than 5\%. This test is not a p value, since this is not an estimate of a probability of deviance from a given null distribution. The test relies on the median overlap of the posterior distribution. It assumes that when the posterior distribution of two or more paramaters do not overlap, then there is a significative difference between the parameters. \cr
+##' This functions performs a test to check whether the posterior distribution of the fitted matrices are different. It returns the proportion of overlap between regimes. When this proportion is less than 0.05 this means that the posterior distribution of the elements of the evolutionary rate matrices does not overlap more than 5\%. This test is not a p value! This is not an estimate of a probability of deviance from a given null distribution. It assumes that when the posterior distribution of two or more paramaters do not overlap, then there is a relevant difference between the parameters. \cr
+##' The test can be performed using the median overlap of the posterior distribution across all elements of the ratematrix or by contrasting each element separatelly. Checking each element independently provides more information. Using the median overlap will result in a single value returned, but it can be insensitive to important changes in the evolutionary rate matrices between regimes. \cr
 ##' \cr
-##' When a posterior distribution with more than two rate regimes is fitted to the data, the function performs all pairwise combinations tests.
+##' When a posterior distribution with more than two rate regimes is fitted to the data, the function performs tests for all pairwise combinations.
 ##' @title Test for difference between evolutionary rate matrix estimates
 ##' @param chain the posterior distribution of parameter estimates as output of the function 'readMCMC'.
 ##' @param par sets which of the attributes of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates' (default is 'all'). Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (the variance vector). Chose 'correlation' to test for the median overlap among the correlations (the distribution of correlation matrices).
-##' @return Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
+##' @param median.test whether to return a median of the summary statistics across all elements of the evolutionary rate matrices. The default is FALSE.
+##' @param regimes a numeric vector or character vector. This is the set of regimes to be compared. If numeric, then the regimes are in the same order as in the 'chain' argument. If character, than names need to match the names of the rate regimes fitted to the phylogenetic tree.
+##' @param plot whether to plot the results of the summary statistics test applied to every element of the matrix.
+##' @return Return a matrix or a list with the value of the test statistics. Values below 0.05 support a difference between the posterior distribution of R matrices. When computing the summary statistics for each element of the evolutionary rate matrix (i.e., median.test=FALSE) the function returns a list object with element-wise results for each regime combination and also plots the results in a heatmap format.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
 ##' \donttest{
-##' ## Load data
-##' data(centrarchidae)
-##' ## Run MCMC. This is just a very short chain.
-##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
-##' ## Load posterior distribution, make plots and check the log.
-##' posterior <- readMCMC(handle, burn=0.25, thin=1)
-##' testRatematrix(chain=posterior, par="all")
-##' testRatematrix(chain=posterior, par="rates")
-##' testRatematrix(chain=posterior, par="correlation")
+##' ## Load data with posterior distribution.
+##' data(anolesPost)
+##' testRatematrix(chain=anolesPost$chain1, par="all")
+##' testRatematrix(chain=anolesPost$chain1, par="rates")
+##' testRatematrix(chain=anolesPost$chain1, par="correlation")
+##' ## Compare with results when using the median of the summary statistics:
+##' testRatematrix(chain=anolesPost$chain1, par="all", median.test=TRUE)
+##' testRatematrix(chain=anolesPost$chain1, par="rates", median.test=TRUE)
+##' testRatematrix(chain=anolesPost$chain1, par="correlation", median.test=TRUE)
+##' 
 ##' }
-testRatematrix <- function(chain, par=c("all","correlation","rates")){
+testRatematrix <- function(chain, par=c("all","correlation","rates"), median.test=FALSE, regimes=NULL, plot=TRUE){
 
     par <- match.arg(par)
 
@@ -30,27 +35,41 @@ testRatematrix <- function(chain, par=c("all","correlation","rates")){
             stop("Cannot perform test with a single regime. \n")
         } else{
             p <- length( chain$matrix )
+            r <- ncol( chain$root )
         }
     } else{
         stop("Arguments need to be the posterior distribution of class 'ratematrix_single_chain' or 'ratematrix_multi_chain'. See 'readMCMC'. \n")
     }
+
+    ## Make all the combinations or use the regimes provided.
+    if( is.null(regimes) ){
+        comb <- combn(1:p, 2)
+    } else{
+        if( !is.numeric( regimes ) & !is.character( regimes ) ) stop("Argument 'regimes' need to be a numeric or character vector. \n")
+        if( is.numeric( regimes ) ){
+            comb <- combn(regimes, 2)
+        }
+        if( is.character( regimes ) ){
+            nm <- names( chain$matrix )
+            if( as.logical( sum(regimes %in% nm) ) ) stop("Names of regimes in argument 'regimes' need to match names of regimes of the posterior distribution (see 'names(chain$matrix)' ). \n")
+            reg.id <- which( nm %in% regimes )
+            comb <- combn(reg.id, 2)
+        }
+    }
     
-    comb <- combn(1:p, 2)
-    median.diff <- list()
+    mat.diff <- list()
     if(par == "all"){
         for(i in 1:ncol(comb)){
             mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c(x) ) )
             mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c(x) ) )
-            mat.diff <- mat1 - mat2
-            median.diff[[i]] <- apply(mat.diff, 1, median)
+            mat.diff[[i]] <- mat1 - mat2
         }
     }
     if(par == "rates"){
         for(i in 1:ncol(comb)){
             mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( diag(x) ) ) )
             mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( diag(x) ) ) )
-            mat.diff <- mat1 - mat2
-            median.diff[[i]] <- apply(mat.diff, 1, median)
+            mat.diff[[i]] <- mat1 - mat2
         }
     }
     if(par == "correlation"){
@@ -60,23 +79,91 @@ testRatematrix <- function(chain, par=c("all","correlation","rates")){
             for(i in 1:ncol(comb)){
                 mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( cov2cor(x)[upper] ) ) )
                 mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( cov2cor(x)[upper] ) ) )
-                mat.diff <- mat1 - mat2
-                median.diff[[i]] <- apply(mat.diff, 1, median)
+                mat.diff[[i]] <- mat1 - mat2
             }
         } else{
             upper <- upper.tri( chain$matrix[[1]][[1]] )
             for(i in 1:ncol(comb)){
                 mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( cov2cor(x)[upper] ) ) )
                 mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( cov2cor(x)[upper] ) ) )
-                median.diff[[i]] <- mat1 - mat2 ## Not a real 'median', because there is only one correlation.
+                mat.diff[[i]] <- mat1 - mat2
             }
         }
     }
-    cdf.list <- lapply(median.diff, FUN = ecdf)
+
+    if(median.test){
+        median.diff <- lapply(mat.diff, function(x) apply(x, 1, median))
+        cdf.list <- lapply(median.diff, FUN = ecdf)
+        qq.list <- lapply(cdf.list, FUN = function(x) x(0) )
+        test <- lapply(qq.list, FUN = function(x) 2*apply(cbind(x, 1-x), 1, min) )
+        test.dt <- do.call(cbind, test)
+        colnames(test.dt) <- paste("mat #",comb[1,], " x #", comb[2,], sep="")
+        rownames(test.dt) <- "test value"
+        return(test.dt)
+    }
+    
+    if(!median.test){
+        overlap <- lapply(mat.diff, FUN=getOverlap)
+        overlap.mat <- lapply(overlap, function(x) matrix(x, ncol=r, byrow = TRUE) )
+        if( is.null(names(chain$matrix)) ){
+            main <- paste("Regime #",comb[1,], " x #", comb[2,], sep="")
+        } else{
+            main <- paste("Regime ", names(chain$matrix)[comb[1,]], " x ", names(chain$matrix)[comb[2,]], sep="")
+        }
+        if(plot){
+            n <- length( overlap.mat )
+            old.par <- par(no.readonly = TRUE)
+            ## Decide the size of the mfrow plot to return. Works up to 12 regimes. Otherwise the function will just return a lot of plots.
+            if( n == 1 ) plotHeatmat(mat=overlap.mat[[1]], r=r, par=par, main=main[1])
+            if( n > 1 & n < 4 ) par( mfrow = c(1,3) )
+            if( n == 4 ) par( mfrow = c(2,2) )
+            if( n > 4 & n < 7 ) par( mfrow = c(2,3))
+            if( n > 6 & n < 10 ) par( mfrow = c(3,3))
+            if( n > 9 & n < 13 ) par( mfrow = c(3,4))
+            lapply(1:n, function(x) plotHeatmat(mat=overlap.mat[[x]], r=r, par=par, main=main[x]) )
+            par(old.par)
+        }
+        names( overlap.mat ) <- main
+        return( list(overlap.mat) )
+    }
+}
+
+## Some helping functions for the output:
+getOverlap <- function(mt.dif){
+    nc <- ncol(mt.dif)
+    cdf.list <- lapply(1:nc, function(x) ecdf(mt.dif[,x]))
     qq.list <- lapply(cdf.list, FUN = function(x) x(0) )
     test <- lapply(qq.list, FUN = function(x) 2*apply(cbind(x, 1-x), 1, min) )
     test.dt <- do.call(cbind, test)
-    colnames(test.dt) <- paste("mat #",comb[1,], " x #", comb[2,], sep="")
-    rownames(test.dt) <- "test value"
-    return(test.dt)
+    return( as.vector(test.dt) )
+}
+
+plotHeatmat <- function(mat, r, par, main){
+    if( par=="rates" ){
+        na.mat <- matrix(NA, nrow=r, ncol=r)
+        diag(na.mat) <- unlist( mat )
+        plot.mat <- na.mat
+    }
+    if( par=="correlation"){
+        na.mat <- matrix(NA, nrow=r, ncol=r)
+        na.mat[upper.tri(na.mat)] <- unlist( mat )
+        plot.mat <- na.mat
+    }
+    if( par=="all" ){
+        plot.mat <- mat
+    }
+    
+    rot.mat <- t(apply(plot.mat, 2, rev))
+    ## Need to rotate the matrix 90 degrees because of the behavior of the 'image' function.
+    x <- y <- 1:r
+    old.par <- par(no.readonly = TRUE)
+    par( mar=c(2,2,4,2) )
+    ## Set a better color pallette.
+    col <- heat.colors(15)
+    breaks <- c(0, exp(seq(log(0.0001), log(1), length.out = 15)))
+    image(x=x, y=y, z=rot.mat, xaxt= "n", yaxt= "n", xlab="", ylab="", main=main, col=col, breaks=breaks)
+    x.text <- rep(1:r, times=r)
+    y.text <- rep(1:r, each=r)
+    text(x=x.text, y=y.text, round(rot.mat, digits=4))
+    par(old.par)
 }
