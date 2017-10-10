@@ -104,7 +104,17 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), median.tes
     
     if(!median.test){
         overlap <- lapply(mat.diff, FUN=getOverlap)
-        overlap.mat <- lapply(overlap, function(x) matrix(x, ncol=r, byrow = TRUE) )
+
+        ## The output for the correlations looks strange because we loose the info of the order of the traits.
+        ## Here I will re-format the output if the test is made on the correlations.
+        if(par == "correlation"){
+            overlap.mat <- lapply(1:length(mat.diff), function(x) matrix(ncol=r, nrow=r))
+            upper <- upper.tri(x=matrix(ncol=r, nrow=r))
+            for( i in 1:length(mat.diff) ) overlap.mat[[i]][upper] <- overlap[[i]]
+        } else{
+            overlap.mat <- lapply(overlap, function(x) matrix(x, ncol=r, byrow = TRUE) )
+        }
+        
         if( is.null(names(chain$matrix)) ){
             main <- paste("Regime #",comb[1,], " x #", comb[2,], sep="")
         } else{
@@ -143,13 +153,7 @@ plotHeatmat <- function(mat, r, par, main){
         na.mat <- matrix(NA, nrow=r, ncol=r)
         diag(na.mat) <- unlist( mat )
         plot.mat <- na.mat
-    }
-    if( par=="correlation"){
-        na.mat <- matrix(NA, nrow=r, ncol=r)
-        na.mat[upper.tri(na.mat)] <- unlist( mat )
-        plot.mat <- na.mat
-    }
-    if( par=="all" ){
+    } else{
         plot.mat <- mat
     }
     
