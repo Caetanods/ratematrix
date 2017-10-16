@@ -67,16 +67,17 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
     ## Check the number of parameters sent to the function. Those need to match.
     lpmu <- nrow(par.mu)
     if(!r == lpmu) stop("number of rows of 'par.mu' need to be equal to the number of traits in the model (r).")
-    if( is.vector(par.sd) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree.")
+    if( is.vector(par.sd) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree. So p == nrow(par.sd).")
     if( is.matrix(par.sd) && !p == nrow(par.sd) ) stop("p need to be equal to the regimes fitted to the tree. So p == nrow(par.sd).")    
     ## lpsd <- nrow(par.sd)
     ## if(!p == lpsd) stop("number of rows of 'par.sd' need to be equal to the number of R matrices fitted to the data (p).")
     if( unif.corr == FALSE ){
-        if( is.matrix(Sigma) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree.")
-        if( is.list(Sigma) && !p == length(Sigma) ) stop("length of 'Sigma' need to be equal to the length of 'nu'. So length(Sigma) == length(nu).")
+        if( is.matrix(Sigma) && p > 1 ) stop("Sigma need to be a list with elements equal to the number of regimes.")
+        if( is.list(Sigma) && !p == length(Sigma) ) stop("length of 'Sigma' need to be equal to the number of regimes fitted to the tree. So length(Sigma) == p.")
+        ## if( is.list(Sigma) && !p == length(Sigma) ) stop("length of 'Sigma' need to be equal to the length of 'nu'. So length(Sigma) == length(nu).")
         ## lsig <- length(Sigma)
         lnu <- length(nu)
-        if(!p == lnu) stop("length of 'Sigma' and 'nu' need to be equal to the number of R matrices fitted to the data (p). So length(Sigma) == length(nu) == p.")
+        if(!p == lnu) stop("length of 'Sigma' and 'nu' need to be equal to the number of regimes fitted to the data. So length(Sigma) == length(nu) == p.")
     }
 
     ## Maybe add test for the correct parameter values? Would improve user experience.
@@ -120,13 +121,13 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
         }
     } else{
         if(p == 1){
-            if(!is.matrix(Sigma)) stop(" 'Sigma' needs to be a matrix when p == 1. ")
+            if(!is.matrix(Sigma)) stop(" 'Sigma' needs to be a matrix when a single regime is fitted to the data (p=1). ")
             if(!is.numeric(nu) || nu < r) stop(" 'nu' need to be a numeric value larger than the dimension of 'Sigma'. ")
             center <- (nu - ncol(Sigma) -1) * Sigma
             corr <- function(x) logDensityIWish(x, v=nu, center)
         } else{
             if(!all(sapply(Sigma, is.matrix))) stop(" 'Sigma' needs to be a list of matrices with length == p. ")
-            if(!all(sapply(nu, is.numeric)) || all(nu < r) ) stop(" 'nu' needs to be a vector with numeric values larger than r. ")
+            if(!all(sapply(nu, is.numeric)) || all(nu < r) ) stop(" 'nu' needs to be a vector with numeric values larger than the dimension of R. ")
             corr_regime <- list()
             center <- list()
             for( i in 1:p){
