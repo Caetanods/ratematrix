@@ -135,16 +135,16 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         cat("Plotting multiple regimes.","\n")
         
         ## Print a text with the association between the colors and the regimes.
-        name.table <- rbind(names(chain$matrix), colors)
+        name.table <- rbind(names(chain$matrix)[p], colors)
         cat("Table with regimes and colors (names or HEX):\n")
         write.table(format(name.table, justify="right"), row.names=F, col.names=F, quote=F)
         
         ## First do a batch of tests:
         check.mat <- vector()
         check.length <- vector()
-        for(i in p){
-            check.mat[i] <- ncol( chain$matrix[[i]][[1]] ) ## First element of each regime.
-            check.length[i] <- length( chain$matrix[[i]] ) ## The length of each chain regime.
+        for(i in 1:length(p)){
+            check.mat[i] <- ncol( chain$matrix[[ p[i] ]][[1]] ) ## First element of each regime.
+            check.length[i] <- length( chain$matrix[[ p[i] ]] ) ## The length of each chain regime.
         }
         equal.size <- sapply(2:length(p), function(x) check.mat[1] == check.mat[x] )
         equal.length <- sapply(2:length(p), function(x) check.length[1] == check.length[x] )
