@@ -50,6 +50,25 @@ checkConvergence <- function(...){
         
         if( length(chains) > 1 ){
             method <- "gelman"
+
+            ## Define function to reduce the length of the chains.
+            set.size <- function(mcmc, n){
+                res <- mcmc
+                res$root <- mcmc$root[1:n,]
+                ll <- length(mcmc$matrix)
+                for(i in 1:ll){
+                    res$matrix[[i]] <- mcmc$matrix[[i]][1:n]
+                }
+                return( res )
+            }
+            
+            ll <- sapply(chains, function(x) nrow(x$root))
+            if( as.logical(max(ll) - min(ll)) ){
+                ## Need to set the length of all the chains to be the same.
+                warning( "MCMC chains have different lengths. Pruning all chains to the minimum length observed." )
+                chains <- lapply(chains, function(x) set.size(mcmc=x, n=min(ll)) )
+            }
+            
             if( inherits(chains[[1]], what=c("ratematrix_single_chain")) ){
                 p <- 1
             } else{
