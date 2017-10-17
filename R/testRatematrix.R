@@ -51,7 +51,7 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), median.tes
         }
         if( is.character( regimes ) ){
             nm <- names( chain$matrix )
-            if( as.logical( sum(regimes %in% nm) ) ) stop("Names of regimes in argument 'regimes' need to match names of regimes of the posterior distribution (see 'names(chain$matrix)' ). \n")
+            if( as.logical( sum(!regimes %in% nm) ) ) stop("Names of regimes in argument 'regimes' need to match names of regimes of the posterior distribution (see 'names(chain$matrix)' ). \n")
             reg.id <- which( nm %in% regimes )
             comb <- combn(reg.id, 2)
         }
