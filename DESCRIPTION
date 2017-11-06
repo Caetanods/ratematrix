@@ -27,6 +27,7 @@ VignetteBuilder:
 LinkingTo: 
 LazyData: true
 Collate:
+    "computeESS.R"
     "sampleTreeClade.R"
     "continueMCMC.R"
     "logAnalyzer.R"

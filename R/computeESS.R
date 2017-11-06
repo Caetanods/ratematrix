@@ -1,0 +1,69 @@
+##' Function uses 'coda' function 'effectiveSize' to compute the ESS for each of the parameters of the model separatelly.
+##' 
+##' @title Compute the ESS for the MCMC samples.
+##' @param mcmc Posterior distribution object. Same as output from 'readMCMC' function.
+##' @param p Number of evolutionary rate matrix regimes fitted to the phylogenetic tree.
+##' @return A list object with the Effective Sample Size for the root values, evolutionary rates, and evolutionary correlations among the traits.
+##' @author Daniel Caetano and Luke Harmon
+##' @export
+##' @importFrom coda mcmc
+##' @importFrom coda effectiveSize
+computeESS <- function(mcmc, p){
+    if( missing(p) ) stop("Need to specify number of regimes as argument 'p'.")
+    root <- mcmc$root
+    rates <- list()
+    corr <- list()
+
+    if( p == 1 ){
+        rates[[1]] <- t( sapply(mcmc$matrix, function(x) diag(x) ) )
+        upper <- upper.tri(mcmc$matrix[[1]])
+        corr[[1]] <- t( sapply(mcmc$matrix, function(x) c( cov2cor(x)[upper] ) ) )
+    }
+
+    if( p > 1){
+        for( i in 1:p ){
+            rates[[i]] <- t( sapply(mcmc$matrix[[i]], function(x) diag(x) ) )
+            upper <- upper.tri(mcmc$matrix[[i]][[1]])
+            corr[[i]] <- t( sapply(mcmc$matrix[[i]], function(x) c( cov2cor(x)[upper] ) ) )
+        }
+    }
+
+    mcmc.root <- coda::mcmc(root)
+    mcmc.rate <- lapply(rates, coda::mcmc)
+    mcmc.corr <- lapply(corr, coda::mcmc)
+
+    ess.root <- coda::effectiveSize(x=mcmc.root)
+    ess.rate <- lapply(mcmc.rate, coda::effectiveSize)
+    ess.corr <- lapply(mcmc.corr, coda::effectiveSize)
+
+    if( p == 1 ){
+        cat("ESS root values \n")
+        print( ess.root )
+        cat("\n")
+        cat("ESS rates \n")
+        print( ess.rate[[1]] )
+        cat("\n")
+        cat("ESS correlation \n")
+        print( ess.corr[[1]] )
+        cat("\n")
+        res <- list( ess.root, ess.rate[[1]], ess.corr[[1]] )
+        names( res ) <- c("ESS_root","ESS_rates","ESS_corr")
+        return( res )
+    }
+
+    if( p > 1 ){
+        cat("ESS root values \n")
+        print( ess.root )
+        cat("\n")
+        cat("ESS rates \n")
+        print( ess.rate )
+        cat("\n")
+        cat("ESS correlation \n")
+        print( ess.corr )
+        cat("\n")
+        res <- list( ess.root, ess.rate, ess.corr )
+        names( res ) <- c("ESS_root","ESS_rates","ESS_corr")
+        return( res )
+    }
+    
+}
