@@ -4,7 +4,7 @@ Description: Estimate the Evolutionary rate matrix (R) using Markov chain Monte
     Carlo (MCMC). The package has functions to plot the results and to summarize the
     MCMC chains.
 URL: https://github.com/Caetanods/ratematrix
-Version: 0.27.1
+Version: 0.28
 License: MIT + file LICENSE
 Author: Daniel S. Caetano, Luke J. Harmon
 Maintainer: Daniel S. Caetano <caetanods1@gmail.com>
