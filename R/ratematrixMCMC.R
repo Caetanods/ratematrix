@@ -25,7 +25,6 @@
 ##' @param w_sd value for the width of the uniform proposal distribution for the vector of standard deviations. This can be a single value to be used for the sd of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
 ##' @param w_mu value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
 ##' @param prop the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.
-##' @param chunk number of generations that the MCMC chain will be kept in the computer memory before writing to file. Larger values will use more RAM memory. If 'chunk' is less than 'gen', then 'chunk = gen'. If 'gen' is not divisible by 'chunk', then the remainder of the integer division will be subtracted from 'gen'. (default is 'gen/100')
 ##' @param dir path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
@@ -54,7 +53,7 @@
 ##' plotPrior(handle, root=TRUE)
 ##' logAnalyzer(handle)
 ##' }
-ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05,0.95), chunk=gen/100, dir=NULL, outname="ratematrixMCMC", IDlen=5, rescaletree=FALSE, save.handle=TRUE){
+ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05,0.95), dir=NULL, outname="ratematrixMCMC", IDlen=5, rescaletree=FALSE, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -156,15 +155,6 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
 
     if( !class(gen) == "numeric" ) stop('gen need to be a "numeric" value.')
 
-    ## Check if 'chunk' is a divisible of the generation number, if not, adjust.
-    ## Default is: gen/100
-    if( chunk > gen || chunk < 1){
-        chunk <- gen
-    }        
-    if( gen %% chunk > 0 ){ ## Check the remainder of the division
-        gen <- gen - (gen %% chunk)
-    }   
-
     ## #######################
     ## Block to create the directory for the output:
     if( is.null(dir) ){
@@ -218,14 +208,14 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 lower.bound.data <- mean.data - ( (mean.data - min.data) * 10 )
                 higher.bound.data <- mean.data + ( (max.data - mean.data) * 10 )
                 par.mu <- cbind( lower.bound.data, higher.bound.data )
-                par.sd <- c(0,100)
+                par.sd <- c(0, 10) ## Prior for the standard deviation.
                 prior_run <- makePrior(r=r, p=1, par.mu=par.mu, par.sd=par.sd )
             }
             if(prior == "empirical_mean"){
                 mn <- colMeans(data)
                 ssd <- apply(data, 2, sd) * 2
                 par.mu <- as.matrix( cbind(mn, ssd) )
-                par.sd <- c(0,100)
+                par.sd <- c(0,10) ## Prior for the standard deviation.
                 prior_run <- makePrior(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
             }
         }
@@ -236,7 +226,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         if( inherits(start, what="character") ){
             if(start == "prior_sample"){
                 cat( "Taking sample from prior as starting point. \n" )
-                start_run <- samplePrior(n=1, prior=prior_run, sample.sd=FALSE)
+                start_run <- samplePrior(n=1, prior=prior_run)
             }
             if(start == "mle"){ ## This will break if the phylogeny is a list.
                 cat( "Optimizing likelihood for the starting value of the MCMC.\n")
@@ -258,7 +248,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         }
 
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                     , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
+                                     , prop=prop, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
                                       , save.handle=save.handle)
         return( out_single )
         
@@ -284,7 +274,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 lower.bound.data <- mean.data - ( (mean.data - min.data) * 10 )
                 higher.bound.data <- mean.data + ( (max.data - mean.data) * 10 )
                 par.mu <- cbind( lower.bound.data, higher.bound.data )
-                rep.sd.regime <- rep(c(0,100), times=p)
+                rep.sd.regime <- rep(c(0,10), times=p)
                 par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
                 prior_run <- makePrior(r=r, p=p, par.mu=par.mu, par.sd=par.sd )
             }
@@ -292,7 +282,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 mn <- colMeans(data)
                 ssd <- apply(data, 2, sd)
                 par.mu <- as.matrix( cbind(mn, ssd) )
-                rep.sd.regime <- rep(c(0,100), times=p)
+                rep.sd.regime <- rep(c(0,10), times=p)
                 par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
                 prior_run <- makePrior(r=r, p=p, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
             }
@@ -304,7 +294,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         if( inherits(start, what="character") ){
             if(start == "prior_sample"){
                 cat( "Taking sample from prior as starting point. \n" )
-                start_run <- samplePrior(n=1, prior=prior_run, sample.sd=FALSE)
+                start_run <- samplePrior(n=1, prior=prior_run)
             }
             if(start == "mle"){ ## Need to deal with the list of matrices here.
                 cat( "Optimizing likelihood for the starting value of the MCMC.\n")
@@ -332,7 +322,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         }
         
         out_mult <- multRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-                                 , prop=prop, chunk=chunk, dir=dir, outname=outname, IDlen=IDlen, regimes=regime.names, traits=trait.names
+                                 , prop=prop, dir=dir, outname=outname, IDlen=IDlen, regimes=regime.names, traits=trait.names
                                    , save.handle=save.handle)
         return( out_mult )
         
