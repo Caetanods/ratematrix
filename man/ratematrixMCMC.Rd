@@ -6,7 +6,7 @@
 \usage{
 ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
   gen, v = 25, w_sd = 0.5, w_mu = 0.5, prop = c(0.05, 0.95),
-  chunk = gen/100, dir = NULL, outname = "ratematrixMCMC", IDlen = 5,
+  dir = NULL, outname = "ratematrixMCMC", IDlen = 5,
   rescaletree = FALSE, save.handle = TRUE)
 }
 \arguments{
@@ -27,8 +27,6 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
 \item{w_mu}{value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.}
 
 \item{prop}{the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.}
-
-\item{chunk}{number of generations that the MCMC chain will be kept in the computer memory before writing to file. Larger values will use more RAM memory. If 'chunk' is less than 'gen', then 'chunk = gen'. If 'gen' is not divisible by 'chunk', then the remainder of the integer division will be subtracted from 'gen'. (default is 'gen/100')}
 
 \item{dir}{path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.}
 
