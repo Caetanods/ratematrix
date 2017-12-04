@@ -18,9 +18,9 @@ Imports:
     MASS,
     phylolm,
     readr,
+    phytools,
     mvMORPH
 Suggests:
-    phytools,
     microbenchmark,
     knitr,
     rmarkdown
