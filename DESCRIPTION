@@ -1,0 +1,29 @@
+Package: ratematrix
+Title: Bayesian estimation of the evolutionary rate matrix
+Version: 0.29
+Authors@R: person("Daniel", "Caetano", email = "caetanods1@gmail.com", role = c("aut", "cre"))
+Description: Estimate the Evolutionary rate matrix (R) using Markov chain Monte
+    Carlo (MCMC). The package has functions to plot the results and to summarize the
+    MCMC chains.
+URL: https://github.com/Caetanods/ratematrix
+Depends: R (>= 3.4.3)
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    ape,
+    geiger,
+    coda,
+    corpcor,
+    MASS,
+    phylolm,
+    readr,
+    mvMORPH
+Suggests:
+    phytools,
+    microbenchmark,
+    knitr,
+    rmarkdown
+VignetteBuilder:
+    knitr
+RoxygenNote: 6.0.1
