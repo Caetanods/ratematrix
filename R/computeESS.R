@@ -17,14 +17,14 @@ computeESS <- function(mcmc, p){
     if( p == 1 ){
         rates[[1]] <- t( sapply(mcmc$matrix, function(x) diag(x) ) )
         upper <- upper.tri(mcmc$matrix[[1]])
-        corr[[1]] <- t( sapply(mcmc$matrix, function(x) c( cov2cor(x)[upper] ) ) )
+        corr[[1]] <- t( sapply(mcmc$matrix, function(x) c( stats::cov2cor(x)[upper] ) ) )
     }
 
     if( p > 1){
         for( i in 1:p ){
             rates[[i]] <- t( sapply(mcmc$matrix[[i]], function(x) diag(x) ) )
             upper <- upper.tri(mcmc$matrix[[i]][[1]])
-            corr[[i]] <- t( sapply(mcmc$matrix[[i]], function(x) c( cov2cor(x)[upper] ) ) )
+            corr[[i]] <- t( sapply(mcmc$matrix[[i]], function(x) c( stats::cov2cor(x)[upper] ) ) )
         }
     }
 

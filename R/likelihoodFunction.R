@@ -10,6 +10,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
+##' \donttest{
 ##' ## Set the prior, take a sample from it and compute the log-likelihood.
 ##' par.mu <- rbind( c(-10, 10), c(-10, 10) )
 ##' par.sd <- rbind( c(0, 10), c(0, 10) )
@@ -22,6 +23,7 @@
 ##' R <- list( R1, R2 )
 ##' ## Compute the log-likelihood.
 ##' likelihoodFunction(data=centrarchidae$data, phy=centrarchidae$phy.map, root=sample.prior$mu, R=R)
+##' }
 likelihoodFunction <- function(data, phy, root, R){
 
     ## 'data' needs to be a class matrix.

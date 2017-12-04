@@ -43,17 +43,17 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), median.tes
 
     ## Make all the combinations or use the regimes provided.
     if( is.null(regimes) ){
-        comb <- combn(1:p, 2)
+        comb <- utils::combn(1:p, 2)
     } else{
         if( !is.numeric( regimes ) & !is.character( regimes ) ) stop("Argument 'regimes' need to be a numeric or character vector. \n")
         if( is.numeric( regimes ) ){
-            comb <- combn(regimes, 2)
+            comb <- utils::combn(regimes, 2)
         }
         if( is.character( regimes ) ){
             nm <- names( chain$matrix )
             if( as.logical( sum(!regimes %in% nm) ) ) stop("Names of regimes in argument 'regimes' need to match names of regimes of the posterior distribution (see 'names(chain$matrix)' ). \n")
             reg.id <- which( nm %in% regimes )
-            comb <- combn(reg.id, 2)
+            comb <- utils::combn(reg.id, 2)
         }
     }
     
@@ -77,23 +77,23 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), median.tes
         if( ncol( chain$matrix[[1]][[1]] ) > 2 ){
             upper <- upper.tri( chain$matrix[[1]][[1]] )
             for(i in 1:ncol(comb)){
-                mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( cov2cor(x)[upper] ) ) )
-                mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( cov2cor(x)[upper] ) ) )
+                mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
+                mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
                 mat.diff[[i]] <- mat1 - mat2
             }
         } else{
             upper <- upper.tri( chain$matrix[[1]][[1]] )
             for(i in 1:ncol(comb)){
-                mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( cov2cor(x)[upper] ) ) )
-                mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( cov2cor(x)[upper] ) ) )
+                mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
+                mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
                 mat.diff[[i]] <- mat1 - mat2
             }
         }
     }
 
     if(median.test){
-        median.diff <- lapply(mat.diff, function(x) apply(x, 1, median))
-        cdf.list <- lapply(median.diff, FUN = ecdf)
+        median.diff <- lapply(mat.diff, function(x) apply(x, 1, stats::median))
+        cdf.list <- lapply(median.diff, FUN = stats::ecdf)
         qq.list <- lapply(cdf.list, FUN = function(x) x(0) )
         test <- lapply(qq.list, FUN = function(x) 2*apply(cbind(x, 1-x), 1, min) )
         test.dt <- do.call(cbind, test)
@@ -141,7 +141,7 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), median.tes
 ## Some helping functions for the output:
 getOverlap <- function(mt.dif){
     nc <- ncol(mt.dif)
-    cdf.list <- lapply(1:nc, function(x) ecdf(mt.dif[,x]))
+    cdf.list <- lapply(1:nc, function(x) stats::ecdf(mt.dif[,x]))
     qq.list <- lapply(cdf.list, FUN = function(x) x(0) )
     test <- lapply(qq.list, FUN = function(x) 2*apply(cbind(x, 1-x), 1, min) )
     test.dt <- do.call(cbind, test)
@@ -163,11 +163,11 @@ plotHeatmat <- function(mat, r, par, main){
     old.par <- par(no.readonly = TRUE)
     par( mar=c(2,2,4,2) )
     ## Set a better color pallette.
-    col <- heat.colors(15)
+    col <- grDevices::heat.colors(15)
     breaks <- c(0, exp(seq(log(0.0001), log(1), length.out = 15)))
-    image(x=x, y=y, z=rot.mat, xaxt= "n", yaxt= "n", xlab="", ylab="", main=main, col=col, breaks=breaks)
+    graphics::image(x=x, y=y, z=rot.mat, xaxt= "n", yaxt= "n", xlab="", ylab="", main=main, col=col, breaks=breaks)
     x.text <- rep(1:r, times=r)
     y.text <- rep(1:r, each=r)
-    text(x=x.text, y=y.text, round(rot.mat, digits=4))
+    graphics::text(x=x.text, y=y.text, round(rot.mat, digits=4))
     par(old.par)
 }

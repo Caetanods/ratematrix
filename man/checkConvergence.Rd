@@ -23,6 +23,7 @@ Multiple chains need to be replicates of the same analysis (e.g., multiple runs 
 The 'Gelman's R' test is based on the potential scale reduction factor which is expect to be equal to 1 when convergence is achieved whereas the Heidelberger is based on pass or fail of two statistics. See more information about each of these tests in the references below and in the documentation for the functions 'coda::gelman.diag' and 'coda::heidel.diag', both from the package 'coda'.
 }
 \examples{
+\donttest{
 data(centrarchidae)
 handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000)
 posterior1 <- readMCMC(handle1, burn=0.25, thin=1)
@@ -33,6 +34,7 @@ posterior2 <- readMCMC(handle2, burn=0.25, thin=1)
 checkConvergence(posterior1, posterior2)
 ## A convergence test using 'Heidelberger test' calculated from a single MCMC chain.
 checkConvergence(posterior1)
+}
 }
 \references{
 \describe{

@@ -43,7 +43,7 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     ## Note that the length is dependent on the 'chunk' and not the total of the 'gen'.
     ## This is a better approach to the loop.
     cache.chain$chain <- start ## Starting value for the chain.
-    cache.chain$chain[[4]] <- rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
+    cache.chain$chain[[4]] <- rebuild.cov(r=stats::cov2cor(start[[2]]), v=start[[3]]^2)
     
     if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
         cache.data$n <- length(phy[[1]]$tip.label) ## Number of tips.

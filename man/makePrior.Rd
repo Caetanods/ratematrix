@@ -14,7 +14,7 @@ makePrior(r, p, den.mu = "unif", par.mu, den.sd = "unif", par.sd,
 
 \item{den.mu}{a string to set the density type for the phylogenetic mean. One of uniform ("unif", default) or normal ("norm") distribution.}
 
-\item{par.mu}{the parameters for the prior density on the vector of phylogenetic means. Matrix with 2 columns and number of rows equal to the number of traits (r). When the density ('den.mu') is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm̉" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.}
+\item{par.mu}{the parameters for the prior density on the vector of phylogenetic means. Matrix with 2 columns and number of rows equal to the number of traits (r). When the density ('den.mu') is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.}
 
 \item{den.sd}{a string to set the density type for the vector of standard deviations. One of uniform ("unif", default) or log-normal ("lnorm") distribution.}
 
@@ -38,6 +38,7 @@ Independent priors are defined for the phylogenetic mean, the vector of standard
 The prior for the model has two elements, one is the vector of phylogenetic means and the other is the evolutionary rate matrix regimes fitted to different branches of the tree. The vector of root values can be distributed as any continuous distribution, in this implementation the two options are the uniform and the normal distribution. On the other hand, the prior distribution for the rate matrix need to be more elaborated. Here we divide the variance-covariance matrix into two elements, the correlation matrix and the vector of standard deviations. Standard deviations can be modelled as any continuous and positive distribution, here we use a uniform or a log-normal distribution. The correlation matrix need to be derived from a distribution of covariance matrices known as the inverse-Wishart. The inverse-Wishart is controlled by two parameters; the scale matrix (Sigma) and the degrees of freedom (nu). Any variance-covariance matrix can be used as the scale matrix. To set a marginally uniform prior for the correlation structure of the evolutionary rate matrices sampled for the model one need to set 'Sigma' as an identity matrix and 'nu' as the dimension of the matrix +1. This is performed automatically by the function when the option 'unif.corr' is set to TRUE.
 }
 \examples{
+\donttest{
 ## Set the prior, take a sample from it and compute the log-likelihood.
 par.mu <- rbind( c(-10, 10), c(-10, 10) )
 par.sd <- rbind( c(0, 10), c(0, 10) )
@@ -59,8 +60,6 @@ handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen
 posterior <- readMCMC(handle, burn=0.25, thin=1)
 plotRatematrix(posterior)
 }
-\seealso{
-\code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

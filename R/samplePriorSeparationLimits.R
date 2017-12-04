@@ -21,12 +21,12 @@ samplePriorSeparationLimits <- function(n, prior, mean.limits, rate.limits, samp
     ## Sample phylogenetic means:
     mu <- matrix(nrow=n, ncol=pars$r)
     if(pars$den.mu == "unif"){
-        for(i in 1:pars$r){ mu[,i] <- runif(n=n, min=mean.limits[1], max=mean.limits[2]) }
+        for(i in 1:pars$r){ mu[,i] <- stats::runif(n=n, min=mean.limits[1], max=mean.limits[2]) }
     } else{
         for(i in 1:pars$r){
             for(j in 1:n){
                 repeat{
-                    mu[j,i] <- rnorm(n=1, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2])
+                    mu[j,i] <- stats::rnorm(n=1, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2])
                     if( mu[j,i] > mean.limits[1] && mu[j,i] < mean.limits[2] ) break
                 }
             }
@@ -63,20 +63,20 @@ samplePriorSeparationLimits <- function(n, prior, mean.limits, rate.limits, samp
     sample_sd <- function(){ ## In this case, if the standard deviation is not sampled, just do not call this function.
         if(pars$den.sd == "unif"){
             if(pars$p == 1){
-                sd <- runif(n=pars$r, min=pars$par.sd[1], max=pars$par.sd[2])
+                sd <- stats::runif(n=pars$r, min=pars$par.sd[1], max=pars$par.sd[2])
             } else{
                 sd <- list()
                 for(i in 1:pars$p){
-                    sd[[i]] <- runif(n=pars$r, min=pars$par.sd[i,1], max=pars$par.sd[i,2])
+                    sd[[i]] <- stats::runif(n=pars$r, min=pars$par.sd[i,1], max=pars$par.sd[i,2])
                 }
             }
         } else{
             if(pars$p == 1){
-                sd <- rlnorm(n=pars$r, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
+                sd <- stats::rlnorm(n=pars$r, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
             } else{
                 sd <- list()
                 for(i in 1:pars$p){
-                    sd[[i]] <- rlnorm(n=pars$r, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2])
+                    sd[[i]] <- stats::rlnorm(n=pars$r, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2])
                 }
             }
         }

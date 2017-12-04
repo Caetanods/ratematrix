@@ -15,7 +15,6 @@
 ##' @return A named vector with the acceptance ratio for the whole MCMC and each of the parameters of the model. If a list of phylogenetic trees was provided to the MCMC chain, then the output is a list with the acceptance ratio for the parameters and a table showing the frequency in which each of the phylogenies was accepted in a move step.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
 ##' \donttest{
 ##' ## Load data
@@ -91,20 +90,20 @@ logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.resu
 
     if( show.plots==TRUE ){
         ## Log-likelihood and acceptance ration trace plot:
-        old.par <- par(no.readonly = TRUE)
+        old.par <- graphics::par(no.readonly = TRUE)
 
-        par( mfrow = c(2,1) )
-        par(mar = c(1, 0, 0, 0), oma = c(3, 4, 2, 0))
-        plot(x=1:nrow( log.mcmc ), y=log.mcmc[,6], type="l", axes=FALSE, xlab="", ylab="")
-        axis(side=2)
-        mtext("Log-likelihood", side=2, line=2, cex=1)
-        plot(x=1:nrow( log.mcmc ), y=cum.accept, type="l", axes=FALSE, xlab="", ylab="")
-        axis(side=2)
-        axis(side=1, at=at.gen, labels=labels.gen)
-        mtext("Generations", side=1, line=2, cex=1)
-        mtext("Acceptance ratio", side=2, line=2, cex=1)
+        graphics::par( mfrow = c(2,1) )
+        graphics::par(mar = c(1, 0, 0, 0), oma = c(3, 4, 2, 0))
+        graphics::plot(x=1:nrow( log.mcmc ), y=log.mcmc[,6], type="l", axes=FALSE, xlab="", ylab="")
+        graphics::axis(side=2)
+        graphics::mtext("Log-likelihood", side=2, line=2, cex=1)
+        graphics::plot(x=1:nrow( log.mcmc ), y=cum.accept, type="l", axes=FALSE, xlab="", ylab="")
+        graphics::axis(side=2)
+        graphics::axis(side=1, at=at.gen, labels=labels.gen)
+        graphics::mtext("Generations", side=1, line=2, cex=1)
+        graphics::mtext("Acceptance ratio", side=2, line=2, cex=1)
 
-        par(old.par)
+        graphics::par(old.par)
     }
 
     if( is.list(handle$phy[[1]]) ){

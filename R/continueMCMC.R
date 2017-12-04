@@ -11,6 +11,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
+##' \donttest{
 ##' ## Continue unfinished run.
 ##' data(centrarchidae)
 ##' ## Run the next line. Then quickly stop R from running to simulate an unexpected termination.
@@ -23,6 +24,7 @@
 ##' handle.cont <- continueMCMC(handle=handle)
 ##' ## We can also add some generations to this same chain:
 ##' handle.add <- continueMCMC(handle=handle.cont, add.gen=1000)
+##' }
 continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
     ## Need to use the elements of the handle to continue the mcmc.
     ## The point here is that the file for the MCMC and for the log need to be the same as the one before.
@@ -58,25 +60,15 @@ continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
             continue <- "continue"
             add.gen <- handle$gen - total
             if( add.gen == 1 || add.gen < 0 ) stop("This MCMC run is complete. Use 'add.gen' to add more generations.\n")
-            ## Check if 'chunk' is a divisible of the generation number, if not, adjust.
         } else{
             continue <- "add.gen"
             handle$gen <- handle$gen + add.gen ## Update the total gen in the handle.
         }
 
-        ## Checks if the 'chunk' is correct given add.gen.
-        if( add.gen < handle$mcmc.par$chunk ){
-            handle$mcmc.par$chunk <- add.gen
-        }
-        if( add.gen %% handle$mcmc.par$chunk > 0 ){ ## Check the remainder of the division
-            add.gen <- add.gen - (add.gen %% handle$mcmc.par$chunk)
-        }
-
         singleRegimeMCMC(X=handle$data, phy=handle$phy, start=start, prior=handle$prior, gen=handle$gen, v=handle$mcmc.par$v
-                       , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu, prop=handle$mcmc.par$prop, chunk=handle$mcmc.par$chunk
-                       , dir=handle$dir, outname=handle$outname, traits=handle$trait.names, save.handle=save.handle, continue=continue, add.gen=add.gen
-                        , ID=handle$ID)
-
+                       , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu, prop=handle$mcmc.par$prop, dir=handle$dir
+                       , outname=handle$outname, traits=handle$trait.names, save.handle=save.handle
+                       , continue=continue, add.gen=add.gen, ID=handle$ID)
     }
     
     if( handle$p > 1 ){
@@ -116,19 +108,10 @@ continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
             handle$gen <- handle$gen + add.gen ## Update the total gen in the handle.
         }
         
-        ## Checks if the 'chunk' is correct given add.gen.
-        if( add.gen < handle$mcmc.par$chunk ){
-            handle$mcmc.par$chunk <- add.gen
-        }
-        if( add.gen %% handle$mcmc.par$chunk > 0 ){ ## Check the remainder of the division
-            add.gen <- add.gen - (add.gen %% handle$mcmc.par$chunk)
-        }
-        
         multRegimeMCMC(X=handle$data, phy=handle$phy, start=start, prior=handle$prior, gen=handle$gen, v=handle$mcmc.par$v
-                     , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu, prop=handle$mcmc.par$prop, chunk=handle$mcmc.par$chunk
-                     , dir=handle$dir, outname=handle$outname, regimes=handle$regime.names, traits=handle$trait.names, save.handle=save.handle
+                     , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu, prop=handle$mcmc.par$prop, dir=handle$dir
+                     , outname=handle$outname, regimes=handle$regime.names, traits=handle$trait.names, save.handle=save.handle
                      , continue=continue, add.gen=add.gen, ID=handle$ID)
-        
     }
 
     if( save.handle ) saveRDS(handle, file = file.path(handle$dir, paste(handle$outname,".",handle$ID,".mcmc.handle.rds",sep="")) )    

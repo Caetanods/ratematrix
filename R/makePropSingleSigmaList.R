@@ -43,7 +43,7 @@ makePropSingleSigmaList <- function(cache.data, cache.chain, prior, w_sd, w_mu, 
 
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
-        if(exp(r) > runif(1)){ ## Accept.
+        if(exp(r) > stats::runif(1)){ ## Accept.
             cat( paste("1; 0; 1; 0; ", which.phy, "; ", prop.sd.lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE)
             cache.chain$chain[[3]] <- prop.sd
             cache.chain$chain[[4]] <- prop.vcv
@@ -81,7 +81,7 @@ makePropSingleSigmaList <- function(cache.data, cache.chain, prior, w_sd, w_mu, 
 
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
-        if(exp(r) > runif(1)){ ## Accept.
+        if(exp(r) > stats::runif(1)){ ## Accept.
             cat( paste("1; 1; 0; 0; ", which.phy, "; ", prop.r.lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE)
             cache.chain$chain[[2]] <- prop.r
             cache.chain$chain[[4]] <- prop.vcv

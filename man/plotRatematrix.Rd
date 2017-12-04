@@ -94,9 +94,6 @@ plotRatematrix(anolesPost$chain, colors=c("green3","orange"), set.xlim=c(0,2)
              , alphaDiag=0.5, alphaEll=0.5, hpd=95, n.lines=500)
 }
 }
-\seealso{
-\code{\link{ readMCMC }} for reading the posterior distribution from the MCMC analisis, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRootValue }} for plotting the posterior for the root values.
-}
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }

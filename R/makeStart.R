@@ -18,7 +18,7 @@
 ##' plotRatematrix(posterior)
 ##' @importFrom corpcor decompose.cov
 makeStart <- function(k, p){
-    mn <- runif(k, min=-100, max=100)
+    mn <- stats::runif(k, min=-100, max=100)
     if( p == 1 ){
         corr <- riwish(v=k+1, S=diag(nrow=k))
         sd <- sqrt( decompose.cov(corr)$v )

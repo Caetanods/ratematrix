@@ -25,6 +25,7 @@ Function calculates the log-likelihood for the multivariate Brownian motion mode
 If more than one evolutionary rate matrix is used, then the function calculates the likelihood using the multirates prunning algorithm. Otherwise the function uses the three point algorithm to make calculations for the single regime case.
 }
 \examples{
+\donttest{
 ## Set the prior, take a sample from it and compute the log-likelihood.
 par.mu <- rbind( c(-10, 10), c(-10, 10) )
 par.sd <- rbind( c(0, 10), c(0, 10) )
@@ -37,6 +38,7 @@ R2 <- diag(sample.prior$sd[[2]]^2) \%*\% sample.prior$matrix[[2]] \%*\% diag(sam
 R <- list( R1, R2 )
 ## Compute the log-likelihood.
 likelihoodFunction(data=centrarchidae$data, phy=centrarchidae$phy.map, root=sample.prior$mu, R=R)
+}
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

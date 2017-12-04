@@ -7,7 +7,7 @@
 ##' @param r number of traits in the model.
 ##' @param p number of evolutionary rate matrix regimes fitted to the phylogeny.
 ##' @param den.mu a string to set the density type for the phylogenetic mean. One of uniform ("unif", default) or normal ("norm") distribution.
-##' @param par.mu the parameters for the prior density on the vector of phylogenetic means. Matrix with 2 columns and number of rows equal to the number of traits (r). When the density ('den.mu') is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm̉" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.
+##' @param par.mu the parameters for the prior density on the vector of phylogenetic means. Matrix with 2 columns and number of rows equal to the number of traits (r). When the density ('den.mu') is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.
 ##' @param den.sd a string to set the density type for the vector of standard deviations. One of uniform ("unif", default) or log-normal ("lnorm") distribution.
 ##' @param par.sd the parameters for the density of standard deviations. Matrix with 2 columns and number of rows equal to the number of evolutionary rate matrix regimes fitted to the phylogenetic tree (p). When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "den.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(standard deviations) for the distributions. If there is only one regime fitted to the tree, then 'par.sd' is a vector with length 2.
 ##' @param unif.corr whether the correlation structure of the prior distribution on the Sigma matrix is flat. This sets an uniformative prior (as uninformative as possible) to the evolutionary correlations among the traits. 
@@ -16,8 +16,8 @@
 ##' @return List of density functions that calculated the log-likelihood given parameter values, the log-likelihood of the prior is equal to the sum of the prior for the root value (first element), the prior for the correlation matrix (second element), and the prior for the vector of standard deviations (third element). The fourth element of the list is a list with the parameters used to specify the prior.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
+##' \donttest{
 ##' ## Set the prior, take a sample from it and compute the log-likelihood.
 ##' par.mu <- rbind( c(-10, 10), c(-10, 10) )
 ##' par.sd <- rbind( c(0, 10), c(0, 10) )
@@ -38,6 +38,7 @@
 ##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000, prior=prior)
 ##' posterior <- readMCMC(handle, burn=0.25, thin=1)
 ##' plotRatematrix(posterior)
+##' }
 makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.corr=TRUE, Sigma=NULL, nu=NULL){
 
     ## Make a warning if 'unif.corr' is TRUE and 'Sigma' or 'nu' has values.
@@ -86,28 +87,28 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
     ## There was a problem in this part. The list of function with level 2 was having a strange behavior due to some environment thing.
 
     if(den.mu == "unif"){
-        mn <- function(x) sum( sapply(1:r, function(i) dunif(x[i], min=par.mu[i,1], max=par.mu[i,2], log=TRUE) ) )
+        mn <- function(x) sum( sapply(1:r, function(i) stats::dunif(x[i], min=par.mu[i,1], max=par.mu[i,2], log=TRUE) ) )
     }
     if(den.mu == "norm"){
-        mn <- function(x) sum( sapply(1:r, function(i) dnorm(x[i], mean=par.mu[i,1], sd=par.mu[i,2], log=TRUE) ) )
+        mn <- function(x) sum( sapply(1:r, function(i) stats::dnorm(x[i], mean=par.mu[i,1], sd=par.mu[i,2], log=TRUE) ) )
     }
 
     if( p == 1 ){
         if(den.sd == "unif"){
-            sd <- function(x) sum( dunif(x, min=par.sd[1], max=par.sd[2], log=TRUE) )
+            sd <- function(x) sum( stats::dunif(x, min=par.sd[1], max=par.sd[2], log=TRUE) )
         }
         if(den.sd == "lnorm"){
-            sd <- function(x) sum( dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
+            sd <- function(x) sum( stats::dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
         }
     } else{
         ## This thing below might solve the problem:
         if(den.sd == "unif"){
             ## The 'x' elements need to match with 'par.sd' rows.
-            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE) ) ) )
+            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) stats::dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE) ) ) )
         }
         if(den.sd == "lnorm"){
             ## The 'x' elements need to match with 'par.sd' rows.
-            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE) ) ) )
+            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) stats::dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE) ) ) )
         }
     }
 

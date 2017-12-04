@@ -7,6 +7,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
+##' \donttest{
 ##' ## Run two (very short) chains and merge results.
 ##' data(centrarchidae)
 ##' handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
@@ -16,6 +17,7 @@
 ##' merged <- mergePosterior(posterior1, posterior2)
 ##' merged ## Summary of the chain
 ##' plotRatematrix(merged)
+##' }
 mergePosterior <- function(...){
     
     chains <- list(...)

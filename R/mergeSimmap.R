@@ -32,7 +32,6 @@
 ##' merged.phy <- mergeSimmap(phy=map.phy, merge.regimes=c("water","earth"), new.regime="mud")
 ##' plot( merged.phy )
 ##' }
-##' @seealso \code{\link{ phytools::make.simmap }} for mapping rate regimes to phylogenetic trees. 
 mergeSimmap <- function(phy, merge.regimes=NULL, new.regime=NULL, drop.regimes=FALSE){
     ## Function to merge two or more regimes into a single regime.
     ## Need to check if the regime will be unique at the end.

@@ -4,6 +4,6 @@ slideWindowPositive <- function(x, w){
     ## In this case is as easy as getting the absolute value of the quantity.
     ## x = the current value.
     ## w = the width parameter of the proposal.
-    y <- abs( runif(1, min = x - (w/2), max = x + (w/2) ) )
+    y <- abs( stats::runif(1, min = x - (w/2), max = x + (w/2) ) )
     return(y)
 }

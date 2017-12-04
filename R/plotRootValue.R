@@ -65,7 +65,7 @@ plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, se
         prob <- c(frac, 1-frac)
         qq.mat <- matrix(data=NA, nrow=ntr, ncol=2)
         for( i in 1:ntr ){
-            qq.mat[,i] <- quantile(x=chain$root[,i], probs=prob)
+            qq.mat[,i] <- stats::quantile(x=chain$root[,i], probs=prob)
         }
     }
 
@@ -74,7 +74,7 @@ plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, se
     ccat <- list() ## The categories, the breaks to be used in the histograms.
     for( i in 1:ntr ){
         ## This is to calculate the x and y limits of the histogram.
-        hists[[i]] <- hist(chain$root[,i], plot=FALSE, breaks=brk)             
+        hists[[i]] <- graphics::hist(chain$root[,i], plot=FALSE, breaks=brk)             
         y.hist <- max(y.hist, hists[[i]]$density, na.rm=TRUE)
     }
     ylim.hist <- c(0,y.hist) ## Limits for the y axis start from 0.
@@ -104,48 +104,48 @@ plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, se
     }
 
     ## Save the original par:
-    old.par <- par(no.readonly = TRUE)
+    old.par <- graphics::par(no.readonly = TRUE)
 
     ## Set par block:
-    par(mfrow = graph.dim )
-    par(cex = 0.6)
-    par(oma = c(3, 3, 3, 3))
+    graphics::par(mfrow = graph.dim )
+    graphics::par(cex = 0.6)
+    graphics::par(oma = c(3, 3, 3, 3))
 
     ## Now make the plots:
     for( i in 1:ntr ){
-        plot(1, xlim=x.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")     
+        graphics::plot(1, xlim=x.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")     
         mid <- mean(x.hist)
         first.quart <- x.hist[1] + (mid - x.hist[1])/2
         second.quart <- mid + (x.hist[2] - mid)/2
-        lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
-        lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
-        lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+        graphics::lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
+        graphics::lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+        graphics::lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
         
         if(show.zero == TRUE){
-            lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
+            graphics::lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
         }
         
         if( hpd < 100 ){
-            plot(hists[[i]], add=TRUE, freq=FALSE, border="gray", col=c("white", color, "white")[ ccat[[i]] ] )
+            graphics::plot(hists[[i]], add=TRUE, freq=FALSE, border="gray", col=c("white", color, "white")[ ccat[[i]] ] )
         } else{
-            plot(hists[[i]], add=TRUE, freq=FALSE, border="gray", col=color)
+            graphics::plot(hists[[i]], add=TRUE, freq=FALSE, border="gray", col=color)
         }
 
         if( !is.null( vline.values ) ){
             if( recycle.vline ){
-                abline(v=vline.values[1], col=vline.color[1], lwd=vline.wd[1])
+                graphics::abline(v=vline.values[1], col=vline.color[1], lwd=vline.wd[1])
             } else{
-                abline(v=vline.values[i], col=vline.color[i], lwd=vline.wd[i])
+                graphics::abline(v=vline.values[i], col=vline.color[i], lwd=vline.wd[i])
             }
         }
 
         
-        axis(1, at=round(c(x.hist[1], mean(x.hist), x.hist[2]), digits = 2), cex.axis=set.cex.axis)
-        axis(2, at=round(c(ylim.hist[1], mean(ylim.hist), ylim.hist[2]), digits = 2), cex.axis=set.cex.axis)
-        mtext(text=set.xlab[i], side=1, cex=set.cex.lab, line=3)
-        mtext(text="Density", side=2, cex=set.cex.lab, line=3)
+        graphics::axis(1, at=round(c(x.hist[1], mean(x.hist), x.hist[2]), digits = 2), cex.axis=set.cex.axis)
+        graphics::axis(2, at=round(c(ylim.hist[1], mean(ylim.hist), ylim.hist[2]), digits = 2), cex.axis=set.cex.axis)
+        graphics::mtext(text=set.xlab[i], side=1, cex=set.cex.lab, line=3)
+        graphics::mtext(text="Density", side=2, cex=set.cex.lab, line=3)
     }
 
     ## Return the original parameters.
-    par(old.par)    
+    graphics::par(old.par)    
 }

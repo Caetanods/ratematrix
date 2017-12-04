@@ -49,9 +49,6 @@ merged.phy <- mergeSimmap(phy=map.phy, merge.regimes=c("water","earth"), new.reg
 plot( merged.phy )
 }
 }
-\seealso{
-\code{\link{ phytools::make.simmap }} for mapping rate regimes to phylogenetic trees.
-}
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }

@@ -11,13 +11,14 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
+##' \donttest{
 ##' ## For two traits, two regimes and 27 species:
 ##' data(centrarchidae)
 ##' estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000000)
 ##' ## For four traits, two regimes and 125 species:
 ##' data(anoles)
 ##' estimateTimeMCMC(data=anoles$data[,1:4], phy=anoles$phy, gen=1000000)
-##' @seealso \code{\link{ microbenchmark::microbenchmark }} for a precise function to estimate computing times.
+##' }
 estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
     ## This version of the function does not take into account writing the MCMC to files and making the proposal steps.
     ## A quick check with an overestimation of the process (by running the whole 'ratematrixMCMC' tree pre-processing) increased time estimates by 30 min only. So, the function the way it is seems fine.
@@ -50,7 +51,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         ## Generate the prior distribution.
         r <- ncol( data )
         mn <- colMeans(data)
-        ssd <- apply(data, 2, sd)
+        ssd <- apply(data, 2, stats::sd)
         par.mu <- as.matrix( cbind(mn, ssd) )
         par.sd <- c(0,100)
         prior <- makePrior(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
@@ -66,7 +67,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cache.chain <- list()
         cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
         cache.chain$chain[[1]] <- start ## Starting value for the chain.
-        cache.chain$chain[[1]][[4]] <- rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
+        cache.chain$chain[[1]][[4]] <- rebuild.cov(r=stats::cov2cor(start[[2]]), v=start[[3]]^2)
 
         evaluateStepMCMC <- function(){
             logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
@@ -84,7 +85,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         p <- ncol( phy$mapped.edge ) ## Multiple regimes.
         r <- ncol( data )
         mn <- colMeans(data)
-        ssd <- apply(data, 2, sd)
+        ssd <- apply(data, 2, stats::sd)
         par.mu <- as.matrix( cbind(mn, ssd) )
         rep.sd.regime <- rep(c(0,100), times=p)
         par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
@@ -98,7 +99,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cache.data <- list()
         cache.chain <- list()    
         cache.data$X <- data
-        cache.data$data_cor <- cov2cor( var( data ) ) ## This is to use the correlation of the data to draw proposals for the root.
+        cache.data$data_cor <- stats::cov2cor( stats::var( data ) ) ## This is to use the correlation of the data to draw proposals for the root.
         cache.data$k <- r ## Number of traits.
         cache.data$p <- p ## Number of regimes fitted to the tree.
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
@@ -116,7 +117,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
         cache.chain$chain[[1]] <- start ## Starting value for the chain.
         cache.chain$chain[[1]][[4]] <- list()
-        for(i in 1:cache.data$p) cache.chain$chain[[1]][[4]][[i]] <- rebuild.cov(r=cov2cor(start[[2]][[i]]), v=start[[3]][[i]]^2)
+        for(i in 1:cache.data$p) cache.chain$chain[[1]][[4]][[i]] <- rebuild.cov(r=stats::cov2cor(start[[2]][[i]]), v=start[[3]][[i]]^2)
 
         ## Function that evaluates the loglik, prior and Jacobian.
         evaluateStepMCMC <- function(){
@@ -136,7 +137,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         cat("\n")
         cat("Computing time...\n")
         time <- microbenchmark::microbenchmark(evaluateStepMCMC(), times = eval.times, unit="s")
-        eval.time <- median( as.numeric( microbenchmark:::convert_to_unit(time$time, unit="s") ) )
+        eval.time <- stats::median( as.numeric( microbenchmark:::convert_to_unit(time$time, unit="s") ) )
         estimate <- ( eval.time * gen ) / 3600
         cat(paste( "Time estimated with current processing power is at least ", round(estimate, 1), " hours.\n", sep=""))
         return( estimate )

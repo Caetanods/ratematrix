@@ -3,6 +3,7 @@
 ##' Print information about object.
 ##' @title Print method for the "ratematrix_multi_mcmc" class.
 ##' @param x The object.
+##' @param ... Additional arguments. Not used here.
 ##' @export
 print.ratematrix_multi_mcmc <- function(x, ...){
     cat("\n")

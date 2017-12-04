@@ -10,6 +10,6 @@ slideWindow <- function(x, w){
     ## Sliding window proposal for unbounded trait.
     ## x = the current value.
     ## w = the width parameter of the proposal.
-    y <- runif(1, min = x - (w/2), max = x + (w/2) )
+    y <- stats::runif(1, min = x - (w/2), max = x + (w/2) )
     return(y)
 }

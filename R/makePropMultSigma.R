@@ -51,7 +51,7 @@ makePropMultSigma <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, fil
 
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
-        if(exp(r) > runif(1)){ ## Accept.
+        if(exp(r) > stats::runif(1)){ ## Accept.
             cat( paste("1; 0; ", Rp, "; 0; 1; ", prop.sd.lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[3]][[Rp]] <- prop.sd
             cache.chain$chain[[4]][[Rp]] <- prop.vcv
@@ -92,7 +92,7 @@ makePropMultSigma <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, fil
 
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
-        if(exp(r) > runif(1)){ ## Accept.
+        if(exp(r) > stats::runif(1)){ ## Accept.
             cat( paste("1; ", Rp, "; 0; 0; 1; ", prop.r.lik,"\n" , sep="") , sep="", file=files[[2]], append=TRUE) ## Rp = the regime updated.
             cache.chain$chain[[2]][[Rp]] <- prop.r
             cache.chain$chain[[4]][[Rp]] <- prop.vcv

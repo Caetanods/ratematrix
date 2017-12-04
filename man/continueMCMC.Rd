@@ -25,6 +25,7 @@ Function to continue an unfinished MCMC chain or to append new generation to a p
 The function will append the new generations to the files created by the prior run of the 'ratematrixMCMC' function. The function will search for these files in the same directory that the previous run was performed. You should double-check if the files are in the path set in 'handle$dir'. If the files are not in the same location, you can provide a new path (relative or absolute path) to the argument 'dir'. The path provided to 'dir' will override the path pointed by 'handle$dir'. The new 'handle' output from 'continueMCMC' will have a updated total number of generations and will also update the directory path, if required.
 }
 \examples{
+\donttest{
 ## Continue unfinished run.
 data(centrarchidae)
 ## Run the next line. Then quickly stop R from running to simulate an unexpected termination.
@@ -37,6 +38,7 @@ handle <- readRDS(file="ratematrixMCMC.85636.mcmc.handle.rds")
 handle.cont <- continueMCMC(handle=handle)
 ## We can also add some generations to this same chain:
 handle.add <- continueMCMC(handle=handle.cont, add.gen=1000)
+}
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

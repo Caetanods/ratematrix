@@ -12,7 +12,6 @@
 ##' @importFrom corpcor decompose.cov
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @export
-##' @seealso \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the samples from the prior.
 ##' @examples
 ##' \donttest{
 ##' par.mu <- rbind( c(-10, 10), c(-10, 10), c(-10, 10) )
@@ -45,11 +44,11 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
     mu <- matrix(nrow=n, ncol=pars$r)
     if(pars$den.mu == "unif"){
         for(i in 1:pars$r){
-            mu[,i] <- runif(n=n, min=pars$par.mu[i,1], max=pars$par.mu[i,2])
+            mu[,i] <- stats::runif(n=n, min=pars$par.mu[i,1], max=pars$par.mu[i,2])
         }
     } else{
         for(i in 1:pars$r){
-            mu[,i] <- rnorm(n=n, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2])
+            mu[,i] <- stats::rnorm(n=n, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2])
         }
     }
 
@@ -81,17 +80,17 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
         if(sample.sd == TRUE){    
             if(pars$den.sd == "unif"){
                 if(pars$p == 1){
-                    sd <- runif(n=pars$r, min=pars$par.sd[1], max=pars$par.sd[2])
+                    sd <- stats::runif(n=pars$r, min=pars$par.sd[1], max=pars$par.sd[2])
                 } else{
                     sd <- list()
-                    for(i in 1:pars$p){ sd[[i]] <- runif(n=pars$r, min=pars$par.sd[i,1], max=pars$par.sd[i,2]) }
+                    for(i in 1:pars$p){ sd[[i]] <- stats::runif(n=pars$r, min=pars$par.sd[i,1], max=pars$par.sd[i,2]) }
                 }
             } else{
                 if(pars$p == 1){
-                    sd <- rlnorm(n=pars$r, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
+                    sd <- stats::rlnorm(n=pars$r, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
                 } else{
                     sd <- list()
-                    for(i in 1:pars$p){ sd[[i]] <- rlnorm(n=pars$r, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2]) }
+                    for(i in 1:pars$p){ sd[[i]] <- stats::rlnorm(n=pars$r, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2]) }
                 }
             }
         } else{
@@ -125,23 +124,23 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
         if(sample.sd == TRUE){    
             if(pars$den.sd == "unif"){
                 if(pars$p == 1){
-                    sdvec <- runif(n=pars$r * n, min=pars$par.sd[1], max=pars$par.sd[2])
+                    sdvec <- stats::runif(n=pars$r * n, min=pars$par.sd[1], max=pars$par.sd[2])
                     sd <- matrix(sdvec, nrow=n, ncol=pars$r)
                 } else{
                     sd <- list()
                     for(i in 1:pars$p){
-                        sdvec <- runif(n=pars$r * n, min=pars$par.sd[i,1], max=pars$par.sd[i,2])
+                        sdvec <- stats::runif(n=pars$r * n, min=pars$par.sd[i,1], max=pars$par.sd[i,2])
                         sd[[i]] <- matrix(sdvec, nrow=n, ncol=pars$r)
                     }
                 }
             } else{
                 if(pars$p == 1){
-                    sdvec <- rlnorm(n=pars$r * n, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
+                    sdvec <- stats::rlnorm(n=pars$r * n, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
                     sd <- matrix(sdvec, nrow=n, ncol=pars$r)
                 } else{
                     sd <- list()
                     for(i in 1:pars$p){
-                        sdvec <- rlnorm(n=pars$r * n, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2])
+                        sdvec <- stats::rlnorm(n=pars$r * n, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2])
                         sd[[i]] <- matrix(sdvec, nrow=n, ncol=pars$r)
                     }
                 }
@@ -162,19 +161,19 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
     if(rebuild.R == TRUE){
         if( n == 1 ){
             if(pars$p == 1){
-                R <- rebuild.cov(cov2cor(vcv), v=sd)
+                R <- rebuild.cov(stats::cov2cor(vcv), v=sd)
             } else{
-                R <- lapply(1:pars$p, function(x) rebuild.cov(cov2cor(vcv[[x]]), v=(sd[[x]])^2 ) )
+                R <- lapply(1:pars$p, function(x) rebuild.cov(stats::cov2cor(vcv[[x]]), v=(sd[[x]])^2 ) )
             }
         } else{
             if(pars$p == 1){
-                R <- lapply(1:n, function(x) rebuild.cov(cov2cor(vcv[[x]]), v=(sd[x,])^2 ) )
+                R <- lapply(1:n, function(x) rebuild.cov(stats::cov2cor(vcv[[x]]), v=(sd[x,])^2 ) )
             } else{
                 R <- list()
                 for(i in 1:pars$p){
                     R[[i]] <- list()
                     for(j in 1:n){
-                        R[[i]][[j]] <- rebuild.cov(cov2cor(vcv[[i]][[j]]), v=(sd[[i]][j,])^2 )
+                        R[[i]][[j]] <- rebuild.cov(stats::cov2cor(vcv[[i]][[j]]), v=(sd[[i]][j,])^2 )
                     }
                 }
             }

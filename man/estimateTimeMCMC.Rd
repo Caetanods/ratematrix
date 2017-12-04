@@ -27,6 +27,7 @@ Estimate time needed to run the MCMC. Function will estimate the time based on t
 Function will use the package 'microbenchmark' if present, otherwise it will compute time using the 'proc.time' function. We recommend users to be sure that the available processors are free when running the time estimate for a more accurate estimate. It is important to note that the same analysis in different computers (or nodes of a server) might have different times.
 }
 \examples{
+\donttest{
 ## For two traits, two regimes and 27 species:
 data(centrarchidae)
 estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000000)
@@ -34,8 +35,6 @@ estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000000
 data(anoles)
 estimateTimeMCMC(data=anoles$data[,1:4], phy=anoles$phy, gen=1000000)
 }
-\seealso{
-\code{\link{ microbenchmark::microbenchmark }} for a precise function to estimate computing times.
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

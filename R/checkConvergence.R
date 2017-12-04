@@ -12,6 +12,7 @@
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @importFrom coda mcmc effectiveSize mcmc.list gelman.diag
 ##' @examples
+##' \donttest{
 ##' data(centrarchidae)
 ##' handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000)
 ##' posterior1 <- readMCMC(handle1, burn=0.25, thin=1)
@@ -22,6 +23,7 @@
 ##' checkConvergence(posterior1, posterior2)
 ##' ## A convergence test using 'Heidelberger test' calculated from a single MCMC chain.
 ##' checkConvergence(posterior1)
+##' }
 ##' @references
 ##' \describe{
 ##'   \item{}{Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, Statistical Science, 7, 457-511.}

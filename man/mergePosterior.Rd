@@ -16,6 +16,7 @@ A merged posterior distribution in the same format.
 Join two or more independent MCMC chains from the same data and phylogenetic trees by appending them together into a single chain.
 }
 \examples{
+\donttest{
 ## Run two (very short) chains and merge results.
 data(centrarchidae)
 handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
@@ -25,6 +26,7 @@ posterior2 <- readMCMC(handle2, burn=0.25, thin=1)
 merged <- mergePosterior(posterior1, posterior2)
 merged ## Summary of the chain
 plotRatematrix(merged)
+}
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{The object.}
+
+\item{...}{Additional arguments. Not used here.}
 }
 \description{
 Print method for the "ratematrix_prior_sample" class.

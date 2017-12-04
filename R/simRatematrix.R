@@ -9,7 +9,6 @@
 ##' @return Returns a matrix with each trait values for the tips. Traits are distributed in the rows and tips are distributed in the columns.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ phytools::sim.corrs }} for the original version of this function.
 simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
     if (!inherits(tree, "phylo")) 
         stop("tree should be an object of class \"phylo\".")
@@ -18,7 +17,7 @@ simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
         if (is.null(anc)) 
             anc <- rep(0, p)
         cholvcv <- chol(vcv)
-        X <- matrix(rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$edge.length), 
+        X <- matrix(stats::rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$edge.length), 
             p)), nrow(tree$edge), p)
         X <- X %*% cholvcv
     }
@@ -34,7 +33,7 @@ simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
         cholvcv <- lapply(vcv, chol)
         X <- matrix(0, nrow(tree$edge), p)
         for (i in 1:length(vcv)) {
-            Y <- matrix(rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$mapped.edge[, 
+            Y <- matrix(stats::rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$mapped.edge[, 
                 i]), p)), nrow(tree$edge), p)
             X <- X + Y %*% cholvcv[[i]]
         }

@@ -7,7 +7,6 @@
 ##' @param dd numeric. The dimension of the matrix.
 ##' @return boolean. Return TRUE when all elements of 'mat' is within the interval of 'qq'.
 ##' @author Daniel S. Caetano, \email{caetanods1@@gmail.com}
-##' @seealso \code{\link{make.grid.plot}}
 ##' @keywords utilities
 ##' @noRd
 checkHPD <- function(mat, qq, dd){

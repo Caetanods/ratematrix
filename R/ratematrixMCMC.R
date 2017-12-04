@@ -38,7 +38,6 @@
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape Ntip
 ##' @importFrom phytools rescaleSimmap
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
 ##' \donttest{
 ##' ## Load data
@@ -213,7 +212,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             }
             if(prior == "empirical_mean"){
                 mn <- colMeans(data)
-                ssd <- apply(data, 2, sd) * 2
+                ssd <- apply(data, 2, stats::sd) * 2
                 par.mu <- as.matrix( cbind(mn, ssd) )
                 par.sd <- c(0,10) ## Prior for the standard deviation.
                 prior_run <- makePrior(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
@@ -280,7 +279,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             }
             if(prior == "empirical_mean"){
                 mn <- colMeans(data)
-                ssd <- apply(data, 2, sd)
+                ssd <- apply(data, 2, stats::sd)
                 par.mu <- as.matrix( cbind(mn, ssd) )
                 rep.sd.regime <- rep(c(0,10), times=p)
                 par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)

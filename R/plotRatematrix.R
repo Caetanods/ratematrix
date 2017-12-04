@@ -28,7 +28,6 @@
 ##' @return A plate with a grid of plots with dimension equal to the number of traits fitted to the data.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ readMCMC }} for reading the posterior distribution from the MCMC analisis, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRootValue }} for plotting the posterior for the root values.
 ##' @examples
 ##' \donttest{
 ##' ## Run and plot a very short MCMC chain:
@@ -137,7 +136,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ## Print a text with the association between the colors and the regimes.
         name.table <- rbind(names(chain$matrix)[p], colors)
         cat("Table with regimes and colors (names or HEX):\n")
-        write.table(format(name.table, justify="right"), row.names=F, col.names=F, quote=F)
+        utils::write.table(format(name.table, justify="right"), row.names=F, col.names=F, quote=F)
         
         ## First do a batch of tests:
         check.mat <- vector()
@@ -185,7 +184,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             qq.count <- 1
             for(i in 1:dd){
                 for(j in i:dd){
-                    qq.list[[w]][[qq.count]] <- quantile(x=LL[[w]][[i]][,j], probs=prob)
+                    qq.list[[w]][[qq.count]] <- stats::quantile(x=LL[[w]][[i]][,j], probs=prob)
                     qq.count <- qq.count + 1
                 }
             }
@@ -294,14 +293,14 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     if( i == j ){
                         ## Remember that the list 'LL' were made over the lines of the grid.
                         ## This is to calculate the x and y limits of the histogram.
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
                         ## Create the cuts for the hpd:
                         ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
                                                      , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
                         hist.count <- hist.count + 1
                     } else{
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
                         ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
                                                      , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
@@ -322,15 +321,15 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ell.lim <- apply(ell.lim, 2, range)
 
         ## Save the original par:
-        old.par <- par(no.readonly = TRUE)
+        old.par <- graphics::par(no.readonly = TRUE)
 
         ## Set par block:
-        par(mfrow = c(dd, dd))
-        par(cex = 0.6)
-        par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
-        par(tcl = -0.25)
-        par(mgp = c(2, 0.6, 0))
-        ## par(xpd = NA) ## To make plots outside plotting area.
+        graphics::par(mfrow = c(dd, dd))
+        graphics::par(cex = 0.6)
+        graphics::par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
+        graphics::par(tcl = -0.25)
+        graphics::par(mgp = c(2, 0.6, 0))
+        ## graphics::par(xpd = NA) ## To make plots outside plotting area.
 
         ## Plot the graphs in the grid:
         ## The if and else make sure that the upper.tri and the lower.tri get the correct plots.
@@ -344,9 +343,9 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ## Repeat the process for all elements of the graph, and now it will need to be a vector.
         ## colors has the color for each regime.
         ## Need to adapt this to accept both color names and HEX.
-        colOff <- adjustcolor(col=colors, alpha.f=alphaOff)
-        colDiag <- adjustcolor(col=colors, alpha.f=alphaDiag)
-        colEll <- adjustcolor(col=colors, alpha.f=alphaEll)
+        colOff <- grDevices::adjustcolor(col=colors, alpha.f=alphaOff)
+        colDiag <- grDevices::adjustcolor(col=colors, alpha.f=alphaDiag)
+        colEll <- grDevices::adjustcolor(col=colors, alpha.f=alphaEll)
         if( is.null(point.color) ){ ## Set the colors for the point matrices equal to the colors if not provided.
             point.color <- colors
         }
@@ -356,65 +355,65 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         for(i in 1:dd){
             for(j in 1:dd){
                 if(j >= i){
-                    plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
                     mid <- mean(xlim.hist)
                     first.quart <- xlim.hist[1] + (mid - xlim.hist[1])/2
                     second.quart <- mid + (xlim.hist[2] - mid)/2
-                    lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
                     if(show.zero == TRUE){
-                        lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
+                        graphics::lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
                     }
-                    box(col="grey")
+                    graphics::box(col="grey")
                     if(j != i){
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="gray"
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="gray"
                                , col=c("white", colOff[w], "white")[ccat[[w]][[hist.plot.count]]] )
                         }
                     } else{
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="black"
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="black"
                                , col=c("white", colDiag[w], "white")[ccat[[w]][[hist.plot.count]]] )
                         }
                         if(i == dd[1]){
-                            axis(1, at=round(c(xlim.hist[1], mean(xlim.hist), xlim.hist[2]), digits = 2) )
+                            graphics::axis(1, at=round(c(xlim.hist[1], mean(xlim.hist), xlim.hist[2]), digits = 2) )
                         }
                     }
                     if(i == 1){
-                        mtext(text=set.leg[j], side=3, cex=l.cex)
+                        graphics::mtext(text=set.leg[j], side=3, cex=l.cex)
                     }
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
+                            graphics::lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
                         }
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
-                    box(col="grey")
+                    graphics::plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::box(col="grey")
                     for( w in 1:length(p) ){
-                        invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
-                                        , type = "l", lwd = ell.wd) )
+                        invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], function(x) graphics::points(x, col = colEll[w]
+                                        , type = "l", lwd = ell.wd)) )
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            invisible( points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
+                            invisible( graphics::points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
                         }
                     }
                     ell.plot.count <- ell.plot.count + 1
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                 }            
             }
         }
         
         ## Return the old parameters:
-        par(old.par)
+        graphics::par(old.par)
        
     } else{
 
@@ -497,11 +496,11 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     if( i == j ){
                         ## Remember that the list 'LL' where made over the lines of the grid.
                         ## This is to calculate the x and y limits of the histogram.
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
                         hist.count <- hist.count + 1
                     } else{
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
                         hist.count <- hist.count + 1
                     }
@@ -516,20 +515,20 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ell.lim <- apply(ell.lim, 2, range)
         
         ## Save the original par:
-        old.par <- par(no.readonly = TRUE)
+        old.par <- graphics::par(no.readonly = TRUE)
 
         ## Set par block:
-        par(mfrow = c(dd[1], dd[1]))
-        par(cex = 0.6)
-        par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
-        par(tcl = -0.25)
-        par(mgp = c(2, 0.6, 0))
-        ## par(xpd = NA) ## To make plots outside plotting area.
+        graphics::par(mfrow = c(dd[1], dd[1]))
+        graphics::par(cex = 0.6)
+        graphics::par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
+        graphics::par(tcl = -0.25)
+        graphics::par(mgp = c(2, 0.6, 0))
+        ## graphics::par(xpd = NA) ## To make plots outside plotting area.
 
         ## Create the color for the plot:
-        colOff <- adjustcolor(col=colors, alpha.f=alphaOff)
-        colDiag <- adjustcolor(col=colors, alpha.f=alphaDiag)
-        colEll <- adjustcolor(col=colors, alpha.f=alphaEll)
+        colOff <- grDevices::adjustcolor(col=colors, alpha.f=alphaOff)
+        colDiag <- grDevices::adjustcolor(col=colors, alpha.f=alphaDiag)
+        colEll <- grDevices::adjustcolor(col=colors, alpha.f=alphaEll)
         if( is.null(point.color) ){ ## Set the colors for the point matrices equal to the colors if not provided.
             point.color <- colors
         }
@@ -546,59 +545,59 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         for(i in 1:dd){
             for(j in 1:dd){
                 if(j >= i){
-                    plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
                     mid <- mean(xlim.hist)
                     first.quart <- xlim.hist[1] + (mid - xlim.hist[1])/2
                     second.quart <- mid + (xlim.hist[2] - mid)/2
-                    lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
                     if(show.zero == TRUE){
-                        lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
+                        graphics::lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
                     }
-                    box(col="grey")
+                    graphics::box(col="grey")
                     if(j != i){
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colOff[w], border="gray")
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colOff[w], border="gray")
                         }
                     } else{
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colDiag[w], border="black")
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colDiag[w], border="black")
                         }
-                        if(i == dd){ axis(1, at=round(c(xlim.hist[1],mean(xlim.hist),xlim.hist[2]), digits = 2) ) }
+                        if(i == dd){ graphics::axis(1, at=round(c(xlim.hist[1],mean(xlim.hist),xlim.hist[2]), digits = 2) ) }
                     }
                     if(i == 1){
-                        mtext(text=set.leg[j], side=3, cex=l.cex)
+                        graphics::mtext(text=set.leg[j], side=3, cex=l.cex)
                     }
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
+                            graphics::lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
                         }
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
-                    box(col="grey")
+                    graphics::plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::box(col="grey")
                     for( w in 1:length(p) ){
-                    invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
-                                    , type = "l", lwd = ell.wd) )
+                    invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], function(x) graphics::points(x, col = colEll[w]
+                                    , type = "l", lwd = ell.wd) ) )
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            invisible( points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
+                            invisible( graphics::points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
                         }
                     }
                     ell.plot.count <- ell.plot.count+1
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                 }            
             }
         }
         ## Return the old parameters:
-        par(old.par)
+        graphics::par(old.par)
     }
 }

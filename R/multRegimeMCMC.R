@@ -92,7 +92,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     ## Creates MCMC chain cache:
     cache.chain$chain <- start ## Starting value for the chain.
     cache.chain$chain[[4]] <- list()
-    for(i in 1:cache.data$p) cache.chain$chain[[4]][[i]] <- rebuild.cov(r=cov2cor(start[[2]][[i]]), v=start[[3]][[i]]^2)
+    for(i in 1:cache.data$p) cache.chain$chain[[4]][[i]] <- rebuild.cov(r=stats::cov2cor(start[[2]][[i]]), v=start[[3]][[i]]^2)
 
     ## Need to calculate the initial log.lik with the single tree or with a random tree from the sample:
     if( is.list( phy[[1]] ) ){

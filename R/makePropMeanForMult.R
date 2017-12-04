@@ -33,7 +33,7 @@ makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, f
 
     ## Acceptance step.
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
-    if(exp(r) > runif(1)){ ## Accept.
+    if(exp(r) > stats::runif(1)){ ## Accept.
         cat( paste("1; 0; 0; 1; 1; ", prop.root.lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Always the phylo 1 in this case.
         cache.chain$chain[[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
