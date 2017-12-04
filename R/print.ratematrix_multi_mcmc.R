@@ -4,7 +4,7 @@
 ##' @title Print method for the "ratematrix_multi_mcmc" class.
 ##' @param x The object.
 ##' @export
-print.ratematrix_multi_mcmc <- function(x){
+print.ratematrix_multi_mcmc <- function(x, ...){
     cat("\n")
     cat("MCMC chain with multiple regimes","\n")
     cat("Number of traits: ", x$k, "\n")

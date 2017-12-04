@@ -4,7 +4,7 @@
 ##' @title Print method for the "ratematrix_multi_chain" class.
 ##' @param x The object.
 ##' @export
-print.ratematrix_multi_chain <- function(x){
+print.ratematrix_multi_chain <- function(x, ...){
     ## First make some calculations:
     k <- ncol( x$root )
     post.length <- nrow( x$root )
