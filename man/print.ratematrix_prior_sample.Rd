@@ -4,7 +4,7 @@
 \alias{print.ratematrix_prior_sample}
 \title{Print method for the "ratematrix_prior_sample" class.}
 \usage{
-\method{print}{ratematrix_prior_sample}(x)
+\method{print}{ratematrix_prior_sample}(x, ...)
 }
 \arguments{
 \item{x}{The object.}

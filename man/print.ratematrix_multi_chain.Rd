@@ -4,7 +4,7 @@
 \alias{print.ratematrix_multi_chain}
 \title{Print method for the "ratematrix_multi_chain" class.}
 \usage{
-\method{print}{ratematrix_multi_chain}(x)
+\method{print}{ratematrix_multi_chain}(x, ...)
 }
 \arguments{
 \item{x}{The object.}

@@ -4,7 +4,7 @@
 \alias{print.ratematrix_prior_function}
 \title{Print method for the "ratematrix_prior_function" class.}
 \usage{
-\method{print}{ratematrix_prior_function}(x)
+\method{print}{ratematrix_prior_function}(x, ...)
 }
 \arguments{
 \item{x}{The object.}
