@@ -23,12 +23,14 @@ The functionality of this function is already integraded within 'ratematrixMCMC'
 The format for the start of the MCMC is a list. The first element of the list is a vector with the root values for each trait. The second element is a correlation matrix and the third element is a vector of standard deviations. The root values and the vector of standard deviations need to have the same length, the correlation matrix needs to have ncol and nrow equal to the length of the root values.
 }
 \examples{
+\donttest{
 data(centrarchidae)
 ## Sample starting point for two traits and two regimes.
 start <- makeStart(k=2, p=2)
 handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000, start=start)
 posterior <- readMCMC(handle)
 plotRatematrix(posterior)
+}
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

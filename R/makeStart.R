@@ -10,12 +10,14 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
+##' \donttest{
 ##' data(centrarchidae)
 ##' ## Sample starting point for two traits and two regimes.
 ##' start <- makeStart(k=2, p=2)
 ##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=2000, start=start)
 ##' posterior <- readMCMC(handle)
 ##' plotRatematrix(posterior)
+##' }
 ##' @importFrom corpcor decompose.cov
 makeStart <- function(k, p){
     mn <- stats::runif(k, min=-100, max=100)
