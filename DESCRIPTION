@@ -1,7 +1,9 @@
 Package: ratematrix
-Title: Bayesian estimation of the evolutionary rate matrix
+Title: Bayesian Estimation of the Evolutionary Rate Matrix
 Version: 0.29
-Authors@R: person("Daniel", "Caetano", email = "caetanods1@gmail.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Daniel", "Caetano", email = "caetanods1@gmail.com", role = c("aut", "cre")),
+    person("Luke", "Harmon", email = "lukeh@uidaho.edu", role = "aut") )
 Description: Estimate the Evolutionary rate matrix (R) using Markov chain Monte
     Carlo (MCMC). The package has functions to plot the results and to summarize the
     MCMC chains.
