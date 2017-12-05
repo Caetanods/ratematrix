@@ -21,11 +21,14 @@ Imports:
     phylolm,
     readr,
     phytools,
-    mvMORPH
+    mvMORPH,
+    Rcpp
 Suggests:
     microbenchmark,
     knitr,
     rmarkdown
 VignetteBuilder:
     knitr
+LinkingTo: 
+    Rcpp
 RoxygenNote: 6.0.1
