@@ -21,7 +21,8 @@ Imports:
     readr,
     phytools,
     mvMORPH,
-    Rcpp
+    Rcpp,
+    RcppArmadillo
 Suggests:
     microbenchmark,
     knitr,
@@ -29,5 +30,6 @@ Suggests:
 VignetteBuilder:
     knitr
 LinkingTo: 
-    Rcpp
+    Rcpp,
+    RcppArmadillo
 RoxygenNote: 6.0.1
