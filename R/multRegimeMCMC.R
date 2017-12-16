@@ -56,7 +56,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     mcmc.par$v <- v
     mcmc.par$w_sd <- w_sd
     mcmc.par$w_mu <- w_mu
-    mcmc.par$prop_sample_root <- prop_sample_root
+    mcmc.par$prob_sample_root <- prob_sample_root
     mcmc.par$prob_sample_var <- prob_sample_var
     
     ## Return errors for the options not implemented now.
@@ -69,8 +69,8 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
         ## Need to take care how to match the regimes and the R matrices.
         anc <- phy$edge[ord.id,1] ## Ancestral edges.
-        cache.data$des <- phy$edge[ord.id,2] ## Descendent edges.
-        cache.data$noydes <- unique(anc) ## The internal nodes we will traverse.
+        des <- phy$edge[ord.id,2] ## Descendent edges.
+        nodes <- unique(anc) ## The internal nodes we will traverse.
 
         ## Set the types for each of the nodes that are going to be visited.
         node.to.tip <- which( tabulate( anc[which(des <= length(phy$tip.label))] ) == 2 )
@@ -80,7 +80,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         names(anc) <- rep(1, times=length(anc))
         names(anc)[which(anc %in% node.to.node)] <- 2
         names(anc)[which(anc %in% node.to.tip.node)] <- 3
-        names_anc <- names(anc)
+        names_anc <- as.numeric( names(anc) )
     }
 
     ## Generate identifier and name for the files:
@@ -123,11 +123,47 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
         saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
     }
 
+    ## Set the objects holding the initial state for the chain.
+    ## These are array and matrix classes.
+    ## start here is produced by the 'samplePrior' function.
+    startR.list <- lapply(1:2, function(x) rebuild.cov(r=cov2cor(start$matrix[[x]]), v=start$sd[[x]]^2) )
+    startR <- array(dim=c(k, k, p))
+    startCorr <- array(dim=c(k, k, p))
+    startvar <- matrix(nrow=k, ncol=p)
+    for( i in 1:p){
+        startR[,,i] <- startR.list[[i]]
+        startCorr[,,i] <- start$matrix[[i]]
+        startvar[,i] <- start$sd[[i]]^2
+    }
+
+    ## Get info from the prior object.
+    den_mu <- prior$pars$den.mu
+    par_mu <- prior$pars$par.mu
+    den_sd <- prior$pars$den.sd
+    par_sd <- prior$pars$par.sd
+
+    if( prior$pars$unif.corr ){
+        sigma.mat <- diag(nrow=k)
+        sigma_array <- array(dim=c(k, k, p))
+        for( i in 1:p){
+            sigma_array[,,i] <- sigma.mat
+        }
+        nu <- rep(k+1, times=p)
+    } else{
+        if( length(prior$pars$Sigma) !=p ) stop( "length of Sigma need to be equal to number of regimes." )
+        sigma_array <- array(dim=c(k, k, p))
+        for( i in 1:p){
+            sigma_array[,,i] <- prior$pars$Sigma[[i]]
+        }
+        nu <- prior$pars$nu
+        if( length(nu) !=p ) stop( "length of nu need to be equal to number of regimes." )
+    }
+
     ## Pass the arguments and start the MCMC.
     runRatematrixMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
                       , mapped_edge=mapped.edge, R=startR, mu=start$root, var=startvar, Rcorr=startCorr, w_mu=w_mu
-                      , par_prior_mu=rangeX, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
-                      , nu=nu, sigma=Sigma, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
+                      , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
+                      , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
                       , prob_sample_root = prob_sample_root, prob_sample_var = prob_sample_var, gen = gen)
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
