@@ -21,7 +21,7 @@
 ##' @param prior the prior densities for the MCMC. Must be one of (i) "uniform", (ii) "empirical_mean" (the default, see 'Details'), (iii) the output of the "makePrior" function or (iv) a list of functions. See more information on 'makePrior' function.
 ##' @param start the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See more information on 'makeStart' function.
 ##' @param gen number of generations for the chain.
-##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.)
+##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd value for the width of the uniform proposal distribution for the vector of standard deviations. This can be a single value to be used for the sd of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
 ##' @param w_mu value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
 ##' @param prop the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.
@@ -67,13 +67,13 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
 
     ## Check if 'w_sd' and 'w_mu' are vectors or not.
     if( length( w_sd ) > 1 ){
-        if( !length(w_sd) == ncol(data) ) stop("Length of 'w_sd' need to be 1 or equal to number of columns in 'data'.")
+        if( !length(w_sd) == ncol(data) ) stop("Length of 'w_sd' need to be 1 or equal to number of traits.")
     } else{
         w_sd <- rep(w_sd, times=ncol(data))
     }
     
     if( length( w_mu ) > 1 ){
-        if( !length(w_mu) == ncol(data) ) stop("Length of 'w_mu' need to be 1 or equal to number of columns in 'data'.")
+        if( !length(w_mu) == ncol(data) ) stop("Length of 'w_mu' need to be 1 or equal to number of traits.")
     } else{
         w_mu <- rep(w_mu, times=ncol(data))
     }
@@ -203,18 +203,15 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             if(prior == "uniform"){
                 max.data <- apply(data, 2, max)
                 min.data <- apply(data, 2, min)
-                mean.data <- colMeans(data)
-                lower.bound.data <- mean.data - ( (mean.data - min.data) * 10 )
-                higher.bound.data <- mean.data + ( (max.data - mean.data) * 10 )
-                par.mu <- cbind( lower.bound.data, higher.bound.data )
-                par.sd <- c(0, 10) ## Prior for the standard deviation.
+                par.mu <- cbind( min.data, max.data )
+                par.sd <- c(0, sqrt(10)) ## Prior for the standard deviation.
                 prior_run <- makePrior(r=r, p=1, par.mu=par.mu, par.sd=par.sd )
             }
             if(prior == "empirical_mean"){
                 mn <- colMeans(data)
                 ssd <- apply(data, 2, stats::sd) * 2
                 par.mu <- as.matrix( cbind(mn, ssd) )
-                par.sd <- c(0,10) ## Prior for the standard deviation.
+                par.sd <- c(0, sqrt(10)) ## Prior for the standard deviation.
                 prior_run <- makePrior(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
             }
         }
@@ -269,11 +266,8 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             if(prior == "uniform"){
                 max.data <- apply(data, 2, max)
                 min.data <- apply(data, 2, min)
-                mean.data <- colMeans(data)
-                lower.bound.data <- mean.data - ( (mean.data - min.data) * 10 )
-                higher.bound.data <- mean.data + ( (max.data - mean.data) * 10 )
-                par.mu <- cbind( lower.bound.data, higher.bound.data )
-                rep.sd.regime <- rep(c(0,10), times=p)
+                par.mu <- cbind( min.data, max.data )
+                rep.sd.regime <- rep(c(0,sqrt(10)), times=p)
                 par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
                 prior_run <- makePrior(r=r, p=p, par.mu=par.mu, par.sd=par.sd )
             }
@@ -281,7 +275,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 mn <- colMeans(data)
                 ssd <- apply(data, 2, stats::sd)
                 par.mu <- as.matrix( cbind(mn, ssd) )
-                rep.sd.regime <- rep(c(0,10), times=p)
+                rep.sd.regime <- rep(c(0,sqrt(10)), times=p)
                 par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
                 prior_run <- makePrior(r=r, p=p, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
             }
@@ -322,7 +316,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         
         out_mult <- multRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
                                  , prop=prop, dir=dir, outname=outname, IDlen=IDlen, regimes=regime.names, traits=trait.names
-                                   , save.handle=save.handle)
+                                   , save.handle=save.handle, add.gen=NULL)
         return( out_mult )
         
     }

@@ -20,7 +20,7 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
 
 \item{gen}{number of generations for the chain.}
 
-\item{v}{value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.)}
+\item{v}{value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.}
 
 \item{w_sd}{value for the width of the uniform proposal distribution for the vector of standard deviations. This can be a single value to be used for the sd of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.}
 

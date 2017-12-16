@@ -20,11 +20,16 @@ Imports:
     phylolm,
     readr,
     phytools,
-    mvMORPH
+    mvMORPH,
+    Rcpp,
+    RcppArmadillo
 Suggests:
     microbenchmark,
     knitr,
     rmarkdown
 VignetteBuilder:
     knitr
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo
 RoxygenNote: 6.0.1

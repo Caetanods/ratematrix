@@ -6,5 +6,5 @@
 \alias{ratematrix-package}
 \title{ratematrix.}
 \description{
-R package to estimate the evolutionary rate matrix using Bayesian Markov-chain Monte Carlo for multiple regimes.
+Package to estimate the evolutionary rate matrix for multiple regimes fitted to the phylogenetic tree using Bayesian Markov-chain Monte Carlo.
 }

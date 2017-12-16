@@ -22,7 +22,7 @@ The log likelihood for the multivariate Brownian motion model.
 Function calculates the log-likelihood for the multivariate Brownian motion model given a phylogenetic tree with rate regimes mapped to it, a data matrix with the trait value for the species, a vector with the phylogenetic means (root values) and a matrix (or list of matrices) with the evolutionary rate matrix for each regime.
 }
 \details{
-If more than one evolutionary rate matrix is used, then the function calculates the likelihood using the multirates prunning algorithm. Otherwise the function uses the three point algorithm to make calculations for the single regime case.
+If more than one evolutionary rate matrix is used, then the function calculates the likelihood using the multirates prunning algorithm. Otherwise the function uses the three point algorithm to make calculations for the single regime case. The prunning algorithm is implemented in C++ using Rcpp and RcppArmadillo. Please check the R code of this functions which shows how to prepare the objects to call the C++ function.
 }
 \examples{
 \donttest{
