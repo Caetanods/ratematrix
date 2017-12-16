@@ -15,27 +15,46 @@ computeESS <- function(mcmc, p){
     corr <- list()
 
     if( p == 1 ){
+
+        k <- ncol(mcmc$matrix[[1]])
+        
         rates[[1]] <- t( sapply(mcmc$matrix, function(x) diag(x) ) )
         upper <- upper.tri(mcmc$matrix[[1]])
         corr[[1]] <- t( sapply(mcmc$matrix, function(x) c( stats::cov2cor(x)[upper] ) ) )
+        if( k < 3 ){
+            corr_vec <- list()
+            corr_vec[[1]] <- corr[[1]][1,]
+        }
     }
 
     if( p > 1){
+        
+        k <- ncol( mcmc$matrix[[1]][[1]] )
+        
         for( i in 1:p ){
             rates[[i]] <- t( sapply(mcmc$matrix[[i]], function(x) diag(x) ) )
             upper <- upper.tri(mcmc$matrix[[i]][[1]])
             corr[[i]] <- t( sapply(mcmc$matrix[[i]], function(x) c( stats::cov2cor(x)[upper] ) ) )
         }
+        if( k < 3 ){
+            ## Elements of 'corr' will be vectors.
+            corr_vec <- list()
+            corr_vec <- lapply(1:p, function(x) corr[[x]][1,])
+        }
     }
 
     mcmc.root <- coda::mcmc(root)
     mcmc.rate <- lapply(rates, coda::mcmc)
-    mcmc.corr <- lapply(corr, coda::mcmc)
+    if( k < 3 ){
+        mcmc.corr <- lapply(corr_vec, coda::mcmc)
+    } else{
+        mcmc.corr <- lapply(corr, coda::mcmc)
+    }
 
     ess.root <- coda::effectiveSize(x=mcmc.root)
     ess.rate <- lapply(mcmc.rate, coda::effectiveSize)
     ess.corr <- lapply(mcmc.corr, coda::effectiveSize)
-
+    
     if( p == 1 ){
         cat("ESS root values \n")
         print( ess.root )
