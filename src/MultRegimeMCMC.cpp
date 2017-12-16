@@ -487,7 +487,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   curr_sd_prior = priorSD_C(sqrt(var), par_prior_sd, den_sd);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
-  Rcout << "Starting point Log-likelihood: " << lik;
+  Rcout << "Starting point Log-likelihood: " << lik << "\n";
 
   // Jacobian for both the regimes:
   for( int j=0; j < p; j++ ){
@@ -502,7 +502,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   log_stream << "\n";
   writeToMultFile_C(mcmc_stream, p, k, R, mu);
 
-  Rf_PrintValue( wrap( "Starting MCMC ..." ) );
+  Rcout << "Starting MCMC ... \n";
   // Starting the MCMC.
   for( int i=0; i < gen; i++ ){
     // Sample between root and matrix. Success here will be the update of the root.
@@ -648,13 +648,13 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
     
   }
 
-  Rcout << "Finished...";
   // Rf_PrintValue( wrap( "Finished..." ) );
   
+  Rcout << "Closing files... \n";
+
   mcmc_stream.close();
   log_stream.close();
 
-  Rcout << "Files closed.";
   // Rf_PrintValue( wrap( "Files closed." ) );
   return "Done.";
 }
