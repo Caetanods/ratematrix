@@ -1,6 +1,6 @@
 ##' Function calculates the log-likelihood for the multivariate Brownian motion model given a phylogenetic tree with rate regimes mapped to it, a data matrix with the trait value for the species, a vector with the phylogenetic means (root values) and a matrix (or list of matrices) with the evolutionary rate matrix for each regime.
 ##'
-##' If more than one evolutionary rate matrix is used, then the function calculates the likelihood using the multirates prunning algorithm. Otherwise the function uses the three point algorithm to make calculations for the single regime case.
+##' If more than one evolutionary rate matrix is used, then the function calculates the likelihood using the multirates prunning algorithm. Otherwise the function uses the three point algorithm to make calculations for the single regime case. The prunning algorithm is implemented in C++ using Rcpp and RcppArmadillo. Please check the R code of this functions which shows how to prepare the objects to call the C++ function.
 ##' @title Likelihood function for the multivariate Brownian motion model
 ##' @param data a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label).
 ##' @param phy a phylogeny of the class "simmap" with the mapped regimes. The number of evolutionary rate matrices fitted to the phylogeny need to be equal to the number of regimes in phy.
@@ -43,7 +43,11 @@ likelihoodFunction <- function(data, phy, root, R){
         
         if( !inherits(phy, what="simmap") ) stop( "R is a list or matrices but phy is not of type 'simmap'." )
         k <- ncol(data) ## Number of traits.
-
+        Rarray <- array(dim=c(k,k,p))
+        for( i in 1:p){
+            Rarray[,,i] <- R[[i]]
+        }
+        
         ## Make the precalculation based on the tree. Here two blocks, depending of whether there is only one or several trees.
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
         mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
@@ -60,9 +64,11 @@ likelihoodFunction <- function(data, phy, root, R){
         names(anc) <- rep(1, times=length(anc))
         names(anc)[which(anc %in% node.to.node)] <- 2
         names(anc)[which(anc %in% node.to.tip.node)] <- 3
+        names_anc <- names(anc)
 
-        loglik <- logLikPrunningMCMC(data, k, p, nodes, des, anc, mapped.edge, R=R, mu=root)
-        return(loglik)
+        lik <- logLikPrunningMCMC_C(X=t(X), k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
+                                  , mapped_edge=mapped_edge, R=Rarray, mu=mu)
+        return(lik)
         
     } else{ ## The case of a single regime.
 

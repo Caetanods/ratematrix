@@ -33,144 +33,77 @@
 ##' @noRd
 multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), dir=NULL, outname="mcmc_ratematrix", IDlen=5, regimes, traits, save.handle, continue=NULL, add.gen, ID=NULL){
 
-    ## Save the 'mcmc.par' list for the mcmc.handle:
+    ## Get the number of regimes.
+    p <- length(start[[2]])
+    
+    ## Check the value of v.
+    if( length( v ) > 1 ){
+        if( !length( v ) == p ) stop( "Length of v need to be 1 or equal to the number of regimes." )
+    } else{
+        v <- rep(v, times=p)
+    }
+    
+    ## Need to transpose the data matrix.
+    X <- t(X)
+    k <- nrow(X) ## Number of traits.
+
+    ## Translate the proportion to the objects:
+    prob_sample_root <- prop[1]
+    prob_sample_var <- 0.5 ## This will be an option later.
+
+    ## Save the list with the MCMC parameters.
     mcmc.par <- list()
     mcmc.par$v <- v
     mcmc.par$w_sd <- w_sd
     mcmc.par$w_mu <- w_mu
-    mcmc.par$prop <- prop
+    mcmc.par$prop_sample_root <- prop_sample_root
+    mcmc.par$prob_sample_var <- prob_sample_var
+    
+    ## Return errors for the options not implemented now.
+    if( is.list(phy[[1]]) ) stop( "List of trees not implemented with C++ yet!" )
+    if( !is.null(continue) ) stop( "Continue MCMC is not implemented in C++ yet!" )
+    if( !is.null(add.gen) ) stop( "Continue MCMC is not implemented in C++ yet!" )
 
-    ## Cache for the data and for the chain:
-    cache.data <- list()
-    cache.chain <- list()
-    cache.data$X <- X
-    cache.data$k <- ncol(X) ## Number of traits.
-
-    ## Make the precalculation based on the tree. Here two blocks, depending of whether there is only one or several trees.
-    if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
-        ## All the objects here are of the type list. Need to modify any call to them.
-        n.phy <- length( phy ) ## Number of trees in the list.
-        ord.id <- lapply(phy, function(x) reorder.phylo(x, order="postorder", index.only = TRUE) ) ## Order for traversal.
-        cache.data$mapped.edge <- lapply(1:n.phy, function(x) phy[[x]]$mapped.edge[ord.id[[x]],]) ## The regimes.
-        anc <- lapply(1:n.phy, function(x) phy[[x]]$edge[ord.id[[x]],1] ) ## Ancestral edges.
-        cache.data$des <- lapply(1:n.phy, function(x) phy[[x]]$edge[ord.id[[x]],2] ) ## Descendent edges.
-        cache.data$nodes <- lapply(anc, unique) ## The internal nodes we will traverse.
-
-        ## Set the types for each of the nodes that are going to be visited.
-        node.to.tip <- lapply(1:n.phy, function(x) which( tabulate( anc[[x]][which(cache.data$des[[x]] <= length(phy[[x]]$tip.label))] ) == 2 ) )
-        node.to.node <- lapply(1:n.phy, function(x) which( tabulate( anc[[x]][which(cache.data$des[[x]] > length(phy[[x]]$tip.label))] ) == 2 ) )
-        node.to.tip.node <- lapply(1:n.phy, function(x) unique( anc[[x]] )[!unique( anc[[x]] ) %in% c(node.to.node[[x]], node.to.tip[[x]])] )
-        ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
-        for( i in 1:n.phy ){
-            names(anc[[i]]) <- rep(1, times=length(anc[[i]]))
-            names(anc[[i]])[which(anc[[i]] %in% node.to.node[[i]])] <- 2
-            names(anc[[i]])[which(anc[[i]] %in% node.to.tip.node[[i]])] <- 3
-        }
-        cache.data$anc <- anc ## This need to come with the names.
-    }
     if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
-        cache.data$mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
+        mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
         ## Need to take care how to match the regimes and the R matrices.
         anc <- phy$edge[ord.id,1] ## Ancestral edges.
         cache.data$des <- phy$edge[ord.id,2] ## Descendent edges.
-        cache.data$nodes <- unique(anc) ## The internal nodes we will traverse.
+        cache.data$noydes <- unique(anc) ## The internal nodes we will traverse.
 
         ## Set the types for each of the nodes that are going to be visited.
-        node.to.tip <- which( tabulate( anc[which(cache.data$des <= length(phy$tip.label))] ) == 2 )
-        node.to.node <- which( tabulate( anc[which(cache.data$des > length(phy$tip.label))] ) == 2 )
+        node.to.tip <- which( tabulate( anc[which(des <= length(phy$tip.label))] ) == 2 )
+        node.to.node <- which( tabulate( anc[which(des > length(phy$tip.label))] ) == 2 )
         node.to.tip.node <- unique( anc )[!unique( anc ) %in% c(node.to.node, node.to.tip)]
         ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
         names(anc) <- rep(1, times=length(anc))
         names(anc)[which(anc %in% node.to.node)] <- 2
         names(anc)[which(anc %in% node.to.tip.node)] <- 3
-        cache.data$anc <- anc ## This need to come with the names.
+        names_anc <- names(anc)
     }
+
+    ## Generate identifier and name for the files:
+    ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
+    mcmc_file_name <- file.path(dir, paste(outname,".",ID,".mcmc",sep=""))
+    log_file_name <- file.path(dir, paste(outname,".",ID,".log",sep=""))
     
-    cache.data$p <- length( start[[2]] ) ## Number of R matrices to be fitted.
-    
-    ## Creates MCMC chain cache:
-    cache.chain$chain <- start ## Starting value for the chain.
-    cache.chain$chain[[4]] <- list()
-    for(i in 1:cache.data$p) cache.chain$chain[[4]][[i]] <- rebuild.cov(r=stats::cov2cor(start[[2]][[i]]), v=start[[3]][[i]]^2)
-
-    ## Need to calculate the initial log.lik with the single tree or with a random tree from the sample:
-    if( is.list( phy[[1]] ) ){
-        rd.start.tree <- sample(1:n.phy, size = 1) ## Choose a starting tree from the pool of trees.
-        cache.chain$lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes[[rd.start.tree]]
-                                               , cache.data$des[[rd.start.tree]]
-                                               , cache.data$anc[[rd.start.tree]], cache.data$mapped.edge[[rd.start.tree]]
-                                               , R=cache.chain$chain[[4]], mu=as.vector(cache.chain$chain[[1]]) )
-        cat( paste("Starting point log-likelihood: ", cache.chain$lik, "\n", sep="") )
-    }
-    if( !is.list( phy[[1]] ) ){
-        cache.chain$lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes, cache.data$des
-                                               , cache.data$anc, cache.data$mapped.edge
-                                               , R=cache.chain$chain[[4]], mu=as.vector(cache.chain$chain[[1]]) )
-        cat( paste("Starting point log-likelihood: ", cache.chain$lik, "\n", sep="") )
-    }
-    cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]]) ## Prior log lik starting value.
-    ## Prior log lik starting value for each of the matrices.
-    ## cache.chain$curr.r.prior <- lapply(1:cache.data$p, function(x) prior[[2]](cache.chain$chain[[1]][[2]][[x]]) )
-    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[4]]) ## Takes a list of R and returns a numeric.
-
-    ## Will need to keep track of the Jacobian for the correlation matrix.
-    decom <- lapply(1:cache.data$p, function(x) decompose.cov( cache.chain$chain[[2]][[x]] ) )
-    cache.chain$curr.r.jacobian <- lapply(1:cache.data$p,
-                                          function(y) sum( sapply(1:cache.data$k, function(x) log( decom[[y]]$v[x]) ) ) * log( (cache.data$k-1)/2 ) )
-    
-    cache.chain$curr.sd.prior <- prior[[3]](cache.chain$chain[[3]]) ## Takes a list of sd vectors and returns a numeric.
-
-    ## Need to check if this is a continuing MCMC before creating new ID and files:
-    if( is.null(continue) ){
-        
-        ## Generate identifier:
-        ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
-
-        ## Open files to write:
-        files <- list( file(file.path(dir, paste(outname,".",ID,".mcmc",sep="")), open="a")
-                    , file(file.path(dir, paste(outname,".",ID,".log",sep="")), open="a") )
-        ## Write header for the posterior MCMC file:
-        ## Here "regime" need to be changed for the name of the regime for the analysis. A default name will be produced by the function is one is not provided.
-        header <- vector(mode="character")
-        for( k in 1:cache.data$p ){
-            for( i in 1:cache.data$k ){
-                for( j in 1:cache.data$k ){
-                    header <- c( header, paste("regime.p", k, ".", i, j, "; ", sep="") )
-                }
-            }
-        }
-        ## Traitname need also to be changed for the name of the trait.
-        header <- c( header, paste("trait.", 1:(cache.data$k-1), "; ", sep=""), paste("trait.", cache.data$k, sep=""), "\n")
-        cat(header, sep="", file=files[[1]], append=TRUE) ## Write the header to the file.
-
-        ## Header for the log file:
-        cat("accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n", sep="", file=files[[2]], append=TRUE)
-    } else{
-        ## Need to create the files object with the path to the existing files. But do not open again.
-        files <- list( file.path(dir, paste(outname,".",ID,".mcmc",sep="") )
-                    , file.path(dir, paste(outname,".",ID,".log",sep="") ) )
-    }
-
-    ## This will check for the arguments, check if there is more than one phylogeny and create the functions for the update and to calculate the lik.
     if( !is.list( phy[[1]] ) ){
         ## This will use a unique tree.
         cat("MCMC chain using a single tree/regime configuration.\n")
-        prop.not.traitwise <- function(...) makePropMeanForMult(...)
-        update.function <- list(prop.not.traitwise, makePropMultSigma)
     }
     if( is.list( phy[[1]] ) ){
         ## This will integrate over all the trees provided.
         cat("MCMC chain using multiple trees/regime configurations.\n")
-        prop.not.traitwise <- function(...) makePropMeanForMultList(..., n.phy=n.phy)
-        update.function <- list(prop.not.traitwise, function(...) makePropMultSigmaList(..., n.phy=n.phy) )
+        ## Here need to adapt the objects for the function somehow.
+        ## To be updated.
     }
 
     ## Before running need to exclude the generations already done if continuing.
     ## Also add the option to do additional generations.
     if( is.null(continue) ){
         cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
-    } else{
+    } else{ 
         if( continue == "continue" ){
             cat( paste("Continue previous MCMC run ", outname, ".", ID, " for ", add.gen, " generations for a total of ", gen, " generations.\n", sep="") )
             gen <- add.gen
@@ -183,46 +116,25 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Save the handle object:
     if( save.handle ){
-        out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
+        out <- list(k = k, p = p, ID = ID, dir = dir, outname = outname, trait.names = traits
                   , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
                   , mcmc.par = mcmc.par)
         class( out ) <- "ratematrix_multi_mcmc"
         saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
     }
 
-    ## Loop over the generations in each chunk:
-    for(i in 2:gen ){
-
-        ## Proposals will be sampled given the 'prop' vector of probabilities.
-
-        ## #########################################
-        ## Sample which parameter is updated:
-        ## 'prop' is a vector of probabilities for 'update.function' 1 or 2.
-        ## 1 = phylo root and 2 = R matrix.
-        up <- sample(x = c(1,2), size = 1, prob = prop)
-        ## #########################################
-
-        ## #########################################
-        ## Update and accept reject steps:
-        ## Did a small modification to the prop of the phylogenetic mean that now requires the function to be called with its explicit argnames.
-        cache.chain <- update.function[[up]](cache.data=cache.data, cache.chain=cache.chain, prior=prior, v=v, w_sd=w_sd, w_mu=w_mu, files=files)
-        ## #########################################
-
-        ## #########################################
-        ## Write to file:
-        writeToMultFile(files, cache.chain, p=cache.data$p)
-        ## #########################################
-        
-    }
-
-    ## Close the connections:
-    if( is.null(continue) ) lapply(files, close)
+    ## Pass the arguments and start the MCMC.
+    runRatematrixMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
+                      , mapped_edge=mapped.edge, R=startR, mu=start$root, var=startvar, Rcorr=startCorr, w_mu=w_mu
+                      , par_prior_mu=rangeX, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
+                      , nu=nu, sigma=Sigma, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
+                      , prob_sample_root = prob_sample_root, prob_sample_var = prob_sample_var, gen = gen)
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    out <- list(k = cache.data$k, p = cache.data$p, ID = ID, dir = dir, outname = outname, trait.names = traits
+    out <- list(k = k, p = p, ID = ID, dir = dir, outname = outname, trait.names = traits
               , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
                , mcmc.par=mcmc.par)
     class( out ) <- "ratematrix_multi_mcmc"
