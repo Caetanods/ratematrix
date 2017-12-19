@@ -2,6 +2,19 @@
 
 *Daniel S. Caetano and Luke J. Harmon*
 
+## THIS IS THE DEVELOPMENT VERSION!
+This package version includes all the new things. Some are stable and some are not. Please send me a message if you need to use some of the development features right now. They will be soon in the stable version of the package.
+
+'ratematrixMCMC' function in this version is implemented on C++ and has a MUCH BETTER performance.
+
+To install you need to:
+
+```{r,R.options=list(max.print=20)}
+install.packages("devtools")
+library(devtools)
+install_github("Caetanods/ratematrix", ref="dev")
+```
+
 ## News and updates
 
 **Jun-2017 (v 0.25):** Add package 'vignette' with tutorial for setting a custom starting point for the MCMC.
