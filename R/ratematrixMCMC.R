@@ -28,7 +28,6 @@
 ##' @param dir path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
-##' @param rescaletree whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. (Default is FALSE).
 ##' @param save.handle whether the handle for the MCMC should be saved to the directory in addition to the output files.
 ##' @return Function returns the 'handle' object and writes the posterior distribution and log as files in the directory (see 'dir'). The handle is a list with the details of the MCMC chain. It is composed by: *k* the number of traits; *p* the number of R regimes fitted to the tree; *ID* the unique identifier of the run; *dir* the directory where the posterior and log files were saved; *outname* the name for the chain; *trait.names* a vector with the label for the traits; *regime.names* a vector with the label for the rate regimes; *data* the data used in the analysis; *phy* a single phylogeny or the list of phylogenies; *prior* a list with the prior functions; *start* a list with the starting parameters for the chain; *gen* the number of generations for the chain; *mcmc.par* a list with the tunning parameters for the MCMC.
 ##' @author Daniel S. Caetano and Luke J. Harmon
@@ -37,7 +36,6 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape Ntip
-##' @importFrom phytools rescaleSimmap
 ##' @examples
 ##' \donttest{
 ##' ## Load data
@@ -52,7 +50,7 @@
 ##' plotPrior(handle, root=TRUE)
 ##' logAnalyzer(handle)
 ##' }
-ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05,0.95), dir=NULL, outname="ratematrixMCMC", IDlen=5, rescaletree=FALSE, save.handle=TRUE){
+ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05,0.95), dir=NULL, outname="ratematrixMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -83,10 +81,6 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         ## Check if the tree is ultrametric, also rescale the tree if needed.
         ultra <- sapply(phy, is.ultrametric)
         if( !sum(ultra)==length(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
-        if( rescaletree ){
-            cat("Rescaling phylogenetic trees so that depth is equal to 1.\n")
-            phy <- lapply(phy, function(x) rescaleSimmap(x, model="depth", 1) )
-        }
         ## Check if the phylogeny is of 'simmap' class.
         check.simmap <- sapply(phy, function(x) inherits(x, what="simmap") )
         if( !sum(check.simmap)==length(check.simmap) ){
@@ -107,10 +101,6 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     } else{ ## Is a single phylogeny.
         ## Check if the tree is ultrametric, also rescale the tree if needed.
         if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
-        if( rescaletree ){
-            cat("Rescaling phylogenetic tree so that depth is equal to 1.\n")
-            phy <- rescaleSimmap(phy, model="depth", 1)
-        }
         ## Check if the phylogeny is of 'simmap' class.
         if( !inherits(phy, what="simmap") ){
             cat('phy is not of class "simmap". Fitting a sigle rate regime to the tree. \n')

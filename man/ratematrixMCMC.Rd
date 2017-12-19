@@ -6,8 +6,7 @@
 \usage{
 ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
   gen, v = 25, w_sd = 0.5, w_mu = 0.5, prop = c(0.05, 0.95),
-  dir = NULL, outname = "ratematrixMCMC", IDlen = 5,
-  rescaletree = FALSE, save.handle = TRUE)
+  dir = NULL, outname = "ratematrixMCMC", IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait. Names for the columns is used as trait labels. If labels are not provided, the function will use default labels.}
@@ -33,8 +32,6 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
 \item{outname}{name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.}
 
 \item{IDlen}{length of digits of the numeric identifier used to name output files (default is 5).}
-
-\item{rescaletree}{whether the function will rescale the phylogenetic tree so that the depth from the tips to the root is equal to 1. (Default is FALSE).}
 
 \item{save.handle}{whether the handle for the MCMC should be saved to the directory in addition to the output files.}
 }

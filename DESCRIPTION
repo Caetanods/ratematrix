@@ -19,14 +19,14 @@ Imports:
     MASS,
     phylolm,
     readr,
-    phytools,
     mvMORPH,
     Rcpp,
     RcppArmadillo
 Suggests:
     microbenchmark,
     knitr,
-    rmarkdown
+    rmarkdown,
+    phytools
 VignetteBuilder:
     knitr
 LinkingTo: 
