@@ -266,10 +266,10 @@ arma::mat riwish_C(int v, arma::mat S){
   return inv_sympd( trans(out) * out );
 }
 
-double hastingsDensity_C(arma::cube R, arma::cube R_prop, int p, arma::vec v, int Rp){
+double hastingsDensity_C(arma::cube R, arma::cube R_prop, int k, arma::vec v, int Rp){
   // The hasting is only computed for the regime that is updated (Rp).
-  arma::mat center_curr = (v[Rp]-p-1) * R.slice(Rp);
-  arma::mat center_prop = (v[Rp]-p-1) * R_prop.slice(Rp);
+  arma::mat center_curr = (v[Rp]-k-1) * R.slice(Rp);
+  arma::mat center_prop = (v[Rp]-k-1) * R_prop.slice(Rp);
   return logDensityIWish_C(R.slice(Rp), v[Rp], center_prop) - logDensityIWish_C(R_prop.slice(Rp), v[Rp], center_curr);
 }  
 
@@ -290,7 +290,7 @@ double priorRoot_C(arma::vec mu, arma::mat par_prior_mu, std::string den_mu){
   // These objects will be constructed by 'makePrior' function.
   // If you have a problem with the vector type you can use:
   // NumericVector(a.begin(),a.end()) to transform into a Rcpp vector.
-  double pp = 0;
+  double pp = 0.0;
   if( den_mu == "unif" ){
     for( int i=0; i < mu.n_elem; i++ ){
       pp = pp + R::dunif(mu[i], par_prior_mu(i,0), par_prior_mu(i,1), true);
@@ -307,7 +307,7 @@ double priorSD_C(arma::mat sd, arma::mat par_prior_sd, std::string den_sd){
   // FUNCTION FOR 2 OR MORE RATE REGIMES.
   // 'sd' is a matrix with number of columns equal to 'p', number of regimes.
   // This function will work even if there is only a single regime, because Armadillo treats the vectors as column vector. So 'sd' will be a matrix with a single column.
-  double pp = 0;
+  double pp = 0.0;
   if( den_sd == "unif" ){
     for( int i=0; i < sd.n_rows; i++ ){
       for( int j=0; j < sd.n_cols; j++){
@@ -399,11 +399,11 @@ void writeToMultFile_C(std::ostream& mcmc_stream, int p, int k, arma::cube R, ar
 // #######################################################
 
 // [[Rcpp::export]]
-std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat var, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::vec w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_var, int gen){
+std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::vec w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // The starting point parameters. These are the objects to carry on the MCMC.
-  // R, mu, var, Rcorr
+  // R, mu, sd, Rcorr
   // The starting point priors:
   // curr_root_prior, curr_sd_prior, Rcorr_curr_prior
   // The parameters for the priors:
@@ -458,7 +458,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   arma::vec curr_jacobian = vec(k, fill::zeros);
 
   int sample_root;
-  int sample_var;
+  int sample_sd;
   arma::vec prop_root;
   double prop_root_prior;
   double pp;
@@ -469,12 +469,12 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   int Rp;
   arma::mat prop_sd;
   double prop_sd_prior;
-  arma::mat prop_diag_var;
+  arma::mat prop_diag_sd;
   arma::cube R_prop;
-  double prop_var_lik;
+  double prop_sd_lik;
   arma::cube Rcorr_prop;
   double Rcorr_prop_prior;
-  arma::mat diag_var;
+  arma::mat diag_sd;
   double prop_corr_lik;
   double hh;
   arma::vec decomp_var;
@@ -484,22 +484,24 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   // Get starting priors, likelihood, and jacobian.
   lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu);
   curr_root_prior = priorRoot_C(mu, par_prior_mu, den_mu);
-  curr_sd_prior = priorSD_C(sqrt(var), par_prior_sd, den_sd);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
   Rcout << "Starting point Log-likelihood: " << lik << "\n";
 
+  arma::mat var_vec = square(sd);
   // Jacobian for both the regimes:
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
-      curr_jacobian[j] = curr_jacobian[j] + ( log(var.col(j)[j]) * log( (k-1.0)/2.0 ) );
+      // The jacobian is computed on the variances!
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec.col(j)[j] ) * log( (k-1.0)/2.0 ) );
     }
   }
 
   // Print starting point to files:
   log_stream << "1; 0; 0; 1; 1; ";
   log_stream << lik;
-  log_stream << "\n";
+  log_stream << "\n"; 
   writeToMultFile_C(mcmc_stream, p, k, R, mu);
 
   Rcout << "Starting MCMC ... \n";
@@ -508,7 +510,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
     // Sample between root and matrix. Success here will be the update of the root.
     sample_root = R::rbinom(1, prob_sample_root);
     // If the matrix is updated, do we update the vector of variances?
-    sample_var = R::rbinom(1, prob_sample_var);
+    sample_sd = R::rbinom(1, prob_sample_sd);
     // If matrix or variance is updated, which regime?
     Rp = Rcpp::as<int >(Rcpp::sample(p, 1)) - 1; // Need to subtract 1 from the result here.
     // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
@@ -542,22 +544,22 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
 	log_stream << lik;
 	log_stream << "\n";
       }
-    } if(sample_var == 1){
+    } else if(sample_sd == 1){
       // Update the variance vector.
       // Draw which regime to update.
       // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
-      prop_sd = sqrt(var); // The matrix of standard deviations.
+      prop_sd = sd; // The matrix of standard deviations.
       prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd);
       prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
       pp = prop_sd_prior - curr_sd_prior;
   
       // Need to rebuild the R matrix to compute the likelihood:
-      prop_diag_var = diagmat( square(prop_sd.col(Rp)) ); // The prop for the variance.
+      prop_diag_sd = diagmat( prop_sd.col(Rp) );
       // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
       R_prop = R; // R is the current R matrix.
-      R_prop.slice(Rp) = prop_diag_var * cov2cor_C( R.slice(Rp) ) * prop_diag_var;
-      prop_var_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, mu);
-      ll = prop_var_lik - lik;
+      R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
+      prop_sd_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, mu);
+      ll = prop_sd_lik - lik;
 
       // Get the ratio i log space. Loglik, and log prior.
       r = ll + pp;
@@ -569,12 +571,12 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
 	log_stream << "1; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; 1; ";
-	log_stream << prop_var_lik;
+	log_stream << prop_sd_lik;
 	log_stream << "\n";
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
-	var = square(prop_sd); // Update the variance.
+	sd = prop_sd; // Update the standard deviation.
 	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
-	lik = prop_var_lik; // Update likelihood. Need to carry over.
+	lik = prop_sd_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
 	log_stream << "0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
@@ -592,22 +594,23 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
       Rcorr_prop = Rcorr;
       // Here v is a vector. So the width can be controlled for each regime.
       Rcorr_prop.slice(Rp) = makePropIWish_C(Rcorr.slice(Rp), k, v[Rp]);
+      // Computes the hastings density for this move.
+      // Hastings is computed for the covariance matrix of the correlation and NOT the evolutionary rate matrix (the reconstructed).
+      hh = hastingsDensity_C(Rcorr, Rcorr_prop, k, v, Rp);
       // Need the prior parameters 'nu' and 'sigma' here.
       Rcorr_prop_prior = priorCorr_C(Rcorr_prop, nu, sigma);
       pp = Rcorr_prop_prior - Rcorr_curr_prior;
 
       // Need to rebuild the R matrix to compute the likelihood:
-      diag_var = diagmat( var.col(Rp) );
+      diag_sd = diagmat( sd.col(Rp) );
       // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
       R_prop = R;
       // 'cor' is not the correct function to use here!
-      R_prop.slice(Rp) = diag_var * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_var;
+      R_prop.slice(Rp) = diag_sd * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_sd;
       prop_corr_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, mu);
       ll = prop_corr_lik - lik;
-      // Computes the hastings density for this move.
-      hh = hastingsDensity_C(R, R_prop, p, v, Rp);
-      // This is the variance of the proposed vcv matrix.
-      decomp_var = diagvec( Rcorr_prop.slice(Rp) );
+      // This is the sdiance of the proposed vcv matrix.
+      decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
       prop_jacobian = 0.0; // Always need to reset.
       // The Jacobian of the transformation.
       for( int i=0; i < k; i++ ){
@@ -648,13 +651,10 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
     
   }
 
-  // Rf_PrintValue( wrap( "Finished..." ) );
-  
   Rcout << "Closing files... \n";
 
   mcmc_stream.close();
   log_stream.close();
 
-  // Rf_PrintValue( wrap( "Files closed." ) );
   return "Done.";
 }
