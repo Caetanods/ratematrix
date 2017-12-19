@@ -49,7 +49,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Translate the proportion to the objects:
     prob_sample_root <- prop[1]
-    prob_sample_var <- 0.5 ## This will be an option later.
+    prob_sample_sd <- 0.5 ## This will be an option later.
 
     ## Save the list with the MCMC parameters.
     mcmc.par <- list()
@@ -57,7 +57,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
     mcmc.par$w_sd <- w_sd
     mcmc.par$w_mu <- w_mu
     mcmc.par$prob_sample_root <- prob_sample_root
-    mcmc.par$prob_sample_var <- prob_sample_var
+    mcmc.par$prob_sample_sd <- prob_sample_sd
     
     ## Return errors for the options not implemented now.
     if( is.list(phy[[1]]) ) stop( "List of trees not implemented with C++ yet!" )
@@ -161,10 +161,10 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, 
 
     ## Pass the arguments and start the MCMC.
     runRatematrixMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
-                      , mapped_edge=mapped.edge, R=startR, mu=start$root, var=startvar, Rcorr=startCorr, w_mu=w_mu
+                      , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
                       , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
                       , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
-                      , prob_sample_root = prob_sample_root, prob_sample_var = prob_sample_var, gen = gen)
+                      , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen)
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
 
