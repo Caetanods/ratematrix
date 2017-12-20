@@ -399,7 +399,7 @@ void writeToMultFile_C(std::ostream& mcmc_stream, int p, int k, arma::cube R, ar
 // #######################################################
 
 // [[Rcpp::export]]
-std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::vec w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen){
+std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // The starting point parameters. These are the objects to carry on the MCMC.
@@ -549,7 +549,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
       // Draw which regime to update.
       // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
       prop_sd = sd; // The matrix of standard deviations.
-      prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd);
+      prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
       prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
       pp = prop_sd_prior - curr_sd_prior;
   

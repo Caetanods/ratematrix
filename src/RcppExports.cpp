@@ -44,7 +44,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // runRatematrixMCMC_C
-std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::vec w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen);
+std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen);
 RcppExport SEXP _ratematrix_runRatematrixMCMC_C(SEXP XSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP muSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_muSEXP, SEXP par_prior_muSEXP, SEXP den_muSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP prob_sample_rootSEXP, SEXP prob_sample_sdSEXP, SEXP genSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -64,7 +64,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type w_mu(w_muSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type par_prior_mu(par_prior_muSEXP);
     Rcpp::traits::input_parameter< std::string >::type den_mu(den_muSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type w_sd(w_sdSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type w_sd(w_sdSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type par_prior_sd(par_prior_sdSEXP);
     Rcpp::traits::input_parameter< std::string >::type den_sd(den_sdSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type nu(nuSEXP);
