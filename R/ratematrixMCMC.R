@@ -22,7 +22,7 @@
 ##' @param start the starting state for the MCMC chain. Must be one of (i) "prior_sample" (the default), (ii) "mle", (iii) a list object. See more information on 'makeStart' function.
 ##' @param gen number of generations for the chain.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
-##' @param w_sd value for the width of the uniform proposal distribution for the vector of standard deviations. This can be a single value to be used for the sd of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
+##' @param w_sd value for the width of the uniform proposal distribution for the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param w_mu value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
 ##' @param prop the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.
 ##' @param dir path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
@@ -63,13 +63,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
     if( v == 25 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.05 ) cat("Using default proposal settings. \n")
 
-    ## Check if 'w_sd' and 'w_mu' are vectors or not.
-    if( length( w_sd ) > 1 ){
-        if( !length(w_sd) == ncol(data) ) stop("Length of 'w_sd' need to be 1 or equal to number of traits.")
-    } else{
-        w_sd <- rep(w_sd, times=ncol(data))
-    }
-    
+    ## Check formats for 'w_mu'. Need to delay check for 'w_sd' until we get the number of regimes.
     if( length( w_mu ) > 1 ){
         if( !length(w_mu) == ncol(data) ) stop("Length of 'w_mu' need to be 1 or equal to number of traits.")
     } else{
@@ -116,6 +110,37 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
         ## Reorder the data to be the same order as the tip labels.
         mm <- match(phy$tip.label, rownames(data))
         data <- data[mm,]
+    }
+
+    ## Check the 'w_sd' parameter. Need to know if phylo is a list and if it is simmap.
+    if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+        if( is.null( phy[[1]]$mapped.edge ) ){
+            n_regimes <- 1
+        } else{
+            n_regimes <- ncol(phy[[1]]$mapped.edge)
+        }
+    } else{
+        if( is.null( phy$mapped.edge ) ){
+            n_regimes <- 1
+        } else{
+            n_regimes <- ncol(phy$mapped.edge)
+        }
+    }
+    
+    if( is.matrix( w_sd ) ){
+        if( !ncol(w_sd) == n_regimes ) stop("ncol(w_sd) need to be equal to the number of regimes.")
+        if( !nrow(w_sd) == ncol(data) ) stop("nrow(w_sd) need to be equal to the number of traits.")
+    } else{
+        if( n_regimes > 1 & !length( w_sd ) == 1 ) stop(" 'w_sd' need to be a single numeric value or a matrix with ncol equal to the number of regimes and nrow equal to the number of traits.")
+        if( length( w_sd ) == 1 ){
+            w_sd <- rep(w_sd, times=ncol(data))
+        }
+        if( !length( w_sd ) == ncol(data) ) stop("length of 'w_sd' need to be equal to the number of traits.")
+        if( n_regimes > 1 ){ ## w_sd needs to be a matrix!
+            temp_mat <- matrix(nrow=length(w_sd), ncol=n_regimes)
+            for(i in 1:n_regimes) temp_mat[,i] <- w_sd
+            w_sd <- temp_mat
+        }
     }
 
     ## Make a quick check down the road to see if the prior is working.

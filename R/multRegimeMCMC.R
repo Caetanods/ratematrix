@@ -31,7 +31,7 @@
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
 ##' @noRd
-multRegimeMCMC <- function(X, phy, start, prior, gen, v=50, w_sd=0.5, w_mu=0.5, prop=c(0.1,0.9), dir=NULL, outname="mcmc_ratematrix", IDlen=5, regimes, traits, save.handle, continue=NULL, add.gen, ID=NULL){
+multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL){
 
     ## Get the number of regimes.
     p <- length(start[[2]])
