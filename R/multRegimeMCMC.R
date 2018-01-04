@@ -39,7 +39,8 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
     ## Check the value of v.
     if( length( v ) > 1 ){
         if( !length( v ) == p ) stop( "Length of v need to be 1 or equal to the number of regimes." )
-    } else{
+    }
+    if( length( v ) == 1){
         v <- rep(v, times=p)
     }
     
@@ -48,8 +49,11 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
     k <- nrow(X) ## Number of traits.
 
     ## Translate the proportion to the objects:
+    if( !length(prop) == 3 ) stop("Length of prop need to be equal to 3. Check help page.")
+    if( !sum(prop) == 1 ) stop("Values of prop need to sum to 1.")
     prob_sample_root <- prop[1]
-    prob_sample_sd <- 0.5 ## This will be an option later.
+    ## Need to get the chance to sample sd rescaled.
+    prob_sample_sd <- prop[2]/sum(prop[2:3])
 
     ## Save the list with the MCMC parameters.
     mcmc.par <- list()
@@ -60,11 +64,12 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
     mcmc.par$prob_sample_sd <- prob_sample_sd
     
     ## Return errors for the options not implemented now.
-    if( is.list(phy[[1]]) ) stop( "List of trees not implemented with C++ yet!" )
+    ## if( is.list(phy[[1]]) ) stop( "List of trees not implemented with C++ yet!" )
     if( !is.null(continue) ) stop( "Continue MCMC is not implemented in C++ yet!" )
     if( !is.null(add.gen) ) stop( "Continue MCMC is not implemented in C++ yet!" )
 
     if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+        cat("MCMC chain using a single tree/regime configuration.\n")
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
         mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
         ## Need to take care how to match the regimes and the R matrices.
@@ -83,32 +88,45 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
         names_anc <- as.numeric( names(anc) )
     }
 
+    if( is.list(phy[[1]]) ){ ## Phy is a list of phylogenies.
+        cat("MCMC chain using multiple trees/regime configurations.\n")
+        ord.id <- lapply(phy, function(x) reorder.phylo(x, order="postorder", index.only = TRUE))
+        ntrees <- length(ord.id) ## Number of trees in the data.
+        mapped.edge <- sapply(1:ntrees, function(x) phy[[x]]$mapped.edge[ord.id[[x]],], simplify="array") ## The regimes.
+        ## Need to take care how to match the regimes and the R matrices.
+        anc <- sapply(1:ntrees, function(x) phy[[x]]$edge[ord.id[[x]],1]) ## Ancestral edges.
+        des <- sapply(1:ntrees, function(x) phy[[x]]$edge[ord.id[[x]],2]) ## Descendent edges.
+        nodes <- sapply(1:ntrees, function(x) unique(anc[,x])) ## The internal nodes we will traverse.
+
+        ## Set the types for each of the nodes that are going to be visited.
+        node.to.tip <- sapply(1:ntrees, function(x) which( tabulate( anc[which(des[,x] <= length(phy[[x]]$tip.label)), x] ) == 2 ) )
+        node.to.node <- sapply(1:ntrees, function(x) which( tabulate( anc[which(des[,x] > length(phy[[x]]$tip.label)), x] ) == 2 ) )
+        node.to.tip.node <- sapply(1:ntrees, function(x) unique( anc[,x] )[!unique( anc[,x] ) %in% c(node.to.node[,x], node.to.tip[,x])] )
+        ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
+        names_anc <- matrix(data=1, nrow=nrow(anc), ncol=ncol(anc))
+        for( i in 1:ncol(anc) ){
+            names_anc[which(anc[,i] %in% node.to.node[,i]), i] <- 2
+            names_anc[which(anc[,i] %in% node.to.tip.node[,i]), i] <- 3            
+        }
+    }
+
     ## Generate identifier and name for the files:
     ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
     mcmc_file_name <- file.path(dir, paste(outname,".",ID,".mcmc",sep=""))
     log_file_name <- file.path(dir, paste(outname,".",ID,".log",sep=""))
     
-    if( !is.list( phy[[1]] ) ){
-        ## This will use a unique tree.
-        cat("MCMC chain using a single tree/regime configuration.\n")
-    }
-    if( is.list( phy[[1]] ) ){
-        ## This will integrate over all the trees provided.
-        cat("MCMC chain using multiple trees/regime configurations.\n")
-        ## Here need to adapt the objects for the function somehow.
-        ## To be updated.
-    }
-
     ## Before running need to exclude the generations already done if continuing.
     ## Also add the option to do additional generations.
     if( is.null(continue) ){
         cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
-    } else{ 
+    } else{ ## BRANCH WITH THE CONTINUE MCMC OPTION. NEED TO IMPLEMENT THIS PART.
         if( continue == "continue" ){
+            ## NEED TO IMPLEMENT THIS PART!
             cat( paste("Continue previous MCMC run ", outname, ".", ID, " for ", add.gen, " generations for a total of ", gen, " generations.\n", sep="") )
             gen <- add.gen
         }
         if( continue == "add.gen" ){
+            ## NEED TO IMPLEMENT THIS PART!
             cat( paste("Adding ", add.gen, " generations to previous MCMC run ", outname, ".", ID, "\n", sep="") )
             gen <- add.gen
         }
@@ -150,21 +168,28 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
         }
         nu <- rep(k+1, times=p)
     } else{
-        if( length(prior$pars$Sigma) !=p ) stop( "length of Sigma need to be equal to number of regimes." )
-        sigma_array <- array(dim=c(k, k, p))
-        for( i in 1:p){
-            sigma_array[,,i] <- prior$pars$Sigma[[i]]
-        }
+        if( length(prior$pars$Sigma) !=p ) stop( "Length of Sigma need to be equal to number of regimes." )
+        sigma_array <- sapply(prior$pars$Sigma, identity, simplify="array")
         nu <- prior$pars$nu
-        if( length(nu) !=p ) stop( "length of nu need to be equal to number of regimes." )
+        if( length(nu) !=p ) stop( "Length of nu need to be equal to number of regimes." )
     }
 
     ## Pass the arguments and start the MCMC.
-    runRatematrixMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
-                      , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
-                      , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
-                      , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
-                      , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen)
+    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+        runRatematrixMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
+                          , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
+                          , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
+                          , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
+                          , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen)
+    }
+    if( is.list(phy[[1]]) ){ ## Phy is a list of phylogenies.
+        runRatematrixMultiMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
+                               , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
+                               , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
+                               , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
+                               , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen)
+
+    }
 
     cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
 
