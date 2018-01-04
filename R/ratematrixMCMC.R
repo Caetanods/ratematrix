@@ -24,7 +24,7 @@
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd value for the width of the uniform proposal distribution for the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param w_mu value for the width of the uniform proposal distribution for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
-##' @param prop the proposal frequencies for each parameter of the model (default is 'c(0.025,0.975)'). This needs to be a numeric vector of length 2. Each value need to be between 0 and 1 and the sum of the vector equal to 1. These values are the probability that the phylogenetic mean or the set of evolutionary rate matrices will be updated at each step of the MCMC chain, respectively.
+##' @param prop a numeric vector of length 3 with the proposal frequencies for each parameter of the model. The vector need to sum to 1. These values are the probability that the phylogenetic mean (prop[1]), the vector of standard deviations (prop[2]), and the correlation matrix (prop[3]) will be updated at each step of the MCMC chain, respectively. Default value is 'c(0.05, 0.475, 0.475)'.
 ##' @param dir path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
@@ -50,7 +50,7 @@
 ##' plotPrior(handle, root=TRUE)
 ##' logAnalyzer(handle)
 ##' }
-ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05,0.95), dir=NULL, outname="ratematrixMCMC", IDlen=5, save.handle=TRUE){
+ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05, 0.475, 0.475), dir=NULL, outname="ratematrixMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -61,7 +61,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     ## Inform that default options are being used:
     if( inherits(prior, what="character") && prior == "empirical_mean" ) cat("Using default prior. \n")
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
-    if( v == 25 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.05 ) cat("Using default proposal settings. \n")
+    if( v == 25 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.05 && prop[2] == 0.475 ) cat("Using default proposal settings. \n")
 
     ## Check formats for 'w_mu'. Need to delay check for 'w_sd' until we get the number of regimes.
     if( length( w_mu ) > 1 ){
@@ -258,6 +258,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
             }
         }
 
+        ## Notice that singleRegimeMCMC will break now because of the 'prop' vector.
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
                                      , prop=prop, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
                                       , save.handle=save.handle)

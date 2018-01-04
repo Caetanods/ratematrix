@@ -79,12 +79,49 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// runRatematrixMultiMCMC_C
+std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen);
+RcppExport SEXP _ratematrix_runRatematrixMultiMCMC_C(SEXP XSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP muSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_muSEXP, SEXP par_prior_muSEXP, SEXP den_muSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP prob_sample_rootSEXP, SEXP prob_sample_sdSEXP, SEXP genSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type nodes(nodesSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type des(desSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type anc(ancSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type names_anc(names_ancSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type mapped_edge(mapped_edgeSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type R(RSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type sd(sdSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type Rcorr(RcorrSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type w_mu(w_muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type par_prior_mu(par_prior_muSEXP);
+    Rcpp::traits::input_parameter< std::string >::type den_mu(den_muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type w_sd(w_sdSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type par_prior_sd(par_prior_sdSEXP);
+    Rcpp::traits::input_parameter< std::string >::type den_sd(den_sdSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type v(vSEXP);
+    Rcpp::traits::input_parameter< std::string >::type log_file(log_fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type mcmc_file(mcmc_fileSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_sample_root(prob_sample_rootSEXP);
+    Rcpp::traits::input_parameter< double >::type prob_sample_sd(prob_sample_sdSEXP);
+    Rcpp::traits::input_parameter< int >::type gen(genSEXP);
+    rcpp_result_gen = Rcpp::wrap(runRatematrixMultiMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_cov2cor_C", (DL_FUNC) &_ratematrix_cov2cor_C, 1},
     {"_ratematrix_priorCorr_C", (DL_FUNC) &_ratematrix_priorCorr_C, 3},
     {"_ratematrix_makePropIWish_C", (DL_FUNC) &_ratematrix_makePropIWish_C, 3},
     {"_ratematrix_runRatematrixMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_C, 26},
+    {"_ratematrix_runRatematrixMultiMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMultiMCMC_C, 26},
     {NULL, NULL, 0}
 };
 

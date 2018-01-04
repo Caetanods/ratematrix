@@ -398,6 +398,10 @@ void writeToMultFile_C(std::ostream& mcmc_stream, int p, int k, arma::cube R, ar
 // ###### The MCMC function.
 // #######################################################
 
+// This is the MCMC function when there is only a single tree/regime configuration to be estimated. Allowing for multiple trees could be done in the same function. However, it is faster and simpler just to duplicate this function and assume that we are always working with a list of trees.
+// The function 'runRatematrixMultiMCMC_C' is doing this.
+// A similar need will happen for the MCMC with a single regime. In this case a bunch of computations are not needed. I can just simplify a lot this MCMC function. Using my own likelihood function will also means I can drop both 'mvMORPH' and 'phytools' as dependencies for the package. This will also make installation in a server much more user-friendly. [The 'rgl' dependecy of 'phytools' makes installation in servers difficult.]
+
 // [[Rcpp::export]]
 std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen){
   // The data parameters:
@@ -641,6 +645,297 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
 	log_stream << "0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; 0; 1; ";
+	log_stream << lik;
+	log_stream << "\n";
+      }
+    }
+
+    // Write the current state to the MCMC file.
+    writeToMultFile_C(mcmc_stream, p, k, R, mu);
+    
+  }
+
+  Rcout << "Closing files... \n";
+
+  mcmc_stream.close();
+  log_stream.close();
+
+  return "Done.";
+}
+
+// The MCMC function for multiple regimes:
+
+// [[Rcpp::export]]
+std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen){
+  // The data parameters:
+  // X, k, p, nodes, des, anc, names_anc, mapped_edge.
+  // These parameters changed from the 'runRatematrixMCMC_C' function:
+  // node, des, anc, and names_anc are now matrices. Each column of these matrices are the vector information for a given tree/regime configuration.
+  // Also mapped_edge is now a cube. Each element of the cube is a different regime configuration for each of the trees.
+  // So the function will, at each MCMC step, sample one of the trees and use that tree to run the MCMC.
+  // The number of trees in the data will be computed from the number of elements in the mapped_edge cube.
+  // The starting point parameters. These are the objects to carry on the MCMC.
+  // R, mu, sd, Rcorr
+  // The starting point priors:
+  // curr_root_prior, curr_sd_prior, Rcorr_curr_prior
+  // The parameters for the priors:
+  // par_prior_mu, den_mu, par_prior_sd, den_sd, nu, sigma
+  // The starting point jacobian:
+  // curr_jacobian
+  // The parameters for the proposals:
+  // w_mu, w_sd, v
+  // The parameters to control the MCMC:
+  // prob_sample_root, prob_sample_var, gen
+
+  // Open the files to write:
+  // The log_file and mcmc_file arguments.
+  std::ofstream log_stream (log_file, ios::out | ios::app);
+  std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
+
+  // Write the header for the mcmc file.
+  for( int kk=1; kk < p+1; kk++ ){
+    for( int ii=1; ii < k+1; ii++ ){
+      for( int jj=1; jj < k+1; jj++ ){
+	mcmc_stream << "regime.p";
+	mcmc_stream << kk;
+	mcmc_stream << ".";
+	mcmc_stream << ii;
+	mcmc_stream << jj;
+	mcmc_stream << "; ";
+      }
+    }
+  }
+  
+  for( int kk=1; kk < k; kk++ ){
+    mcmc_stream << "trait.";
+    mcmc_stream << kk;
+    mcmc_stream << "; ";
+  }
+  mcmc_stream << "trait.";
+  mcmc_stream << k;
+  mcmc_stream << "\n";
+
+  // Write the header for the log file.
+  log_stream << "accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n";
+
+  // Define the containers for the run:
+  // The starting point log lik:
+  double lik;
+  // The starting point prior:
+  double curr_root_prior;
+  double curr_sd_prior;
+  double Rcorr_curr_prior;
+  // The jacobian for the MCMC. There are one for each regime.
+  // Because need to track the jump separatelly.
+  arma::vec curr_jacobian = vec(k, fill::zeros);
+
+  // Compute the number of trees in the data:
+  int n_trees = mapped_edge.n_slices;
+  int curr_phy = 0; // This is the current phy. It starts with the first tree.
+  int prop_phy; // Container to store the sampled tree.
+  
+  int sample_root;
+  int sample_sd;
+  arma::vec prop_root;
+  double prop_root_prior;
+  double pp;
+  double prop_root_lik;
+  double ll;
+  double r;
+  double unif_draw;
+  int Rp;
+  arma::mat prop_sd;
+  double prop_sd_prior;
+  arma::mat prop_diag_sd;
+  arma::cube R_prop;
+  double prop_sd_lik;
+  arma::cube Rcorr_prop;
+  double Rcorr_prop_prior;
+  arma::mat diag_sd;
+  double prop_corr_lik;
+  double hh;
+  arma::vec decomp_var;
+  double prop_jacobian = 0.0; // Need always to reset this one.
+  double jj;
+
+  // Get starting priors, likelihood, and jacobian.
+  // Here using the first tree (the curr_phy).
+  lik = logLikPrunningMCMC_C(X, k, p, nodes.col(curr_phy), des.col(curr_phy), anc.col(curr_phy), names_anc.col(curr_phy), mapped_edge.slice(curr_phy), R, mu);
+  curr_root_prior = priorRoot_C(mu, par_prior_mu, den_mu);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
+  Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
+
+  Rcout << "Starting point Log-likelihood (using first tree/regime in the list): " << lik << "\n";
+
+  arma::mat var_vec = square(sd);
+  // Jacobian for both the regimes:
+  for( int j=0; j < p; j++ ){
+    for( int i=0; i < k; i++ ){
+      // The jacobian is computed on the variances!
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec.col(j)[j] ) * log( (k-1.0)/2.0 ) );
+    }
+  }
+
+  // Print starting point to files:
+  log_stream << "1; 0; 0; 1; 1; ";
+  log_stream << lik;
+  log_stream << "\n"; 
+  writeToMultFile_C(mcmc_stream, p, k, R, mu);
+
+  Rcout << "Starting MCMC ... \n";
+  // Starting the MCMC.
+  for( int i=0; i < gen; i++ ){
+    // Sample between root and matrix. Success here will be the update of the root.
+    sample_root = R::rbinom(1, prob_sample_root);
+    // If the matrix is updated, do we update the vector of variances?
+    sample_sd = R::rbinom(1, prob_sample_sd);
+    // If matrix or variance is updated, which regime?
+    Rp = Rcpp::as<int >(Rcpp::sample(p, 1)) - 1; // Need to subtract 1 from the result here.
+    // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+    // Which tree/regime configuration to use?
+    prop_phy = Rcpp::as<int >(Rcpp::sample(n_trees, 1)) - 1; // This is an index too.
+	  
+    // The 'if...if...else' structure is lazy and will evaluate only the first entry.
+    if(sample_root == 1){
+      // Update the root state.
+      prop_root = slideWindow_C(mu, w_mu);
+      // Compute the prior.
+      prop_root_prior = priorRoot_C(prop_root, par_prior_mu, den_mu);
+      // The log prior ratio. curr_root_prior is the current prior density for the root.
+      pp = prop_root_prior - curr_root_prior;
+      prop_root_lik = logLikPrunningMCMC_C(X, k, p, nodes.col(prop_phy), des.col(prop_phy), anc.col(prop_phy), names_anc.col(prop_phy), mapped_edge.slice(prop_phy), R, prop_root);
+      // The likelihood ratio.
+      ll = prop_root_lik - lik;
+      // Get the ratio in log space.
+      r = ll + pp;
+
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	log_stream << "1; 0; 0; 1; ";
+	log_stream << prop_phy+1; // Sum back to the number of the tree.
+	log_stream << "; ";
+	log_stream << prop_root_lik;
+	log_stream << "\n";
+	mu = prop_root; // Update the value for the root. Need to carry over.
+	curr_root_prior = prop_root_prior; // Update the root prior. Need to carry over.
+	lik = prop_root_lik; // Update likelihood. Need to carry over.
+	curr_phy = prop_phy; // Update the current tree in the pool.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "1; 0; 0; 1; ";
+	log_stream << curr_phy+1; // Sum back to the number of the tree.
+	log_stream << "; ";
+	log_stream << lik;
+	log_stream << "\n";
+      }
+    } else if(sample_sd == 1){
+      // Update the variance vector.
+      // Draw which regime to update.
+      // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+      prop_sd = sd; // The matrix of standard deviations.
+      prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
+      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
+      pp = prop_sd_prior - curr_sd_prior;
+  
+      // Need to rebuild the R matrix to compute the likelihood:
+      prop_diag_sd = diagmat( prop_sd.col(Rp) );
+      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      R_prop = R; // R is the current R matrix.
+      R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
+      prop_sd_lik = logLikPrunningMCMC_C(X, k, p, nodes.col(prop_phy), des.col(prop_phy), anc.col(prop_phy), names_anc.col(prop_phy), mapped_edge.slice(prop_phy), R_prop, mu);
+      ll = prop_sd_lik - lik;
+
+      // Get the ratio i log space. Loglik, and log prior.
+      r = ll + pp;
+
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	log_stream << "1; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; ";
+	log_stream << prop_phy+1; // Add 1 to get number of phy.
+	log_stream << "; ";
+	log_stream << prop_sd_lik;
+	log_stream << "\n";
+	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
+	sd = prop_sd; // Update the standard deviation.
+	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
+	lik = prop_sd_lik; // Update likelihood. Need to carry over.
+	curr_phy = prop_phy; // Update the phylogeny from the pool.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; ";
+	log_stream << curr_phy+1; // Add 1 to get number of phy.
+	log_stream << "; ";
+	log_stream << lik;
+	log_stream << "\n";
+      }
+      
+    } else{
+      // Update the correlation matrix.
+      // Draw which regime to update.
+      // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+      // IMPORTANT: R here needs to be the vcv used to draw the correlation only.
+      // This is not the full VCV of the model.
+      Rcorr_prop = Rcorr;
+      // Here v is a vector. So the width can be controlled for each regime.
+      Rcorr_prop.slice(Rp) = makePropIWish_C(Rcorr.slice(Rp), k, v[Rp]);
+      // Computes the hastings density for this move.
+      // Hastings is computed for the covariance matrix of the correlation and NOT the evolutionary rate matrix (the reconstructed).
+      hh = hastingsDensity_C(Rcorr, Rcorr_prop, k, v, Rp);
+      // Need the prior parameters 'nu' and 'sigma' here.
+      Rcorr_prop_prior = priorCorr_C(Rcorr_prop, nu, sigma);
+      pp = Rcorr_prop_prior - Rcorr_curr_prior;
+
+      // Need to rebuild the R matrix to compute the likelihood:
+      diag_sd = diagmat( sd.col(Rp) );
+      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      R_prop = R;
+      // 'cor' is not the correct function to use here!
+      R_prop.slice(Rp) = diag_sd * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_sd;
+      prop_corr_lik = logLikPrunningMCMC_C(X, k, p, nodes.col(prop_phy), des.col(prop_phy), anc.col(prop_phy), names_anc.col(prop_phy), mapped_edge.slice(prop_phy), R_prop, mu);
+      ll = prop_corr_lik - lik;
+      // This is the sdiance of the proposed vcv matrix.
+      decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
+      prop_jacobian = 0.0; // Always need to reset.
+      // The Jacobian of the transformation.
+      for( int i=0; i < k; i++ ){
+	prop_jacobian = prop_jacobian + log(decomp_var[i]) * log( (k-1.0)/2.0 );
+      }
+      // The curr_jacobian is a vector. There are a jacobian for each regime.
+      jj = prop_jacobian - curr_jacobian[Rp];
+
+      // Get the ratio i log space. Loglik, log prior, log hastings and log jacobian.
+      r = ll + pp + hh + jj;
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	// This line will write to the mcmc_file.
+	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
+	log_stream << "1; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; 0; ";
+	log_stream << prop_phy+1; // Add 1 to get the number of the phylo.
+	log_stream << "; ";
+	log_stream << prop_corr_lik;
+	log_stream << "\n";
+	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
+	Rcorr = Rcorr_prop; // Update the correlation matrix.
+	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
+	lik = prop_corr_lik; // Update likelihood. Need to carry over.
+	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
+	curr_phy = prop_phy; // Updates the current phy from the pool.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; 0; ";
+	log_stream << curr_phy+1; // Add 1 to get the number of the phylo.
+	log_stream << "; ";
 	log_stream << lik;
 	log_stream << "\n";
       }
