@@ -144,7 +144,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
     ## Set the objects holding the initial state for the chain.
     ## These are array and matrix classes.
     ## start here is produced by the 'samplePrior' function.
-    startR.list <- lapply(1:2, function(x) rebuild.cov(r=cov2cor(start$matrix[[x]]), v=start$sd[[x]]^2) )
+    startR.list <- lapply(1:p, function(x) rebuild.cov(r=cov2cor(start$matrix[[x]]), v=start$sd[[x]]^2) )
     startR <- array(dim=c(k, k, p))
     startCorr <- array(dim=c(k, k, p))
     startvar <- matrix(nrow=k, ncol=p)
