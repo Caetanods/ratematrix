@@ -221,7 +221,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             ell.data[[w]] <- list()
             for(j in 2:dd){
                 for(i in 1:(j-1)){                    
-                    ell.data[[w]][[ell.data.count]] <- getEllipseAllMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ]
+                    ell.data[[w]][[ell.data.count]] <- getEllipseMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ]
                                                                         , traits=c(i,j), n.points=n.points)
                     ell.data.count <- ell.data.count + 1 ## Update the counter.
                 }
@@ -320,6 +320,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
         ell.lim <- do.call(rbind, ell.lim)
         ell.lim <- apply(ell.lim, 2, range)
+        ## Need to make the ellipse plots isometric. So it is easy to compare the covariances among different traits.
+        ell.lim.iso <- c(min(ell.lim[1,]),max(ell.lim[2,]))
 
         ## Save the original par:
         old.par <- par(no.readonly = TRUE)
@@ -394,7 +396,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
+                    plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
                     box(col="grey")
                     for( w in 1:length(p) ){
                         invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
@@ -514,6 +516,9 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
         ell.lim <- do.call(rbind, ell.lim)
         ell.lim <- apply(ell.lim, 2, range)
+        ## Need to make the axes for the ellipse plots isometric.
+        ell.lim.iso <- c(min(ell.lim[1,]),max(ell.lim[2,]))
+
         
         ## Save the original par:
         old.par <- par(no.readonly = TRUE)
@@ -580,7 +585,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
+                    plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
                     box(col="grey")
                     for( w in 1:length(p) ){
                     invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
