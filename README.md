@@ -4,13 +4,12 @@
 
 ## News and updates
 
-**Jun-2017 (v 0.25):** Add package 'vignette' with tutorial for setting a custom starting point for the MCMC.
+**Feb-2018 (v 0.27.1):** Makes the x and y axes for the ellipse plots of 'plotRatematrix' isometric so it is easier to compare different traits. Imports package 'ellipse' to draw the ellipse lines (improves the code for the function).
+**Aug-2017 (v 0.27):** Adds option to control the width of the proposal for sd and mean for each trait independently (see 'help(ratematrixMCMC)'). Drops option to force the MCMC to use a single rate. Fix bug that constrained argument 'w_sd' == 'w_mu'. Fix calculation of acceptance ratios performed by 'logAnalyzer'.
 
 **Jun-2017 (v 0.26):** Fix problem with 'plotRatematrix'. The ellipse lines had the x and y axes inverted. The problem is now fixed.
 
-**Aug-2017 (v 0.27):** Adds option to control the width of the proposal for sd and mean for each trait independently (see 'help(ratematrixMCMC)'). Drops option to force the MCMC to use a single rate. Fix bug that constrained argument 'w_sd' == 'w_mu'. Fix calculation of acceptance ratios performed by 'logAnalyzer'.
-
-**Feb-2018 (v 0.27.1):** Makes the x and y axes for the ellipse plots of 'plotRatematrix' isometric so it is easier to compare different traits. Imports package 'ellipse' to draw the ellipse lines (improves the code for the function).
+**Jun-2017 (v 0.25):** Add package 'vignette' with tutorial for setting a custom starting point for the MCMC.
 
 ## Description
 
