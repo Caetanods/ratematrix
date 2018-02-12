@@ -21,7 +21,8 @@ Imports:
     readr,
     mvMORPH,
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    ellipse
 Suggests:
     microbenchmark,
     knitr,

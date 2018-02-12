@@ -220,7 +220,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             ell.data[[w]] <- list()
             for(j in 2:dd){
                 for(i in 1:(j-1)){                    
-                    ell.data[[w]][[ell.data.count]] <- getEllipseAllMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ]
+                    ell.data[[w]][[ell.data.count]] <- getEllipseMatrix( mat=chain$matrix[[ p[w] ]][ ss.list[[w]] ]
                                                                         , traits=c(i,j), n.points=n.points)
                     ell.data.count <- ell.data.count + 1 ## Update the counter.
                 }
@@ -318,7 +318,10 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ##       of the lines and the transparency can be modified.
         ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
         ell.lim <- do.call(rbind, ell.lim)
-        ell.lim <- apply(ell.lim, 2, range)
+        ell.lim <- apply(ell.lim, 2, range) ## One column for each of the plots.
+        ## Need to make such that the plot uses the same limits for the x and y axis. Otherwise it is hard to
+        ##    compare the major axis of variance of the plots.
+        ell.lim.iso <- c(min(ell.lim[1,]),max(ell.lim[2,]))
 
         ## Save the original par:
         old.par <- graphics::par(no.readonly = TRUE)
@@ -393,7 +396,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    graphics::plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
                     graphics::box(col="grey")
                     for( w in 1:length(p) ){
                         invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], function(x) graphics::points(x, col = colEll[w]
@@ -513,6 +516,11 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
         ell.lim <- do.call(rbind, ell.lim)
         ell.lim <- apply(ell.lim, 2, range)
+        ## Need to make sure that the y and x axes have the same range. This will make it possible to compare the major axes of
+        ##    variances among the traits.
+        ell.lim.iso <- c(min(ell.lim[1,]),max(ell.lim[2,]))
+
+        
         
         ## Save the original par:
         old.par <- graphics::par(no.readonly = TRUE)
@@ -579,7 +587,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    graphics::plot(1, xlim=ell.lim[,1], ylim=ell.lim[,2], axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
                     graphics::box(col="grey")
                     for( w in 1:length(p) ){
                     invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], function(x) graphics::points(x, col = colEll[w]
