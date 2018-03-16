@@ -45,7 +45,6 @@ Collate:
     "dataset_anoles.R"
     "dataset_centrarchidae.R"
     "dicMCMC.R"
-    "getEllipseAllMatrix.R"
     "getEllipseMatrix.R"
     "hastingsDensity.R"
     "logDensityIWish.R"
