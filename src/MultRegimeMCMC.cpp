@@ -4,7 +4,6 @@ using namespace Rcpp;
 using namespace arma;
 
 // This will have a function to run the MCMC and all the cpp functions that this depends on. The idea is that R functions will prepare the prior parameters and the objects needed to run this function. The output of the function will be the files mcmc and log.
-// Later I will separate each of the supporting functions into different cpp files.
 
 // #######################################################
 // ###### Support Functions
@@ -345,6 +344,26 @@ double priorCorr_C(arma::cube corr, arma::vec nu, arma::cube sigma){
 // ###### The proposal functions
 // #######################################################
 
+arma::vec multiplierProposal_C(int size, arma::vec w_sd){
+  // A proposal that scales with the absolute value of the parameter. (Always positive.)
+  // in R this is doing:
+  // exp( 2 * log(w_sd) * runif(1, min=-0.5, max=0.5) )
+  // Get this return factor and multiply by the current value for the proposal.
+  // Return is a vector of length 'size', so it will work for multiple parameters.
+  // The proposal ratio is the sum of the output vector.
+  return exp( (randu(size) - 0.5) % (2.0 * log(w_sd)) );
+}
+
+arma::vec slideWindowLogSpace_C(arma::vec mu, arma::vec w_mu){
+  // This will take the vector of root values mu and a vector of widths and make a draw.
+  // Difference is that here we do the sliding window in log-space.
+  // This proposal strategy is symmetrical in log-space but assymetrical in normal space.
+  // Not a problem because the symmetry need to happen in the proposal step.
+  // in R this is doing:
+  // y <- sapply(1:length(mu), function(x) exp( log(mu) - (log(w_mu)/2) + (runif(1) * log(w_mu)) ) )
+  return exp( log(mu) - (log(w_mu)/2) + (randu(mu.n_elem) % log(w_mu)) );
+}
+
 arma::vec slideWindow_C(arma::vec mu, arma::vec w_mu){
   // This will take the vector of root values mu and a vector of widths and make a draw.
   // in R this is doing:
@@ -352,14 +371,14 @@ arma::vec slideWindow_C(arma::vec mu, arma::vec w_mu){
   return (mu - (w_mu/2)) + ( randu( mu.n_elem ) % w_mu );
 }
 
-arma::vec slideWindowPositive_C(arma::vec sd, arma::vec w_sd){
-  // This will take the vector of root values mu and a vector of widths and make a draw.
-  arma::vec prop_sd = (sd - (w_sd/2)) + ( randu(sd.n_elem) % w_sd );
-  for(int i=0; i < sd.n_elem; i++){
-    prop_sd[i] = std::abs(prop_sd[i]);
-  }
-  return prop_sd;
-}
+// arma::vec slideWindowPositive_C(arma::vec sd, arma::vec w_sd){
+//   // This will take the vector of root values mu and a vector of widths and make a draw.
+//   arma::vec prop_sd = (sd - (w_sd/2)) + ( randu(sd.n_elem) % w_sd );
+//   for(int i=0; i < sd.n_elem; i++){
+//     prop_sd[i] = std::abs(prop_sd[i]);
+//   }
+//   return prop_sd;
+// }
 
 // [[Rcpp::export]]
 arma::mat makePropIWish_C(arma::mat vcv, double k, double v){
@@ -484,6 +503,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   arma::vec decomp_var;
   double prop_jacobian = 0.0; // Need always to reset this one.
   double jj;
+  arma::vec multi_factor; // Stores the multiplier proposal scaler.
 
   // Get starting priors, likelihood, and jacobian.
   lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu);
@@ -553,7 +573,9 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
       // Draw which regime to update.
       // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
       prop_sd = sd; // The matrix of standard deviations.
-      prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
+      // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
+      multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
+      prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
       prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
       pp = prop_sd_prior - curr_sd_prior;
   
@@ -565,8 +587,8 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
       prop_sd_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, mu);
       ll = prop_sd_lik - lik;
 
-      // Get the ratio i log space. Loglik, and log prior.
-      r = ll + pp;
+      // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
+      r = ll + pp + accu(multi_factor);
 
       // Advance to the acceptance step.
       // Here we are only updating the root, so all other parameters are the same.
@@ -757,6 +779,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes
   arma::vec decomp_var;
   double prop_jacobian = 0.0; // Need always to reset this one.
   double jj;
+  arma::vec multi_factor; // The scale factor for the multiplier proposal.
 
   // Get starting priors, likelihood, and jacobian.
   // Here using the first tree (the curr_phy).
@@ -798,6 +821,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes
     // The 'if...if...else' structure is lazy and will evaluate only the first entry.
     if(sample_root == 1){
       // Update the root state.
+      // prop_root = slideWindow_C(mu, w_mu);
       prop_root = slideWindow_C(mu, w_mu);
       // Compute the prior.
       prop_root_prior = priorRoot_C(prop_root, par_prior_mu, den_mu);
@@ -834,7 +858,9 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes
       // Draw which regime to update.
       // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
       prop_sd = sd; // The matrix of standard deviations.
-      prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
+      // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
+      multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
+      prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
       prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
       pp = prop_sd_prior - curr_sd_prior;
   
@@ -846,8 +872,8 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes
       prop_sd_lik = logLikPrunningMCMC_C(X, k, p, nodes.col(prop_phy), des.col(prop_phy), anc.col(prop_phy), names_anc.col(prop_phy), mapped_edge.slice(prop_phy), R_prop, mu);
       ll = prop_sd_lik - lik;
 
-      // Get the ratio i log space. Loglik, and log prior.
-      r = ll + pp;
+      // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
+      r = ll + pp + accu(multi_factor);
 
       // Advance to the acceptance step.
       // Here we are only updating the root, so all other parameters are the same.
