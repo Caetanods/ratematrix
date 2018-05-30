@@ -132,25 +132,13 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
         
     }
 
-    ## First check if "microbenchmark" is installed in the system. If yes, then use it, otherwise perform a less accurate estimate of the time.
-    if (requireNamespace("microbenchmark", quietly = TRUE)) {
-        cat("\n")
-        cat("Computing time...\n")
-        time <- microbenchmark::microbenchmark(evaluateStepMCMC(), times = eval.times, unit="s")
-        eval.time <- stats::median( as.numeric( microbenchmark:::convert_to_unit(time$time, unit="s") ) )
-        estimate <- ( eval.time * gen ) / 3600
-        cat(paste( "Time estimated with current processing power is at least ", round(estimate, 1), " hours.\n", sep=""))
-        return( estimate )
-    } else {
-        cat("\n")
-        cat("Computing time...\n")
-        tpm <- proc.time()
-        void <- sapply(1:eval.times, function(x) evaluateStepMCMC() )
-        tpm.diff <- proc.time() - tpm
-        eval.time <- as.numeric( tpm.diff[3] ) / eval.times
-        estimate <- ( eval.time * gen ) / 3600
-        cat(paste( "Time estimated with current processing power is at least ", round(estimate, 1), " hours.\n", sep=""))
-        return( estimate )
-    }
-    
+    cat("\n")
+    cat("Computing time...\n")
+    tpm <- proc.time()
+    void <- sapply(1:eval.times, function(x) evaluateStepMCMC() )
+    tpm.diff <- proc.time() - tpm
+    eval.time <- as.numeric( tpm.diff[3] ) / eval.times
+    estimate <- ( eval.time * gen ) / 3600
+    cat(paste( "Time estimated with current processing power is at least ", round(estimate, 1), " hours.\n", sep=""))
+    return( estimate )
 }
