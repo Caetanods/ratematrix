@@ -22,7 +22,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
 ##' @noRd
-singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), dir=NULL, outname="single_R_fast", IDlen=5
+singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.1,0.45,0.45), dir=NULL, outname="single_R_fast", IDlen=5
                            , traits, save.handle, continue=NULL, add.gen, ID=NULL){
 
     ## Save the 'mcmc.par' list for the mcmc.handle:
@@ -30,13 +30,14 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     mcmc.par$v <- v
     mcmc.par$w_sd <- w_sd
     mcmc.par$w_mu <- w_mu
-    mcmc.par$prop <- prop    
+    mcmc.par$prop <- prop
     
     ## Creates data and chain cache:
     cache.data <- list()
     cache.chain <- list()
     cache.data$k <- ncol(X) ## Number of traits.
     cache.data$X <- X
+    cache.data$prop <- prop ## Necessary to allow for control of sd and corr proposals.
 
     ## Creates MCMC chain cache:
     ## Here trying to initialize the chain cache with the correct number of elements in the list.
@@ -139,6 +140,9 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
         saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
     }
 
+    ## Create vector of probabilities for the sample of root vs. matrix:
+    if( prop[1] > 1 ) stop("Wrong probabilities set to 'prop' argument. Check help page.")
+    mcmc.prop <- c(prop[1], 1-prop[1]) / sum( c(prop[1], 1-prop[1]) )
     ## Loop for the whole MCMC
     for(i in 2:gen ){
 
@@ -148,7 +152,7 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
         ## Sample which parameter is updated:
         ## 'prop' is a vector of probabilities for 'update.function' 1 or 2.
         ## 1 = phylo root and 2 = R matrix.
-        up <- sample(x = c(1,2), size = 1, prob = prop)
+        up <- sample(x = c(1,2), size = 1, prob = mcmc.prop)
         ## #########################################
 
         ## #########################################
