@@ -16,6 +16,9 @@ computeESS <- function(mcmc, p){
 
     if( p == 1 ){
 
+        ## Check the accuracy of the p argument.
+        if( !is.matrix( mcmc$matrix[[1]] ) ) stop( "Number of regimes might be wrong." )
+
         k <- ncol(mcmc$matrix[[1]])
         
         rates[[1]] <- t( sapply(mcmc$matrix, function(x) diag(x) ) )
@@ -28,6 +31,11 @@ computeESS <- function(mcmc, p){
     }
 
     if( p > 1){
+
+        ## Check the accuracy of the p argument.
+        if( !p == length( mcmc$matrix ) ) stop( "Number of regimes might be wrong." )
+        check.p <- sapply(1:p, function(x) is.matrix( mcmc$matrix[[x]][[1]] ) )
+        if( !all(check.p) ) stop( "Number of regimes might be wrong." )
         
         k <- ncol( mcmc$matrix[[1]][[1]] )
         
