@@ -30,6 +30,7 @@
 ##' @importFrom geiger treedata
 ##' @importFrom ape reorder.phylo
 ##' @importFrom corpcor rebuild.cov
+##' @importFrom stats cov2cor
 ##' @noRd
 multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL){
 
