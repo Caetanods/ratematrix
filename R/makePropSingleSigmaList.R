@@ -16,12 +16,17 @@
 makePropSingleSigmaList <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, files, phy, n.phy) {
 
     which.phy <- sample(1:n.phy, size = 1) ## The index for the phy used for the log.lik.
-    up <- sample(1:2, size=1)
+
+    mat.prob <- cache.data$prop[2:3] / sum(cache.data$prop[2:3])
+    up <- sample(1:2, size=1, prob = mat.prob)
 
     if( up == 1 ){
         ## Update the vector of standard deviations.
         to.update.sd <- cache.chain$chain[[3]]
-        prop.sd <- sapply(1:length(to.update.sd), function(x) slideWindowPositive(to.update.sd[x], w_sd[x]) )
+        ## multi.prop[1,] is the proposed vector.
+        ## multi.prop[2,] is the prop ratio vector.
+        multi.prop <- sapply(1:length(to.update.sd), function(x) multiplierProposal(x = to.update.sd[x], a = w_sd[x]) )
+        prop.sd <- multi.prop[1,]
         prop.sd.prior <- prior[[3]]( prop.sd ) ## The third prior function. New prior works on list format.
         pp <- prop.sd.prior - cache.chain$curr.sd.prior
 
@@ -39,7 +44,8 @@ makePropSingleSigmaList <- function(cache.data, cache.chain, prior, w_sd, w_mu, 
         ll <-  prop.sd.lik - cache.chain$lik
         
         ## Get ratio in log space.
-        r <- ll + pp
+        ## multi.prop is the proposal ratio for the multiplier proposal.
+        r <- ll + pp + sum( multi.prop[2,] )
 
         ## Acceptance step.
         ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
