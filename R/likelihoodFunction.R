@@ -26,11 +26,12 @@
 ##' }
 likelihoodFunction <- function(data, phy, root, R){
 
-    ## 'data' needs to be a class matrix.
-    data <-  as.matrix( data )
+    ## Need to transpose the data matrix.
+    X <- t( as.matrix(data) )
+    k <- nrow(X) ## Number of traits.
 
     ## Correct the format for the root.
-    root <- as.numeric( root )
+    mu <- as.numeric( root )
     
     ## Check if R is a matrix or a list.
     if( is.list(phy[[1]]) ) stop( "Function does not accept a list of phylo." )
@@ -65,9 +66,11 @@ likelihoodFunction <- function(data, phy, root, R){
         names(anc)[which(anc %in% node.to.node)] <- 2
         names(anc)[which(anc %in% node.to.tip.node)] <- 3
         names_anc <- names(anc)
+        names_anc <- as.numeric( names_anc ) ## Type integer.
 
-        lik <- logLikPrunningMCMC_C(X=t(X), k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
-                                  , mapped_edge=mapped_edge, R=Rarray, mu=mu)
+        lik <- logLikPrunningMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc,
+                                    names_anc=names_anc
+                                  , mapped_edge=mapped.edge, R=Rarray, mu=mu)
         return(lik)
         
     } else{ ## The case of a single regime.
@@ -78,7 +81,7 @@ likelihoodFunction <- function(data, phy, root, R){
         ## Creates data and chain cache:
         cache.data <- list()
         cache.data$k <- ncol(data) ## Number of traits.
-        cache.data$X <- data
+        cache.data$X <- as.matrix(data)
         cache.data$n <- length(phy$tip.label)
         loglik <- logLikSingleRegime(data=cache.data, chain=NULL, phy=phy, root=root, R=R ) ## Lik start value.
         return(loglik)
