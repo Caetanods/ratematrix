@@ -1,3 +1,13 @@
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title Multiplier proposal
+##' @param x 
+##' @param a 
+##' @return The proposal and the proposal ratio.
+##' @author daniel
+##' @noRd
+##' @importFrom stats runif setNames
 multiplierProposal <- function(x, a){
     ## This proposal scheme will perform steps in the log space of the parameter.
     ## This is much more efficient for the cases in which small changes in large
