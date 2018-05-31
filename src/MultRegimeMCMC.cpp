@@ -20,6 +20,7 @@ double logLikNode_C(arma::vec ss, arma::mat sigma_len, arma::mat sigma_len_inv, 
   return -0.5 * ( k * log(2 * arma::datum::pi) + val + as_scalar(trans(ss) * sigma_len_inv * ss));
 }
 
+// [[Rcpp::export]]
 double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu) {
   // X is the data matrix with information for the tips.
   // k is the number of traits in the data.

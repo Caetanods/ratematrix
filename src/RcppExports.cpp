@@ -6,6 +6,26 @@
 
 using namespace Rcpp;
 
+// logLikPrunningMCMC_C
+double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu);
+RcppExport SEXP _ratematrix_logLikPrunningMCMC_C(SEXP XSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type nodes(nodesSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type des(desSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type anc(ancSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type names_anc(names_ancSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mapped_edge(mapped_edgeSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type R(RSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cov2cor_C
 arma::mat cov2cor_C(arma::mat V);
 RcppExport SEXP _ratematrix_cov2cor_C(SEXP VSEXP) {
@@ -117,6 +137,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_ratematrix_logLikPrunningMCMC_C", (DL_FUNC) &_ratematrix_logLikPrunningMCMC_C, 10},
     {"_ratematrix_cov2cor_C", (DL_FUNC) &_ratematrix_cov2cor_C, 1},
     {"_ratematrix_priorCorr_C", (DL_FUNC) &_ratematrix_priorCorr_C, 3},
     {"_ratematrix_makePropIWish_C", (DL_FUNC) &_ratematrix_makePropIWish_C, 3},
