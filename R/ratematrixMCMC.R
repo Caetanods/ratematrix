@@ -63,6 +63,11 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
     if( v == 25 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.05 && prop[2] == 0.475 ) cat("Using default proposal settings. \n")
 
+    ## Check if provided prior has the correct dimension:
+    if( inherits(prior, what="ratematrix_prior_function") ){
+        if( !prior$pars$r == ncol(data) ) stop("Wrong number of traits specified on the prior.")
+    }
+    
     ## Check formats for 'w_mu'. Need to delay check for 'w_sd' until we get the number of regimes.
     if( length( w_mu ) > 1 ){
         if( !length(w_mu) == ncol(data) ) stop("Length of 'w_mu' need to be 1 or equal to number of traits.")
@@ -113,17 +118,30 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     }
 
     ## Check the 'w_sd' parameter. Need to know if phylo is a list and if it is simmap.
+    ## Get the number of regimes and check the prior, if provided.
     if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
         if( is.null( phy[[1]]$mapped.edge ) ){
             n_regimes <- 1
+            if( inherits(prior, what="ratematrix_prior_function") ){
+                if( !prior$pars$p == n_regimes ) stop("Number of regimes specified on prior does not match the phylogeny.")
+            }
         } else{
             n_regimes <- ncol(phy[[1]]$mapped.edge)
+            if( inherits(prior, what="ratematrix_prior_function") ){
+                if( !prior$pars$p == n_regimes ) stop("Number of regimes specified on prior does not match the phylogeny.")
+            }
         }
     } else{
         if( is.null( phy$mapped.edge ) ){
             n_regimes <- 1
+            if( inherits(prior, what="ratematrix_prior_function") ){
+                if( !prior$pars$p == n_regimes ) stop("Number of regimes specified on prior does not match the phylogeny.")
+            }
         } else{
             n_regimes <- ncol(phy$mapped.edge)
+            if( inherits(prior, what="ratematrix_prior_function") ){
+                if( !prior$pars$p == n_regimes ) stop("Number of regimes specified on prior does not match the phylogeny.")
+            }
         }
     }
     
