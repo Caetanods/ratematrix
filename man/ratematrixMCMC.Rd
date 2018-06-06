@@ -4,8 +4,8 @@
 \alias{ratematrixMCMC}
 \title{Estimate the evolutionary rate matrix using Markov-chain Monte Carlo}
 \usage{
-ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
-  gen, v = 25, w_sd = 0.5, w_mu = 0.5, prop = c(0.05, 0.475, 0.475),
+ratematrixMCMC(data, phy, prior = "uniform_scaled", start = "prior_sample",
+  gen, v = 50, w_sd = 0.2, w_mu = 0.5, prop = c(0.05, 0.475, 0.475),
   dir = NULL, outname = "ratematrixMCMC", IDlen = 5, save.handle = TRUE)
 }
 \arguments{
@@ -23,7 +23,7 @@ ratematrixMCMC(data, phy, prior = "empirical_mean", start = "prior_sample",
 
 \item{w_sd}{the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.}
 
-\item{w_mu}{value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.}
+\item{w_mu}{value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.}
 
 \item{prop}{a numeric vector of length 3 with the proposal frequencies for each parameter of the model. The vector need to sum to 1. These values are the probability that the phylogenetic mean (prop[1]), the vector of standard deviations (prop[2]), and the correlation matrix (prop[3]) will be updated at each step of the MCMC chain, respectively. Default value is 'c(0.05, 0.475, 0.475)'.}
 

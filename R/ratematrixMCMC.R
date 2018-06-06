@@ -21,7 +21,7 @@
 ##' @param gen number of generations for the chain.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
-##' @param w_mu value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'.
+##' @param w_mu value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.
 ##' @param prop a numeric vector of length 3 with the proposal frequencies for each parameter of the model. The vector need to sum to 1. These values are the probability that the phylogenetic mean (prop[1]), the vector of standard deviations (prop[2]), and the correlation matrix (prop[3]) will be updated at each step of the MCMC chain, respectively. Default value is 'c(0.05, 0.475, 0.475)'.
 ##' @param dir path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
@@ -34,6 +34,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape Ntip
+##' @importFrom geiger fitContinuous
 ##' @examples
 ##' \donttest{
 ##' data( centrarchidae )
@@ -64,7 +65,7 @@
 ##' plotRatematrix(merged.posterior)
 ##' plotRootValue(merged.posterior)
 ##' }
-ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sample", gen, v=25, w_sd=0.5, w_mu=0.5, prop=c(0.05, 0.475, 0.475), dir=NULL, outname="ratematrixMCMC", IDlen=5, save.handle=TRUE){
+ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sample", gen, v=50, w_sd=0.2, w_mu=0.5, prop=c(0.05, 0.475, 0.475), dir=NULL, outname="ratematrixMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -73,7 +74,8 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     cat("\n")
 
     ## Inform that default options are being used:
-    if( inherits(prior, what="character") && prior == "empirical_mean" ) cat("Using default prior. \n")
+    if( inherits(prior, what="character") && prior == "empirical_mean" ) cat("Using old default prior. \n")
+    if( inherits(prior, what="character") && prior == "uniform_scaled" ) cat("Using new default prior. \n")
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
     if( v == 25 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.05 && prop[2] == 0.475 ) cat("Using default proposal settings. \n")
 
@@ -178,7 +180,7 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
     ## Make a quick check down the road to see if the prior is working.
     if( !inherits(prior, what="ratematrix_prior_function") ){
         if( inherits(prior, what="character") ){
-            if( !prior %in% c("uniform","empirical_mean") ) stop("prior option was not recognized. Check details for the 'prior' argument.")
+            if( !prior %in% c("uniform","empirical_mean", "uniform_scaled") ) stop("prior option was not recognized. Check details for the 'prior' argument.")
         } else{
             if( inherits(prior, what="list") ){
                 warning("MCMC chain using custom prior as speficied by argument 'prior'.")
@@ -261,6 +263,24 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 par.sd <- c(0, sqrt(10)) ## Prior for the standard deviation.
                 prior_run <- makePrior(r=r, p=1, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
             }
+            if(prior == "uniform_scaled"){
+                data.range <- t( apply(data, 2, range) )
+                ## Step on the root is 1/10 of the space.
+                ## This overrides the user parameters!
+                cat("Computing step size for root value proposal from the data. \n")
+                w_mu <- ( data.range[,2] - data.range[,1] ) / 10
+                cat("Guessing magnitude of rates from the data. \n")
+                if( is.list(phy[[1]]) ){ ## List of phylo.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM") )
+                } else{ ## Only one phylo.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy, dat=data[,x], model = "BM") )
+                }
+                guess.rates <- sapply(fit, function(x) coef(x)[1])
+                top.sd <- sqrt( ceiling(guess.rates) * 10 )
+                bottom.sd <- rep(0, times = length(top.sd))
+                par.sd <- cbind(bottom.sd, top.sd)
+                prior_run <- makePrior(r=r, p=1, den.mu="norm", par.mu=data.range, par.sd=par.sd)
+            }
         }
         
         ## #######################
@@ -326,6 +346,24 @@ ratematrixMCMC <- function(data, phy, prior="empirical_mean", start="prior_sampl
                 rep.sd.regime <- rep(c(0,sqrt(10)), times=p)
                 par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
                 prior_run <- makePrior(r=r, p=p, den.mu="norm", par.mu=par.mu, par.sd=par.sd)
+            }
+            if(prior == "uniform_scaled"){
+                data.range <- t( apply(data, 2, range) )
+                ## Step on the root is 1/10 of the space.
+                ## This overrides the user parameters!
+                cat("Computing step size for root value proposal from the data. \n")
+                w_mu <- ( data.range[,2] - data.range[,1] ) / 10
+                cat("Guessing magnitude of rates from the data. \n")
+                if( is.list(phy[[1]]) ){ ## List of phylo.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM") )
+                } else{ ## Only one phylo.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy, dat=data[,x], model = "BM") )
+                }
+                guess.rates <- sapply(fit, function(x) coef(x)[1])
+                top.sd <- sqrt( ceiling(guess.rates) * 10 )
+                bottom.sd <- rep(0, times = length(top.sd))
+                par.sd <- cbind(bottom.sd, top.sd)
+                prior_run <- makePrior(r=r, p=p, den.mu="norm", par.mu=data.range, par.sd=par.sd)
             }
         }
         
