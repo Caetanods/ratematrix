@@ -423,7 +423,7 @@ void writeToMultFile_C(std::ostream& mcmc_stream, int p, int k, arma::cube R, ar
 // A similar need will happen for the MCMC with a single regime. In this case a bunch of computations are not needed. I can just simplify a lot this MCMC function. Using my own likelihood function will also means I can drop both 'mvMORPH' and 'phytools' as dependencies for the package. This will also make installation in a server much more user-friendly. [The 'rgl' dependecy of 'phytools' makes installation in servers difficult.]
 
 // [[Rcpp::export]]
-std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen){
+std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // The starting point parameters. These are the objects to carry on the MCMC.
@@ -438,6 +438,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   // w_mu, w_sd, v
   // The parameters to control the MCMC:
   // prob_sample_root, prob_sample_var, gen
+  // write_header, wheather to write the header to file or just to append.
 
   // Open the files to write:
   // The log_file and mcmc_file arguments.
@@ -445,31 +446,35 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
   std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
 
   // Write the header for the mcmc file.
-  for( int kk=1; kk < p+1; kk++ ){
-    for( int ii=1; ii < k+1; ii++ ){
-      for( int jj=1; jj < k+1; jj++ ){
-	mcmc_stream << "regime.p";
-	mcmc_stream << kk;
-	mcmc_stream << ".";
-	mcmc_stream << ii;
-	mcmc_stream << jj;
-	mcmc_stream << "; ";
+  if(write_header == 1){
+    for( int kk=1; kk < p+1; kk++ ){
+      for( int ii=1; ii < k+1; ii++ ){
+	for( int jj=1; jj < k+1; jj++ ){
+	  mcmc_stream << "regime.p";
+	  mcmc_stream << kk;
+	  mcmc_stream << ".";
+	  mcmc_stream << ii;
+	  mcmc_stream << jj;
+	  mcmc_stream << "; ";
+	}
       }
     }
+  
+    for( int kk=1; kk < k; kk++ ){
+      mcmc_stream << "trait.";
+      mcmc_stream << kk;
+      mcmc_stream << "; ";
+    }
+    mcmc_stream << "trait.";
+    mcmc_stream << k;
+    mcmc_stream << "\n";
+
+    // Write the header for the log file.
+    log_stream << "accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n";
+  } else{
+    // Do nothing.
   }
   
-  for( int kk=1; kk < k; kk++ ){
-    mcmc_stream << "trait.";
-    mcmc_stream << kk;
-    mcmc_stream << "; ";
-  }
-  mcmc_stream << "trait.";
-  mcmc_stream << k;
-  mcmc_stream << "\n";
-
-  // Write the header for the log file.
-  log_stream << "accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n";
-
   // Define the containers for the run:
   // The starting point log lik:
   double lik;
@@ -689,7 +694,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
 // The MCMC function for multiple regimes:
 
 // [[Rcpp::export]]
-std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen){
+std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // These parameters changed from the 'runRatematrixMCMC_C' function:
@@ -709,6 +714,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes
   // w_mu, w_sd, v
   // The parameters to control the MCMC:
   // prob_sample_root, prob_sample_var, gen
+  // write_header, wheather to write the header to file or just to append.
 
   // Open the files to write:
   // The log_file and mcmc_file arguments.
@@ -716,31 +722,35 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes
   std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
 
   // Write the header for the mcmc file.
-  for( int kk=1; kk < p+1; kk++ ){
-    for( int ii=1; ii < k+1; ii++ ){
-      for( int jj=1; jj < k+1; jj++ ){
-	mcmc_stream << "regime.p";
-	mcmc_stream << kk;
-	mcmc_stream << ".";
-	mcmc_stream << ii;
-	mcmc_stream << jj;
-	mcmc_stream << "; ";
+  if(write_header == 1){
+    for( int kk=1; kk < p+1; kk++ ){
+      for( int ii=1; ii < k+1; ii++ ){
+	for( int jj=1; jj < k+1; jj++ ){
+	  mcmc_stream << "regime.p";
+	  mcmc_stream << kk;
+	  mcmc_stream << ".";
+	  mcmc_stream << ii;
+	  mcmc_stream << jj;
+	  mcmc_stream << "; ";
+	}
       }
     }
-  }
   
-  for( int kk=1; kk < k; kk++ ){
+    for( int kk=1; kk < k; kk++ ){
+      mcmc_stream << "trait.";
+      mcmc_stream << kk;
+      mcmc_stream << "; ";
+    }
     mcmc_stream << "trait.";
-    mcmc_stream << kk;
-    mcmc_stream << "; ";
+    mcmc_stream << k;
+    mcmc_stream << "\n";
+
+    // Write the header for the log file.
+    log_stream << "accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n";
+  } else{
+    // Do nothing.
   }
-  mcmc_stream << "trait.";
-  mcmc_stream << k;
-  mcmc_stream << "\n";
-
-  // Write the header for the log file.
-  log_stream << "accepted; matrix.corr; matrix.sd; root; which.phylo; log.lik \n";
-
+    
   // Define the containers for the run:
   // The starting point log lik:
   double lik;
