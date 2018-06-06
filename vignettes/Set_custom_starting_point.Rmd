@@ -77,7 +77,8 @@ To show how to do this I will perform a short MCMC analysis with a small dataset
 
 
 ```{r, eval=FALSE}
-handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles.phy, gen=500000, singlerate=TRUE)
+handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles.phy, gen=500000, singlerate=TRUE
+                         , dir=tempdir() )
 handle <- readRDS( "ratematrixMCMC.23182.mcmc.handle.rds" )
 mcmc <- readMCMC(handle, thin = 200)
 ```
@@ -133,7 +134,8 @@ var <- lapply(R, function(x) decompose.cov(x)[[2]] )
 
 Now we check whether it works:
 ```{r, eval=FALSE}
-( custom.start.handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles.phy, start=start, gen=1000) )
+( custom.start.handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles.phy, start=start
+                                        , gen=1000, dir=tempdir() ) )
 ```
 ```{r, echo=FALSE}
 load( system.file("extdata", "handle.start.point.tutorial.RData", package = "ratematrix") )
