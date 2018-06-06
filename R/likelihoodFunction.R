@@ -10,7 +10,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
-##' \dontrun{
+##' \donttest{
 ##' data( centrarchidae )
 ##' root <- colMeans( centrarchidae$data )
 ##' Rlist <- list( rbind(c(0.5, 0.1),c(0.1,0.5)), rbind(c(0.5, 0),c(0,0.5)) )

@@ -65,7 +65,7 @@ The plots are divided into three groups. Upper-diagonal plots show histograms wi
 Lower-diagonal plots are ideal to visualize the evolutionary correlation and variance between two traits. The orientation of the ellipses show whether there is a positive, negative or lack of correlation (horizontal or vertical orientation) between traits. The shape of the ellipses show the major axis of variation between traits. A 'cigar-shaped' ellipse indicates that one of the traits show faster evolutionary rates than the other, so one axis of variation is much larger than the other whereas a more circular (round) ellipse is a result of comparable rates of evolution between the two traits. A completely circular shape denotes lack of evolutionary correlation between two traits. It might help to understand the meaning of the ellipses lines by imagining each ellipse line marks the spread of the dots in a scatterplot with data generated with a particular covariance value (i.e., the covariance value the ellipse is representing).
 }
 \examples{
-\dontrun{
+\donttest{
 data( centrarchidae )
 dt.range <- t( apply( centrarchidae$data, 2, range ) )
 ## The step size for the root value can be set given the range we need to sample from:

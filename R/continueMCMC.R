@@ -11,7 +11,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
-##' \dontrun{
+##' \donttest{
 ##' ## Continue unfinished run.
 ##' data(centrarchidae)
 ##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)

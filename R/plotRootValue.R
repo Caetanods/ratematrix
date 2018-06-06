@@ -18,7 +18,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
-##' \dontrun{
+##' \donttest{
 ##' data( centrarchidae )
 ##' dt.range <- t( apply( centrarchidae$data, 2, range ) )
 ##' ## The step size for the root value can be set given the range we need to sample from:

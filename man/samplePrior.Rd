@@ -29,7 +29,7 @@ If 'sample.sd' is set to FALSE the samples from the standard deviations will be 
 The option 'rebuild.R' controls if the samples from the posterior distribution should return the standard deviation separated from the correlation matrix or if these elements should be used to rebuild the covariance matrix. Set 'rebuild.R' to TRUE if you want to obtain the covariance matrices. Otherwise, the 'plotPrior' function works better when 'rebuild.R' is set to FALSE.
 }
 \examples{
-\dontrun{
+\donttest{
 data( centrarchidae )
 dt.range <- t( apply( centrarchidae$data, 2, range ) )
 ## The step size for the root value can be set given the range we need to sample from:

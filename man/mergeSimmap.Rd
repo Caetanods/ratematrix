@@ -30,7 +30,7 @@ Function takes the elements of the 'merge.regimes' vector and collapse all those
 If the original phylogeny has only two regimes or if 'drop.regimes' is set to TRUE, then the output will be of class 'phylo' with no regime information.
 }
 \examples{
-\dontrun{
+\donttest{
 library( phytools ) ## Need phytools for this example.
 data(centrarchidae)
 plot( centrarchidae$phy.map )

@@ -21,7 +21,7 @@ Computes the Effective Sample Size (ESS) for the parameters of the model from th
 Function uses 'coda' function 'effectiveSize' to compute the ESS for each of the parameters of the model separatelly. Values for the ESS is too low indicates poor mixing for the parameter of the model.
 }
 \examples{
-\dontrun{
+\donttest{
 data( centrarchidae )
 dt.range <- t( apply( centrarchidae$data, 2, range ) )
 ## The step size for the root value can be set given the range we need to sample from:

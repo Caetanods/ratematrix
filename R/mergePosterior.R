@@ -7,7 +7,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
-##' \dontrun{
+##' \donttest{
 ##' data( centrarchidae )
 ##' ## Set the limits of the uniform prior on the root based on the observed traits
 ##' data.range <- t( apply( centrarchidae$data, 2, range ) )

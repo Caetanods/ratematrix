@@ -42,7 +42,7 @@ Independent priors are defined for the phylogenetic mean, the vector of standard
 The prior for the model has two elements, one is the vector of phylogenetic means (or the root values) and the other is the evolutionary rate matrices (the vcv matrices for the rate of the multivariate BM model). The vector of root values can be distributed as any continuous distribution. In this implementation the two options are the uniform and the normal distribution. On the other hand, the prior distribution for the rate matrices need to be more elaborated. Here we divide the variance-covariance matrix into two elements, a correlation matrix and a vector of standard deviations. Standard deviations can be modelled as any continuous distrbuted of positive values. Here we use a uniform or a log-normal distribution. The correlation matrix need to be derived from a distribution of covariance matrices known as the inverse-Wishart. The inverse-Wishart is controlled by two parameters; the scale matrix (Sigma) and the degrees of freedom (nu). Any variance-covariance matrix can be used as the scale matrix. To set a marginally uniform prior for the correlation structure of the evolutionary rate matrices sampled for the model one need to set 'Sigma' as an identity matrix and 'nu' as the dimension of the matrix +1. This is performed automatically by the function when the option 'unif.corr' is set to TRUE.
 }
 \examples{
-\dontrun{
+\donttest{
 data( centrarchidae )
 ## Set the limits of the uniform prior on the root based on the observed traits
 data.range <- t( apply( centrarchidae$data, 2, range ) )

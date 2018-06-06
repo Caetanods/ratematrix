@@ -25,7 +25,7 @@ Function to continue an unfinished MCMC chain or to append more generations to a
 The function will append the new generations to the same files created by the prior run of the 'ratematrixMCMC' function. The function will, by default, search for files in the same directory of the previous run (see 'handle$dir'). However, you can provide a new path (relative or absolute path) to the argument 'dir'. The path provided to 'dir' will override the path pointed by 'handle$dir'. The new 'handle' output from 'continueMCMC' will have an updated total number of generations and will also update the directory path, if required.
 }
 \examples{
-\dontrun{
+\donttest{
 ## Continue unfinished run.
 data(centrarchidae)
 handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)

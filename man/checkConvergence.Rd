@@ -23,7 +23,7 @@ Multiple chains need to be replicates of the same analysis (e.g., multiple runs 
 The 'Gelman's R' test is based on the potential scale reduction factor which is expected to be equal to 1 when convergence is achieved. If you see values close to 1 (e.g., ~1.01 to 1.05) it means that you just need to get more samples from the MCMC (see 'continueMCMC' function). See more information about each of these tests in the references below and in the documentation for the functions 'coda::gelman.diag' and 'coda::heidel.diag', both from the package 'coda'.
 }
 \examples{
-\dontrun{
+\donttest{
 data(centrarchidae)
 handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
 posterior1 <- readMCMC(handle1, burn=0.25, thin=10)

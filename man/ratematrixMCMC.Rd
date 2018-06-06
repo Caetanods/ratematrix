@@ -57,7 +57,7 @@ MCMC DOES NOT CONVERGE OR MIX: If the MCMC is taking too long to converge then t
 CANNOT FIND THE POSTERIOR: The function writes the posterior into two files: The '.log' file has the log-likelihood and information about which phylogeny was used, which parameter was proposed and whether the step was accepted or not. The '.mcmc' file has the posterior for the parameters of the model. Those are identified by a name for the chain set by "outname" and an unique series of numbers set by "IDlen". Note that you will need the handle object provided as the output for the function (or saved to the directory if 'save.handle' is TRUE) to be able to load, plot and analyze the posterior distribution.
 }
 \examples{
-\dontrun{
+\donttest{
 data( centrarchidae )
 ## Set the limits of the uniform prior on the root based on the observed traits
 data.range <- t( apply( centrarchidae$data, 2, range ) )

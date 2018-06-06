@@ -37,7 +37,7 @@
 ##' @importFrom geiger fitContinuous
 ##' @importFrom stats coef
 ##' @examples
-##' \dontrun{
+##' \donttest{
 ##' data( centrarchidae )
 ##' ## Set the limits of the uniform prior on the root based on the observed traits
 ##' data.range <- t( apply( centrarchidae$data, 2, range ) )

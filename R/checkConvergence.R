@@ -12,7 +12,7 @@
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @importFrom coda mcmc effectiveSize mcmc.list gelman.diag
 ##' @examples
-##' \dontrun{
+##' \donttest{
 ##' data(centrarchidae)
 ##' handle1 <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
 ##' posterior1 <- readMCMC(handle1, burn=0.25, thin=10)

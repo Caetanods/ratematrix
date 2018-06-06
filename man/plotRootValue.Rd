@@ -41,7 +41,7 @@ A plot with the posterior density of root values or distribution of root values 
 Plot the posterior distribution of root values sampled from the MCMC analysis or samples from the prior distribution.
 }
 \examples{
-\dontrun{
+\donttest{
 data( centrarchidae )
 dt.range <- t( apply( centrarchidae$data, 2, range ) )
 ## The step size for the root value can be set given the range we need to sample from:
