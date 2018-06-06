@@ -49,12 +49,20 @@ unif.prior <- makePrior(r = 2, p = 1, den.mu = "unif", par.mu = par.mu, den.sd =
                         , par.sd = par.sd)
 ```
 
+After defining our prior we can take samples from it and evaluate the distribution by plotting the samples.
+
+```{r, fig.height=4, fig.width=4}
+samples <- samplePrior(n = 1000, prior = unif.prior)
+## Plot the prior samples between -10 and 10.
+plotRatematrix(samples, set.xlim = c(-10,10))
+```
+
 Now we are ready to run the MCMC analysis using the prior we created. Here I slightly increased the frequency that the chain is sampling the root values. Note that both the sampling frequencies for each parameter of the model (`prop`) and the width of the proposals (`w_sd` and `w_mu`) are parameters that can (and should!!) be tweaked by the user to maximize the efficiency of the sampler.
 
 The `ratematrixMCMC` function will write files to the working directory. The output is a handle object that stores the information of the MCMC run. The handle object (here named `handle.unif.root`) will be required by other functions.
 ```{r, eval=FALSE}
-handle.unif.root <- ratematrixMCMC(data=dat, phy=phy, prior=unif.prior, start="prior_sample"
-                                   , gen=200000, outname="uniform_root_prior", prop=c(0.1,0.9) )
+handle.unif.root <- ratematrixMCMC(data=dat, phy=phy, prior=unif.prior, start="prior_sample",
+                                   gen=200000, outname="uniform_root_prior" )
 ```
 ```{r, echo=FALSE}
 load( system.file("extdata", "unif.root.RData", package = "ratematrix") )
