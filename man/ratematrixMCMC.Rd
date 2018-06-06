@@ -27,7 +27,7 @@ ratematrixMCMC(data, phy, prior = "uniform_scaled", start = "prior_sample",
 
 \item{prop}{a numeric vector of length 3 with the proposal frequencies for each parameter of the model. The vector need to sum to 1. These values are the probability that the phylogenetic mean (prop[1]), the vector of standard deviations (prop[2]), and the correlation matrix (prop[3]) will be updated at each step of the MCMC chain, respectively. Default value is 'c(0.05, 0.475, 0.475)'.}
 
-\item{dir}{path of the directory to write the files (default is 'NULL'). If 'NULL', then function will write files to the current working directory (check 'getwd()'). If directory does not exist, then function will create it. The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.}
+\item{dir}{path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.}
 
 \item{outname}{name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.}
 
@@ -39,12 +39,14 @@ ratematrixMCMC(data, phy, prior = "uniform_scaled", start = "prior_sample",
 Function returns the 'handle' object and writes the posterior distribution and log as files in the directory (see 'dir'). The handle is a list with the details of the MCMC chain. It is composed by: *k* the number of traits; *p* the number of R regimes fitted to the tree; *ID* the unique identifier of the run; *dir* the directory where the posterior and log files were saved; *outname* the name for the chain; *trait.names* a vector with the label for the traits; *regime.names* a vector with the label for the rate regimes; *data* the data used in the analysis; *phy* a single phylogeny or the list of phylogenies; *prior* a list with the prior functions; *start* a list with the starting parameters for the chain; *gen* the number of generations for the chain; *mcmc.par* a list with the tunning parameters for the MCMC.
 }
 \description{
-Function runs a MCMC chain to estimate the posterior distribution of the evolutionary rate matrix (R) and the root value (phylogenetic mean). Prior distribution and starting state for the chain can be chosen among pre-defined options or manually set by the user using accompanying functions (see function 'makePrior' for more information). Please note that the function will write files to the directory.
+Function runs a MCMC chain to estimate the posterior distribution of the evolutionary rate matrix (R) and the root value (phylogenetic mean). Prior distribution and starting state for the chain can be chosen among pre-defined options or manually set by the user using accompanying functions (see function 'makePrior' for more information). User NEED to provide a directory to write the files (See 'Details'). Use dir="." option to write files to the current directory.
 }
 \details{
 The MCMC chain works by proposing values for the evolutionary rate matrices (R) fitted to the tree and the vector of root values (or phylogenetic mean). The proposal for the R matrices works by separating the variance-covariance matrix into a correlation matrix and a vector of standard deviations and making independent proposals for each. This scheme is called the 'separation strategy' and significantly improves the mix of the chain and also provide a intuitive distinction between the evolutionary correlation among the traits (correlation matrix) and the rates of evolution (standard deviation vector). The proposal for the root values are made all in a single step. \cr
 \cr
 The function will print a series of messages to the screen. Those provide details of the setup of the chain, the unique identifier for the files and the log-likelihood of the starting value of the chain. Up to now these messages cannot be disabled. \cr
+\cr
+DIRECTORY TO WRITE FILES: User need to specify the directory to write the files. Use "." to write to the current directoy. RCran policy prohibits the package to automaticaly write to the current directory. \cr
 \cr
 DEFAULT PRIOR: The default prior distribution ('uniform_scaled') is composed by a uniform distribution on the root values with range equal to the range observed at the tip data. The size of the window used at each proposal step for the root values is equal to the width of the prior divided by 10 units. For the evolutionary rate matrix, this prior sets a uniform distribution on the correlations (spanning all possible correlation structures) and also a uniform distribution on the vector of standard deviations. The limits of the prior on the standard deviation is computed by first doing a quick Maximum Likelihood estimate of each trait under a single rate BM model and using the results to inform the magnitude of the rates. This default prior distribution might not be the best for your dataset. Keep in mind that the default behavior of the MCMC is to draw a starting point from the prior distribution. Please check the 'makePrior' function for more information on priors and how to make a custom prior distribution.\cr
 \cr
@@ -75,7 +77,7 @@ prior <- makePrior(r = 2, p = 2, den.mu = "unif", par.mu = data.range, den.sd = 
 ## Run multiple MCMC chains.
 handle.list <- lapply(1:4, function(x) ratematrixMCMC(data=centrarchidae$data
                       , phy=centrarchidae$phy.map, prior=prior, gen=10000
-                      , w_mu=w_mu, w_sd=w_sd) )
+                      , w_mu=w_mu, w_sd=w_sd, dir=tempdir()) )
 ## Read all to a list
 posterior.list <- lapply(handle.list, readMCMC)
 ## Check for convergence (it might not converge with only 10000 steps)
