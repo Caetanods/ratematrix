@@ -34,7 +34,7 @@ prior <- makePrior(r = 2, p = 2, den.mu = "unif", par.mu = data.range, den.sd = 
 ## Run multiple MCMC chains.
 handle.list <- lapply(1:4, function(x) ratematrixMCMC(data=centrarchidae$data
                       , phy=centrarchidae$phy.map, prior=prior, gen=10000
-                      , w_mu=w_mu, w_sd=w_sd) )
+                      , w_mu=w_mu, w_sd=w_sd, dir=tempdir()) )
 ## Read all to a list
 posterior.list <- lapply(handle.list, readMCMC)
 ## Merge all posteriors in the list.

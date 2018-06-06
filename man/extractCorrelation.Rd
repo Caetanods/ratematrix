@@ -29,7 +29,7 @@ w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
 par.sd <- cbind(c(0,0), sqrt( c(10,10) ))
 prior <- makePrior(r=2, p=2, den.mu="unif", par.mu=dt.range, den.sd="unif", par.sd=par.sd)
 handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
-                         , gen=10000, w_mu=w_mu)
+                         , gen=10000, w_mu=w_mu, dir=tempdir())
 posterior <- readMCMC(handle, burn = 0.2, thin = 10)
 ## Get the correlations:
 cor.list <- extractCorrelation(post = posterior)

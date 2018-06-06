@@ -58,7 +58,7 @@ w_sd <- matrix(0.2, ncol = 2, nrow = 2)
 prior <- makePrior(r = 2, p = 2, den.mu = "unif", par.mu = data.range, den.sd = "unif"
                    , par.sd = par.sd)
 handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
-                         , gen=50000, w_mu=w_mu, w_sd=w_sd)
+                         , gen=50000, w_mu=w_mu, w_sd=w_sd, dir=tempdir())
 posterior <- readMCMC(handle, burn = 0.2, thin = 10)
 plotRatematrix( posterior )
 }

@@ -25,7 +25,7 @@
 ##'                , point.wd = 2)
 ##' plotRootValue(prior.samples)
 ##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
-##'                          , gen=10000, w_mu=w_mu)
+##'                          , gen=10000, w_mu=w_mu, dir=tempdir())
 ##' posterior <- readMCMC(handle, burn = 0.2, thin = 10)
 ##' ## Again, here the red line shows the starting point of the MCMC.
 ##' plotRatematrix( posterior, point.matrix = start.point$matrix, point.color = "red"

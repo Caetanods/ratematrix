@@ -21,7 +21,7 @@
 ##' par.sd <- cbind(c(0,0), sqrt( c(1,1) ))
 ##' prior <- makePrior(r=2, p=2, par.mu=dt.range, par.sd=par.sd)
 ##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
-##'                          , gen=50000, w_mu=w_mu)
+##'                          , gen=50000, w_mu=w_mu, dir=tempdir())
 ##' posterior <- readMCMC(handle, burn = 0.2, thin = 10)
 ##' testRatematrix(posterior, par = "all")
 ##' testRatematrix(posterior, par = "correlation")
