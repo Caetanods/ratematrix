@@ -1,35 +1,44 @@
-##' Plot the posterior distribution of root values sampled from the MCMC analysis using 'ratematrixMCMC' function.
+##' Plot the posterior distribution of root values sampled from the MCMC analysis or samples from the prior distribution.
 ##'
 ##' 
-##' @title Plot the posterior distribution of the root values for the traits.
-##' @param chain the posterior distribution loaded from the files using 'readMCMC'.
+##' @title Plot posterior distribution of root values for the traits
+##' @param chain the posterior distribution loaded from the files using 'readMCMC' or samples from the prior generated with the 'samplePrior' function.
 ##' @param color the color for the histograms.
 ##' @param set.xlab a vector with legends for the x axes. If 'NULL' (default), the names are 'trait_1' to 'trait_n". 
 ##' @param set.cex.lab the cex value for the labels (default is 1).
 ##' @param set.cex.axis the cex value for the axes numbers (default is 1.5).
 ##' @param set.xlim the xlim for the plot. Need to be a vector with the lower and higher bound.
-##' @param hpd the Highest Posterior Density interval to highlight in the plot. Regions outside the interval will be painted in "white". A numeric value between 0 and 100 (default is 100).
-##' @param mfrow the number of lines for the plate. The plots will be arranged in the number of lines provided (default is 1).
-##' @param vline.values numeric values for a vertical line in the plot. Can be a single value recycled for each of the plots or a vector with length equal to the number of traits.
-##' @param vline.color vector with colors for the vertical lines. Can be a single color if length of 'vline.values' is 1 otherwise need to have length equal to the number of traits.
+##' @param hpd the Highest Posterior Density interval to highlight in the plot. Parameter values outside this interval will be colored in white. A numeric value between 0 and 100 (default is 100).
+##' @param mfrow the number of rows to use in the figure (default is 1).
+##' @param vline.values numeric values for plotting vertical lines. Can be a single value recycled for each of the plots or a vector with length equal to the number of traits.
+##' @param vline.color character vector with colors for the vertical lines. Can be a single color if length of 'vline.values' is 1 otherwise need to have length equal to the number of traits.
 ##' @param vline.wd numeric value for the width of the vertical lines. Can be a single value if length of 'vline.values' is 1 otherwise need to have length equal to the number of traits.
 ##' @param show.zero whether a vertical line should be plotted showing the position of the value 0 in the plot.
-##' @return A plot with the posterior density for the root values of the MCMC analysis. Many characteristics of the plot can be controlled by the user.
+##' @return A plot with the posterior density of root values or distribution of root values sampled from the prior.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
 ##' \donttest{
-##' ## Load data
-##' data(centrarchidae)
-##' ## Run MCMC. This is just a very short chain.
-##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
-##' ## Load posterior distribution, make plots and check the log.
-##' posterior <- readMCMC(handle, burn=0.25, thin=1)
-##' plotRatematrix(posterior)
+##' data( centrarchidae )
+##' dt.range <- t( apply( centrarchidae$data, 2, range ) )
+##' ## The step size for the root value can be set given the range we need to sample from:
+##' w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
+##' par.sd <- cbind(c(0,0), sqrt( c(10,10) ))
+##' prior <- makePrior(r=2, p=2, den.mu="unif", par.mu=dt.range, den.sd="unif", par.sd=par.sd)
+##' prior.samples <- samplePrior(n = 1000, prior = prior)
+##' start.point <- samplePrior(n=1, prior=prior)
+##' ## Plot the prior. Red line shows the sample from the prior that will set the starting 
+##' ##      point for the MCMC.
+##' plotRatematrix(prior.samples, point.matrix = start.point$matrix, point.color = "red"
+##'                , point.wd = 2)
+##' plotRootValue(prior.samples)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
+##'                          , gen=10000, w_mu=w_mu)
+##' posterior <- readMCMC(handle, burn = 0.2, thin = 10)
+##' ## Again, here the red line shows the starting point of the MCMC.
+##' plotRatematrix( posterior, point.matrix = start.point$matrix, point.color = "red"
+##'                , point.wd = 2)
 ##' plotRootValue(posterior)
-##' plotPrior(handle)
-##' plotPrior(handle, root=TRUE)
-##' logAnalyzer(handle)
 ##' }
 plotRootValue <- function(chain, color="black", set.xlab=NULL, set.cex.lab=1, set.cex.axis=1.5, set.xlim=NULL, hpd=100, mfrow=1, vline.values=NULL, vline.color=NULL, vline.wd=NULL, show.zero=FALSE){
     ## Plot Root value. Will work just like the plotRatematrix.

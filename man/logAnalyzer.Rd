@@ -12,40 +12,37 @@ logAnalyzer(handle, burn = 0.25, thin = 100, show.plots = TRUE,
 
 \item{burn}{the proportion of burn-in. A numeric value between 0 and 1.}
 
-\item{thin}{the number of generations to skip when reading the posterior distribution.}
+\item{thin}{the number of generations to skip when reading the posterior distributionfrom the files. Since the files contain each step of the sampler, one can check the posterior with different 'thin' values without the need of reanalyses.}
 
-\item{show.plots}{whether to show a trace plot of the log-likelihood and the acceptance ratio.}
+\item{show.plots}{whether to show a trace plot of the log-likelihood and the acceptance ratio. Default is TRUE.}
 
-\item{print.result}{whether to print the results of the acceptance ratio to the screen.}
+\item{print.result}{whether to print the results of the acceptance ratio to the screen. Default is TRUE.}
 
-\item{dir}{the directory where to find the log file. If set to 'NULL' (default), the function will search for the files in the same directory that the MCMC chain was made (handle$dir).}
+\item{dir}{the directory where to find the log file. If set to 'NULL' (default), the function will search for the files in the same directory that the MCMC chain was made (stored in handle$dir).}
 }
 \value{
 A named vector with the acceptance ratio for the whole MCMC and each of the parameters of the model. If a list of phylogenetic trees was provided to the MCMC chain, then the output is a list with the acceptance ratio for the parameters and a table showing the frequency in which each of the phylogenies was accepted in a move step.
 }
 \description{
-Reads the log file produced by the 'ratematrixMCMC' function. Calculates acceptance ratio and shows the trace plot.
+Reads the log file produced by the 'ratematrixMCMC' function. Calculates acceptance ratio and shows the trace plot. Check the function 'computeESS' to compute the Effective Sample Size of the posterior distribution.
 }
 \details{
-The log shows the acceptance ratio for the parameters of the model and also for each of the phylogenies provided to the 'ratematrixMCMC' function, if more than one was provided as imput. The function 'ratematrixMCMC' also provides a brief discussion about acceptance ratio for the parameters in the 'Details'.\cr
+The log shows the acceptance ratio for the parameters of the model and also for each of the phylogenies provided to the 'ratematrixMCMC' function (if more than one was provided as input). Also see function 'ratematrixMCMC' for a brief discussion about acceptance ratio for the parameters in 'Details'.\cr
 \cr
-The acceptance ratio is the frequency in which any proposal step for that parameter was accepted by the MCMC sampler. When this frequency is too high, then proposals are accepted too often, which might decrease the efficiency of the sampler to sample from a wide range of the parameter space (the steps are too short). On the other hand, when the acceptance ratio is too low, then the steps of the sampler propose new values that are often outside the posterior distribution and are systematically rejected by the sampler. Statisticians often suggest that a good acceptance ratio for a MCMC is something close to '0.24'. \cr
+The acceptance ratio is the frequency in which any proposal step for that parameter was accepted by the MCMC sampler. When this frequency is too high, then proposals are accepted too often, which might decrease the efficiency of the sampler to sample from a wide range of the parameter space (the steps are too short). On the other hand, when the acceptance ratio is too low, then the steps of the sampler propose new values that are often outside of the posterior distribution and are systematically rejected by the sampler. Statisticians often suggest that a good acceptance ratio for a MCMC is something close to '0.24'. Our experience is that acceptance ratios between 0.15 and 0.4 will work just fine. Much lower or higher than this might create mixing problems or be too inefficient.\cr
 \cr
-If you provided a list of phylogenies to the MCMC chain, then the sampler will randomly sample one of these phylogenies and use it to compute the likelihood of the model at each step of the MCMC. The pool of trees and/or regime configurations provided effectivelly works as a prior distribution. It is important to note that this is not equivalent to a joint estimation of the comparative model of trait evolution and phylogenetic tree, since the moves proposed by the MCMC chain are restricted to the parameters of the phylogenetic comparative model. Some of the phylogenies provided in the pool might be accepted more than others during the MCMC. When this happens, the acceptance ratio for a given tree, or set of trees, will be relativelly lower when compared to the rest. This means that the information presented in such a tree (or trees) is less represented in the posterior distribution than other trees. If this issue happens, we advise users to investigate whether this trees show a different pattern (potentially biologically informative) when compared to the other set of trees, also to repeat the analysis with these trees in order to check whether parameters estimates are divergent. Also note that, since the MCMC is sampling such trees with equal probability, we do not expect the acceptance ratio to be close to 0.24. In this case a good mixing for all trees would show a similar acceptance ratio across all trees.
+If you provided a list of phylogenies to the MCMC chain, then the sampler will randomly sample one of these phylogenies and use it to compute the likelihood of the model at each step of the MCMC. The pool of trees and/or regime configurations provided effectivelly works as a prior distribution. It is important to note that this is not equivalent to a joint estimation of the comparative model of trait evolution and phylogenetic tree, since the moves proposed by the MCMC chain are restricted to the parameters of the phylogenetic comparative model. Some of the phylogenies provided in the pool might be accepted more than others during the MCMC. When this happens, the acceptance ratio for a given tree, or set of trees, will be relativelly lower when compared to the rest. This means that the information presented in such a tree (or trees) is less represented in the posterior distribution than other trees. If this issue happens, we advise users to investigate whether these trees show a different pattern (potentially biologically informative) when compared to the other set of trees. Additionally, one might also repeat the analysis with these trees in separate in order to check whether parameters estimates are divergent.
 }
 \examples{
 \donttest{
 ## Load data
 data(centrarchidae)
 ## Run MCMC. This is just a very short chain.
-handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
+handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
 ## Load posterior distribution, make plots and check the log.
-posterior <- readMCMC(handle, burn=0.25, thin=1)
+posterior <- readMCMC(handle, burn=0.1, thin=10)
 plotRatematrix(posterior)
-plotRootValue(posterior)
-plotPrior(handle)
-plotPrior(handle, root=TRUE)
-logAnalyzer(handle, burn=0.25, thin=1)
+logAnalyzer(handle, burn=0.1, thin=10)
 }
 }
 \author{

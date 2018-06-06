@@ -1,6 +1,6 @@
-##' Estimate time needed to run the MCMC. Function will estimate the time based on the computation of the log-likelihood, prior density, and the Jacobian of the proposal step. The time estimated is a minimum bound based on the processing power of the current computer. Running the MCMC in different computers might change the time.
+##' Estimate time minimum time needed to run the MCMC.
 ##'
-##' Function will use the package 'microbenchmark' if present, otherwise it will compute time using the 'proc.time' function. We recommend users to be sure that the available processors are free when running the time estimate for a more accurate estimate. It is important to note that the same analysis in different computers (or nodes of a server) might have different times.
+##' Function will estimate the time based on the computation of the log-likelihood, prior density, and the Jacobian of the proposal step. The time estimated is a minimum bound based on the processing power of the current computer. Running the MCMC in different computers might change the time. Other factors, such as writing the posterior samples to large files, can influence the time to run the MCMC.
 ##' @title Time estimate to complete a MCMC chain
 ##' @param data a matrix with the data. Each column is a different trait and species names need to be provided as rownames (rownames(data) == phy$tip.label).
 ##' @param phy a phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.
@@ -12,12 +12,8 @@
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
 ##' \donttest{
-##' ## For two traits, two regimes and 27 species:
 ##' data(centrarchidae)
-##' estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000000)
-##' ## For four traits, two regimes and 125 species:
-##' data(anoles)
-##' estimateTimeMCMC(data=anoles$data[,1:4], phy=anoles$phy, gen=1000000)
+##' estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
 ##' }
 estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
     ## This version of the function does not take into account writing the MCMC to files and making the proposal steps.

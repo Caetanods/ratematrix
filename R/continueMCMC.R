@@ -1,11 +1,11 @@
-##' Function to continue an unfinished MCMC chain or to append new generation to a previously finished MCMC. It works by reading the last state of the chain and the tunning parameters of the previous chain, then continuing it from this step.
+##' Function to continue an unfinished MCMC chain or to append more generations to a previously finished MCMC. It works by reading the last state of the chain and the tunning parameters of the previous chain, then restarting it from this step.
 ##'
-##' The function will append the new generations to the files created by the prior run of the 'ratematrixMCMC' function. The function will search for these files in the same directory that the previous run was performed. You should double-check if the files are in the path set in 'handle$dir'. If the files are not in the same location, you can provide a new path (relative or absolute path) to the argument 'dir'. The path provided to 'dir' will override the path pointed by 'handle$dir'. The new 'handle' output from 'continueMCMC' will have a updated total number of generations and will also update the directory path, if required.
+##' The function will append the new generations to the same files created by the prior run of the 'ratematrixMCMC' function. The function will, by default, search for files in the same directory of the previous run (see 'handle$dir'). However, you can provide a new path (relative or absolute path) to the argument 'dir'. The path provided to 'dir' will override the path pointed by 'handle$dir'. The new 'handle' output from 'continueMCMC' will have an updated total number of generations and will also update the directory path, if required.
 ##' @title Continue unfinished MCMC chain or add more generations
 ##' @param handle the output of 'ratematrixMCMC'.
-##' @param add.gen number of generations to be added to the chain. This is used after the chain finished the previously set number of generations, but more generations are needed. If 'NULL' (default), the function will only continue unfinished chains.
-##' @param save.handle whether to save the updated 'handle' object to the directory.
-##' @param dir an optional path to the posterior chain and log files. See 'Details'.
+##' @param add.gen number of generations to be added to a finished chain. If 'NULL' (default), the function will only continue unfinished chains.
+##' @param save.handle whether to save the updated 'handle' object to the directory. This can overwrite the previous handle file.
+##' @param dir an optional path to the output files. See 'Details'.
 ##' @return Function will write the parameter values for each generation and the log to files. The new generations will be appended to the same files created by 'ratematrixMCMC'.
 ##' @export
 ##' @importFrom corpcor decompose.cov
@@ -14,16 +14,9 @@
 ##' \donttest{
 ##' ## Continue unfinished run.
 ##' data(centrarchidae)
-##' ## Run the next line. Then quickly stop R from running to simulate an unexpected termination.
-##' set.seed(1234)
-##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=4000)
-##' ## Now continue the same MCMC chain. First we need to read the 'handle' from file, because
-##' ##    the MCMC chain did not finished properly and the 'handle' object was not created.
-##' handle ## 'object not found'.
-##' handle <- readRDS(file="ratematrixMCMC.85636.mcmc.handle.rds")
-##' handle.cont <- continueMCMC(handle=handle)
-##' ## We can also add some generations to this same chain:
-##' handle.add <- continueMCMC(handle=handle.cont, add.gen=1000)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
+##' ## Now add generations to the same MCMC chain.
+##' handle.add <- continueMCMC(handle=handle, add.gen=10000)
 ##' }
 continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
     ## Need to use the elements of the handle to continue the mcmc.
@@ -107,10 +100,13 @@ continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
             continue <- "add.gen"
             handle$gen <- handle$gen + add.gen ## Update the total gen in the handle.
         }
-        
-        multRegimeMCMC(X=handle$data, phy=handle$phy, start=start, prior=handle$prior, gen=handle$gen, v=handle$mcmc.par$v
-                     , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu, prop=handle$mcmc.par$prop, dir=handle$dir
-                     , outname=handle$outname, regimes=handle$regime.names, traits=handle$trait.names, save.handle=save.handle
+
+        multRegimeMCMC(X=handle$data, phy=handle$phy, start=start, prior=handle$prior,
+                       gen=handle$gen, v=handle$mcmc.par$v
+                     , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu,
+                       prop=handle$mcmc.par$prop, dir=handle$dir
+                     , outname=handle$outname, regimes=handle$regime.names,
+                       traits=handle$trait.names, save.handle=save.handle
                      , continue=continue, add.gen=add.gen, ID=handle$ID)
     }
 

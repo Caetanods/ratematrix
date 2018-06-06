@@ -2,7 +2,7 @@
 % Please edit documentation in R/readMCMC.R
 \name{readMCMC}
 \alias{readMCMC}
-\title{Read the output files from the MCMC}
+\title{Read the MCMC output files}
 \usage{
 readMCMC(handle, burn = 0.25, thin = 100, dir = NULL)
 }
@@ -13,13 +13,13 @@ readMCMC(handle, burn = 0.25, thin = 100, dir = NULL)
 
 \item{thin}{the thinning of the posterior distribution. A number with the interval between each MCMC step to be kept in the posterior distribution (default is 100).}
 
-\item{dir}{directory where output files from the MCMC run are stored. If 'NULL' (default), then files are read from the directory chosen when running the MCMC chain using the argument 'dir' of the 'ratematrixMCMC' function (stored on handle). Otherwise function will read files from 'dir'.}
+\item{dir}{directory with the output files. If 'NULL' (default), then files are read from the directory chosen when running the MCMC chain using the argument 'dir' of the 'ratematrixMCMC' function (stored on handle). Otherwise function will read files from 'dir'.}
 }
 \value{
-List with the MCMC chain for the phylogenetic mean (root value) and evolutionary rate matrices (R). *root* are the values for the phylogenetic mean in matrix format; *matrix* is a list of length equal to the number of matrices fitted to the tree, each of those are lists with the chain of respective R matrices.
+List with the MCMC chain for the phylogenetic mean (root value) and evolutionary rate matrices (R). *root* are the values for the phylogenetic mean in matrix format; *matrix* is a list of length equal to the number of rate regimes fitted to the tree, each of those are lists with the chain of respective R matrices.
 }
 \description{
-Reads the output files from the MCMC with posterior distribution of the parameter estimates.
+Reads the output files from the MCMC with the posterior distribution of the chains.
 }
 \examples{
 \donttest{

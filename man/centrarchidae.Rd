@@ -6,7 +6,7 @@
 \title{Data and phylogenetic tree for Centrarchidae fishes}
 \format{A list with a dataframe with the morphological data ($data) and a 'Simmap' format tree with the regime of "narrow_diet" and "wide_diet" mapped on the tree ($phy.map).}
 \source{
-\href{http://datadryad.org/resource/doi:10.5061/dryad.4t157/1}{Data Dryad}
+http://datadryad.org/resource/doi:10.5061/dryad.4t157/1
 }
 \usage{
 data(centrarchidae)

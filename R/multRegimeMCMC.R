@@ -32,7 +32,7 @@
 ##' @importFrom corpcor rebuild.cov
 ##' @importFrom stats cov2cor
 ##' @noRd
-multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL){
+multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL, ID=NULL){
 
     ## Get the number of regimes.
     p <- length(start[[2]])
@@ -63,12 +63,23 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
     mcmc.par$w_mu <- w_mu
     mcmc.par$prob_sample_root <- prob_sample_root
     mcmc.par$prob_sample_sd <- prob_sample_sd
+    mcmc.par$prop <- prop
     
-    ## Return errors for the options not implemented now.
-    ## if( is.list(phy[[1]]) ) stop( "List of trees not implemented with C++ yet!" )
-    if( !is.null(continue) ) stop( "Continue MCMC is not implemented in C++ yet!" )
-    if( !is.null(add.gen) ) stop( "Continue MCMC is not implemented in C++ yet!" )
-
+    if( !is.null(continue) ){
+        ## Use the provided ID number for the run.
+        mcmc_file_name <- file.path(dir, paste(outname,".", ID, ".mcmc",sep=""))
+        log_file_name <- file.path(dir, paste(outname,".", ID, ".log",sep=""))
+        write_header <- 0
+        gen <- add.gen
+    } else{
+        ## Generate identifier and name for the files:
+        new.ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
+        mcmc_file_name <- file.path(dir, paste(outname,".",new.ID,".mcmc",sep=""))
+        log_file_name <- file.path(dir, paste(outname,".",new.ID,".log",sep=""))
+        write_header <- 1
+    }
+    
+    
     if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
         cat("MCMC chain using a single tree/regime configuration.\n")
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
@@ -110,36 +121,31 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
             names_anc[which(anc[,i] %in% node.to.tip.node[,i]), i] <- 3            
         }
     }
-
-    ## Generate identifier and name for the files:
-    ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
-    mcmc_file_name <- file.path(dir, paste(outname,".",ID,".mcmc",sep=""))
-    log_file_name <- file.path(dir, paste(outname,".",ID,".log",sep=""))
     
     ## Before running need to exclude the generations already done if continuing.
     ## Also add the option to do additional generations.
     if( is.null(continue) ){
-        cat( paste("Start MCMC run ", outname, ".", ID, " with ", gen, " generations.\n", sep="") )
-    } else{ ## BRANCH WITH THE CONTINUE MCMC OPTION. NEED TO IMPLEMENT THIS PART.
+        cat( paste("Start MCMC run ", outname, ".", new.ID, " with ", gen, " generations.\n", sep="") )
+    } else{
         if( continue == "continue" ){
-            ## NEED TO IMPLEMENT THIS PART!
             cat( paste("Continue previous MCMC run ", outname, ".", ID, " for ", add.gen, " generations for a total of ", gen, " generations.\n", sep="") )
             gen <- add.gen
+            new.ID <- ID
         }
         if( continue == "add.gen" ){
-            ## NEED TO IMPLEMENT THIS PART!
             cat( paste("Adding ", add.gen, " generations to previous MCMC run ", outname, ".", ID, "\n", sep="") )
             gen <- add.gen
+            new.ID <- ID
         }
     }
 
     ## Save the handle object:
     if( save.handle ){
-        out <- list(k = k, p = p, ID = ID, dir = dir, outname = outname, trait.names = traits
-                  , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
+        out <- list(k = k, p = p, ID = new.ID, dir = dir, outname = outname, trait.names = traits
+                  , regime.names = regimes, data = t(X), phy = phy, prior = prior, start = start, gen = gen
                   , mcmc.par = mcmc.par)
         class( out ) <- "ratematrix_multi_mcmc"
-        saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
+        saveRDS(out, file = file.path(dir, paste(outname,".",new.ID,".mcmc.handle.rds",sep="")) )
     }
 
     ## Set the objects holding the initial state for the chain.
@@ -181,23 +187,23 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop, dir, 
                           , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
                           , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
                           , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
-                          , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen)
+                          , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen, write_header = write_header)
     }
     if( is.list(phy[[1]]) ){ ## Phy is a list of phylogenies.
         runRatematrixMultiMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
                                , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
                                , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
                                , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name, mcmc_file=mcmc_file_name
-                               , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen)
+                               , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen, write_header = write_header)
 
     }
 
-    cat( paste("Finished MCMC run ", outname, ".", ID, "\n", sep="") )
+    cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
 
     ## Returns 'p = 1' to indentify the results as a single R matrix fitted to the data.
     ## Returns the data, phylogeny, priors and start point to work with other functions.
-    out <- list(k = k, p = p, ID = ID, dir = dir, outname = outname, trait.names = traits
-              , regime.names = regimes, data = X, phy = phy, prior = prior, start = start, gen = gen
+    out <- list(k = k, p = p, ID = new.ID, dir = dir, outname = outname, trait.names = traits
+              , regime.names = regimes, data = t(X), phy = phy, prior = prior, start = start, gen = gen
                , mcmc.par=mcmc.par)
     class( out ) <- "ratematrix_multi_mcmc"
     return( out )

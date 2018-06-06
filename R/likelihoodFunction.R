@@ -1,28 +1,29 @@
-##' Function calculates the log-likelihood for the multivariate Brownian motion model given a phylogenetic tree with rate regimes mapped to it, a data matrix with the trait value for the species, a vector with the phylogenetic means (root values) and a matrix (or list of matrices) with the evolutionary rate matrix for each regime.
+##' Returns the log-likelihood for the multivariate Brownian motion model with 1 or more rate regimes mapped to the tree.
 ##'
-##' If more than one evolutionary rate matrix is used, then the function calculates the likelihood using the multirates prunning algorithm. Otherwise the function uses the three point algorithm to make calculations for the single regime case. The prunning algorithm is implemented in C++ using Rcpp and RcppArmadillo. Please check the R code of this functions which shows how to prepare the objects to call the C++ function.
+##' If two or more rate regimes are mapped to the phylogenetic tree, then the function calculates the likelihood using the new prunning algorithm adapted to fit multiple rate regimes. The prunning algorithm is implemented in C++ using 'Rcpp' and 'RcppArmadillo'. Otherwise the function uses the three point algorithm (Ho and Ané, 2014) to make calculations for the single regime case.
 ##' @title Likelihood function for the multivariate Brownian motion model
 ##' @param data a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label).
-##' @param phy a phylogeny of the class "simmap" with the mapped regimes. The number of evolutionary rate matrices fitted to the phylogeny need to be equal to the number of regimes in phy.
+##' @param phy a phylogeny of the class "simmap" with the mapped regimes or "phylo" for a single rate model.
 ##' @param root a numeric vector with the root value (phylogenetic mean).
-##' @param R a matrix or a list of matrices. If 'R' is a matrix then the likelihood for a single regime is calculated. If 'R' is a list of matrices, then each matrix will be fitted to a regime in 'phy'. The R matrices will be fitted to the regimes in the same order as the columns of 'phy$mapped.edge'.
+##' @param R a matrix or a list of matrices. If 'R' is a matrix then the likelihood for a single regime is calculated. If 'R' is a list of matrices, then each matrix will be fitted to a regime in 'phy' and the length of the list need to match the number of regimes fitted to the tree.
 ##' @return The log likelihood for the multivariate Brownian motion model.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
 ##' \donttest{
-##' ## Set the prior, take a sample from it and compute the log-likelihood.
-##' par.mu <- rbind( c(-10, 10), c(-10, 10) )
-##' par.sd <- rbind( c(0, 10), c(0, 10) )
-##' prior <- makePrior(r=2, p=2, par.mu=par.mu, par.sd=par.sd)
-##' sample.prior <- samplePrior(n=1, prior=prior)
-##' ## Reconstruct the variance-covariance matrix from the correlation matrix and the variances.
-##' ## Note that the model has two evolutionary rate matrix regimes. So we need a list.
-##' R1 <- diag(sample.prior$sd[[1]]^2) %*% sample.prior$matrix[[1]] %*% diag(sample.prior$sd[[1]]^2)
-##' R2 <- diag(sample.prior$sd[[2]]^2) %*% sample.prior$matrix[[2]] %*% diag(sample.prior$sd[[2]]^2)
-##' R <- list( R1, R2 )
-##' ## Compute the log-likelihood.
-##' likelihoodFunction(data=centrarchidae$data, phy=centrarchidae$phy.map, root=sample.prior$mu, R=R)
+##' data( centrarchidae )
+##' root <- colMeans( centrarchidae$data )
+##' Rlist <- list( rbind(c(0.5, 0.1),c(0.1,0.5)), rbind(c(0.5, 0),c(0,0.5)) )
+##' likelihoodFunction(data = centrarchidae$data, phy = centrarchidae$phy.map, root = root
+##'                    , R = Rlist)
+##' ## Get the likelihood for a single regime model:
+##' phy.single <- mergeSimmap(phy = centrarchidae$phy.map, drop.regimes = TRUE)
+##' Rsingle <- rbind(c(0.5, 0.1),c(0.1,0.5))
+##' likelihoodFunction(data = centrarchidae$data, phy = phy.single, root = root, R = Rsingle)
+##' }
+##' @references
+##' \describe{
+##'   \item{}{Ho, L. S. T. and Ané, C. (2014). "A linear-time algorithm for Gaussian and non-Gaussian trait evolution models". Systematic Biology *63*(3):397-408.}
 ##' }
 likelihoodFunction <- function(data, phy, root, R){
 

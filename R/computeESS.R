@@ -1,13 +1,38 @@
-##' Function uses 'coda' function 'effectiveSize' to compute the ESS for each of the parameters of the model separatelly.
-##' 
-##' @title Compute the ESS for the MCMC samples.
+##' Computes the Effective Sample Size (ESS) for the parameters of the model from the MCMC samples.
+##'
+##' Function uses 'coda' function 'effectiveSize' to compute the ESS for each of the parameters of the model separatelly. Values for the ESS is too low indicates poor mixing for the parameter of the model.
+##' @title Compute the ESS for the MCMC samples
 ##' @param mcmc Posterior distribution object. Same as output from 'readMCMC' function.
 ##' @param p Number of evolutionary rate matrix regimes fitted to the phylogenetic tree.
-##' @return A list object with the Effective Sample Size for the root values, evolutionary rates, and evolutionary correlations among the traits.
+##' @return A list object with the ESS value for the root, evolutionary rates, and evolutionary correlations among the traits.
 ##' @author Daniel Caetano and Luke Harmon
 ##' @export
 ##' @importFrom coda mcmc
 ##' @importFrom coda effectiveSize
+##' @examples
+##' \donttest{
+##' data( centrarchidae )
+##' dt.range <- t( apply( centrarchidae$data, 2, range ) )
+##' ## The step size for the root value can be set given the range we need to sample from:
+##' w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
+##' par.sd <- cbind(c(0,0), sqrt( c(10,10) ))
+##' prior <- makePrior(r=2, p=2, den.mu="unif", par.mu=dt.range, den.sd="unif", par.sd=par.sd)
+##' prior.samples <- samplePrior(n = 1000, prior = prior)
+##' start.point <- samplePrior(n=1, prior=prior)
+##' ## Plot the prior. Red line shows the sample from the prior that will set the 
+##' ##      starting point for the MCMC.
+##' plotRatematrix(prior.samples, point.matrix = start.point$matrix, point.color = "red"
+##'                , point.wd = 2)
+##' plotRootValue(prior.samples)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
+##'                          , gen=10000, w_mu=w_mu)
+##' posterior <- readMCMC(handle, burn = 0.2, thin = 10)
+##' ## Again, here the red line shows the starting point of the MCMC.
+##' plotRatematrix( posterior, point.matrix = start.point$matrix, point.color = "red"
+##'                , point.wd = 2)
+##' plotRootValue(posterior)
+##' computeESS(mcmc=posterior, p=2)
+##' }
 computeESS <- function(mcmc, p){
     if( missing(p) ) stop("Need to specify number of regimes as argument 'p'.")
     root <- mcmc$root
