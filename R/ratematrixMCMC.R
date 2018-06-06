@@ -35,8 +35,9 @@
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape Ntip
 ##' @importFrom geiger fitContinuous
+##' @importFrom stats coef
 ##' @examples
-##' \donttest{
+##' \dontrun{
 ##' data( centrarchidae )
 ##' ## Set the limits of the uniform prior on the root based on the observed traits
 ##' data.range <- t( apply( centrarchidae$data, 2, range ) )

@@ -30,7 +30,7 @@ This functions performs a test to check whether the posterior distribution of th
 The test can be performed using the median overlap of the posterior distribution across all elements of the ratematrix or by contrasting each element separatelly. Checking each element independently provides more information. Using the median overlap will result in a single value returned, but it can be insensitive to important changes in the evolutionary rate matrices between regimes. When a posterior distribution with more than two rate regimes is fitted to the data, the function performs tests for all pairwise combinations.
 }
 \examples{
-\donttest{
+\dontrun{
 data( centrarchidae )
 dt.range <- t( apply( centrarchidae$data, 2, range ) )
 ## The step size for the root value can be set given the range we need to sample from:

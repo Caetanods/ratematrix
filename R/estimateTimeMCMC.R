@@ -11,7 +11,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
-##' \donttest{
+##' \dontrun{
 ##' data(centrarchidae)
 ##' estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
 ##' }

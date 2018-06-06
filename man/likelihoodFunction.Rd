@@ -25,7 +25,7 @@ Returns the log-likelihood for the multivariate Brownian motion model with 1 or 
 If two or more rate regimes are mapped to the phylogenetic tree, then the function calculates the likelihood using the new prunning algorithm adapted to fit multiple rate regimes. The prunning algorithm is implemented in C++ using 'Rcpp' and 'RcppArmadillo'. Otherwise the function uses the three point algorithm (Ho and Ané, 2014) to make calculations for the single regime case.
 }
 \examples{
-\donttest{
+\dontrun{
 data( centrarchidae )
 root <- colMeans( centrarchidae$data )
 Rlist <- list( rbind(c(0.5, 0.1),c(0.1,0.5)), rbind(c(0.5, 0),c(0,0.5)) )

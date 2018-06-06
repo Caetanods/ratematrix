@@ -9,7 +9,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
-##' \donttest{
+##' \dontrun{
 ##' ## Load data
 ##' data(centrarchidae)
 ##' ## Run MCMC. This is just a very short chain.

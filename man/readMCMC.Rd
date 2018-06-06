@@ -22,7 +22,7 @@ List with the MCMC chain for the phylogenetic mean (root value) and evolutionary
 Reads the output files from the MCMC with the posterior distribution of the chains.
 }
 \examples{
-\donttest{
+\dontrun{
 ## Load data
 data(centrarchidae)
 ## Run MCMC. This is just a very short chain.

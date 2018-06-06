@@ -21,7 +21,7 @@ Returns a list with length equal to the number of regimes. Each list element is 
 One can plot the correlation values using boxplots and compare their distribution. Pairwise statistical tests across the samples is also possible.
 }
 \examples{
-\donttest{
+\dontrun{
 data( centrarchidae )
 dt.range <- t( apply( centrarchidae$data, 2, range ) )
 ## The step size for the root value can be set given the range we need to sample from:

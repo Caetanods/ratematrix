@@ -14,7 +14,7 @@
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
-##' \donttest{
+##' \dontrun{
 ##' library( phytools ) ## Need phytools for this example.
 ##' data(centrarchidae)
 ##' plot( centrarchidae$phy.map )

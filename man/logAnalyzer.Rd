@@ -34,7 +34,7 @@ The acceptance ratio is the frequency in which any proposal step for that parame
 If you provided a list of phylogenies to the MCMC chain, then the sampler will randomly sample one of these phylogenies and use it to compute the likelihood of the model at each step of the MCMC. The pool of trees and/or regime configurations provided effectivelly works as a prior distribution. It is important to note that this is not equivalent to a joint estimation of the comparative model of trait evolution and phylogenetic tree, since the moves proposed by the MCMC chain are restricted to the parameters of the phylogenetic comparative model. Some of the phylogenies provided in the pool might be accepted more than others during the MCMC. When this happens, the acceptance ratio for a given tree, or set of trees, will be relativelly lower when compared to the rest. This means that the information presented in such a tree (or trees) is less represented in the posterior distribution than other trees. If this issue happens, we advise users to investigate whether these trees show a different pattern (potentially biologically informative) when compared to the other set of trees. Additionally, one might also repeat the analysis with these trees in separate in order to check whether parameters estimates are divergent.
 }
 \examples{
-\donttest{
+\dontrun{
 ## Load data
 data(centrarchidae)
 ## Run MCMC. This is just a very short chain.
