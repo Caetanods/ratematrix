@@ -38,7 +38,8 @@ If you provided a list of phylogenies to the MCMC chain, then the sampler will r
 ## Load data
 data(centrarchidae)
 ## Run MCMC. This is just a very short chain.
-handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000, dir=tempdir())
+handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000
+                         , dir=tempdir())
 ## Load posterior distribution, make plots and check the log.
 posterior <- readMCMC(handle, burn=0.1, thin=10)
 plotRatematrix(posterior)
