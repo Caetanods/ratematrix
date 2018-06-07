@@ -2,20 +2,55 @@
 
 *Daniel S. Caetano and Luke J. Harmon*
 
-## THIS IS THE DEVELOPMENT VERSION!
-This package version includes all the new things. Some are stable and some are not. Please send me a message if you need to use some of the development features right now. They will be soon in the stable version of the package.
+## Description
 
-'ratematrixMCMC' function in this version is implemented on C++ and has a MUCH BETTER performance.
+R package for the study of patterns of evolutionary correlation among two or more traits using phylogenetic trees. 'ratematrix' offers a suite of tools to estimate the evolutionary rate matrix (R) incorporating uncertainty in the form of a posterior distribution using Markov-chain Monte Carlo.
 
-To install you need to:
+For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article available at (http://biorxiv.org/content/early/2017/01/25/102939)
+
+If you use the package please cite "Caetano, D. S., and L. J. Harmon. 2017. ratematrix: an R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecolology and Evolution http://dx.doi.org/10.1111%2F2041-210X.12826 "
+
+## Examples in the literature
+
+Hermansen, J. S., J. Starrfelt, K. L. Voje, and N. C. Stenseth. 2018. Macroevolutionary consequences of sexual conflict. Biology Letters 14:20180186. (http://rsbl.royalsocietypublishing.org/content/14/6/20180186)
+
+Slater, G. J., and A. R. Friscia. 2018. Hierarchy, Morphology, and Adaptive Radiation: a Test of Osborn’s Law in the Carnivora. bioRxiv 285700. (https://www.biorxiv.org/content/early/2018/03/20/285700)
+
+## Installation
+
+**For Linux and Mac:**
 
 ```{r,R.options=list(max.print=20)}
 install.packages("devtools")
 library(devtools)
-install_github("Caetanods/ratematrix", ref="dev")
+install_github("Caetanods/ratematrix")
+```
+
+NOTE: In case you are working with an older version of R and have problems to install the package using 'devtools', try to set this option as a workaround:
+```{r,R.options=list(max.print=20)}
+options(download.file.method = "wget")
+```
+
+**For Windows:**
+
+In this case you need to use the binary file. You can download it from this Dropbox link: https://www.dropbox.com/s/l1h2mumsgwsfzck/ratematrix_1.0.tar.gz?dl=0 [please send me an email message if the file is not available]
+
+Then install using the following lines. Of course, need to fix the path to the file to match the directory on your computer.
+
+```{r,R.options=list(max.print=20)}
+## First install the dependencies:
+install.packages(pkgs=c("ape", "geiger", "coda", "corpcor", "MASS", "phylolm", "readr"
+                        , "mvMORPH", "Rcpp", "ellipse"))
+## Now install the 'ratematrix' package from binary:
+install.packages("C:/Users/minion/Desktop/ratematrix_1.0.zip", repos = NULL, type = "win.binary")
+## Try to load the package.
+library( ratematrix )
+## If you get an error message. Check if additional packages need to be installed.
 ```
 
 ## News and updates
+
+**Jun-2018 (v 1.0):** MAJOR UPDATE! This is the list of changes: a) Implemented C++ code for the MCMC (Major speed improvement!), b) Now package works on Linux, Mac and Window systems!, c) Changed default prior (see help page for 'ratematrixMCMC', d) added new functions to facilitate computing the Effective Sample Size, extracting the evolutionary correlations among other things, e) updated the usability of many functions. (please check the help pages and examples for the updates), f) package now follow RCran policy. See change to 'dir' argument on function 'ratematrixMCMC'.
 
 **May-2018 (v 0.3):** Fix minor bugs. Fix function to estimate the MCMC with no regime (single ratematrix fitted to the tree). Fix the call to the likelihood function outside the MCMC (interface issue only!). Corrects warnings from RCran checks. Almost ready for RCran.
 
@@ -29,31 +64,4 @@ install_github("Caetanods/ratematrix", ref="dev")
 
 **Jun-2017 (v 0.25):** Add package 'vignette' with tutorial for setting a custom starting point for the MCMC.
 
-## Description
-
-R package for the study of patterns of evolutionary correlation among two or more traits using phylogenetic trees. 'ratematrix' offers a suite of tools to estimate the evolutionary rate matrix (R) incorporating uncertainty in the form of a posterior distribution using Markov-chain Monte Carlo. The package allows for quick set-up and run of MCMC chain while also providing tools for users to customize their own MCMC chains.
-
-For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article available at (http://biorxiv.org/content/early/2017/01/25/102939)
-
-If you use the package please cite "Caetano, D. S., and L. J. Harmon. 2017. ratematrix: an R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecolology and Evolution http://dx.doi.org/10.1111%2F2041-210X.12826 "
-
-Please contact the author (caetanods1[at]gmail.com) if you have any question, problem or suggestion for the package. The authors also watch and update the github 'issues' tab.
-
-Installation depends on 'devtools'.
-```{r,R.options=list(max.print=20)}
-install.packages("devtools")
-library(devtools)
-install_github("Caetanods/ratematrix", build_vignettes = TRUE)
-```
-
-In case you are working with an older version of R and have problems to install the package using 'devtools', try to set this option as a workaround:
-```{r,R.options=list(max.print=20)}
-options(download.file.method = "wget")
-```
-
-The package offers some tutorials in form of 'vignettes'. To access use:
-```{r,R.options=list(max.print=20)}
-browseVignettes("ratematrix")
-```
-
-[Please check the wiki page for documentation and tutorials](https://github.com/Caetanods/ratematrix/wiki/Home).
+Please contact the author (caetanods1[at]gmail.com) if you have any question, problem or suggestion for the package.
