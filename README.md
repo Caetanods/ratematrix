@@ -33,7 +33,7 @@ options(download.file.method = "wget")
 
 **For Windows:**
 
-In this case you need to use the binary file. You can download it from this Dropbox link: https://www.dropbox.com/s/l1h2mumsgwsfzck/ratematrix_1.0.tar.gz?dl=0 [please send me an email message if the file is not available]
+In this case you need to use the binary file. You can download it from this Dropbox link: https://www.dropbox.com/s/uvga0x04fakmiji/ratematrix_1.0.zip?dl=0 [please send me an email message if the file is not available]
 
 Then install using the following lines. Of course, need to fix the path to the file to match the directory on your computer.
 
