@@ -12,7 +12,6 @@
 ##' @param w_sd numeric. Width of the uniform sliding window proposal for the vector of standard deviations.
 ##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means.
 ##' @param prop vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each generation, second is the probability that the evolutionary rate matrix will be updated instead.
-##' @param chunk numeric. Number of generations that the MCMC chain will be stored in memory before writing to file. At each 'chunk' generations the function will write the block stored in memory to a file and erase all but the last generation, which is used to continue the MCMC chain.
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
@@ -23,7 +22,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
 ##' @noRd
-singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.3,0.7), chunk, dir=NULL, outname="single_R_fast", IDlen=5
+singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.1,0.45,0.45), dir=NULL, outname="single_R_fast", IDlen=5
                            , traits, save.handle, continue=NULL, add.gen, ID=NULL){
 
     ## Save the 'mcmc.par' list for the mcmc.handle:
@@ -32,51 +31,46 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     mcmc.par$w_sd <- w_sd
     mcmc.par$w_mu <- w_mu
     mcmc.par$prop <- prop
-    mcmc.par$chunk <- chunk
-    
     
     ## Creates data and chain cache:
     cache.data <- list()
     cache.chain <- list()
     cache.data$k <- ncol(X) ## Number of traits.
     cache.data$X <- X
+    cache.data$prop <- prop ## Necessary to allow for control of sd and corr proposals.
 
     ## Creates MCMC chain cache:
     ## Here trying to initialize the chain cache with the correct number of elements in the list.
     ## Note that the length is dependent on the 'chunk' and not the total of the 'gen'.
     ## This is a better approach to the loop.
-    cache.chain$chain <- vector(mode="list", length=chunk+1) ## Chain list.
-    cache.chain$chain[[1]] <- start ## Starting value for the chain.
-    cache.chain$chain[[1]][[4]] <- rebuild.cov(r=cov2cor(start[[2]]), v=start[[3]]^2)
-    ## The loglik function from mvMORPH does not need the b vector, but the root value.
-                                        #cache.chain$root.curr <- as.vector(cache.chain$chain[[1]][[1]])
-    cache.chain$lik <- vector(mode="numeric", length=chunk+1) ## Lik vector.
+    cache.chain$chain <- start ## Starting value for the chain.
+    cache.chain$chain[[4]] <- rebuild.cov(r=stats::cov2cor(start[[2]]), v=start[[3]]^2)
     
     if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
         cache.data$n <- length(phy[[1]]$tip.label) ## Number of tips.
         n.phy <- length(phy)
         init.phylo <- phy[[ sample(1:n.phy, size=1) ]]
-        cache.chain$lik[1] <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=init.phylo
-                                               , root=as.vector(cache.chain$chain[[1]][[1]])
-                                               , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
+        cache.chain$lik <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=init.phylo
+                                               , root=as.vector(cache.chain$chain[[1]])
+                                               , R=cache.chain$chain[[4]]) ## Lik start value.
     }
 
     if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
         cache.data$n <- length(phy$tip.label)
-        cache.chain$lik[1] <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
-                                               , root=as.vector(cache.chain$chain[[1]][[1]])
-                                               , R=cache.chain$chain[[1]][[4]]) ## Lik start value.
+        cache.chain$lik <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
+                                               , root=as.vector(cache.chain$chain[[1]])
+                                               , R=cache.chain$chain[[4]]) ## Lik start value.
     }
-    cat( paste("Starting point log-likelihood: ", cache.chain$lik[1], "\n", sep="") )
+    cat( paste("Starting point log-likelihood: ", cache.chain$lik, "\n", sep="") )
     
-    cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]][[1]]) ## Prior log lik starting value.
-    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[1]][[4]]) ## Prior log lik starting value.
+    cache.chain$curr.root.prior <- prior[[1]](cache.chain$chain[[1]]) ## Prior log lik starting value.
+    cache.chain$curr.r.prior <- prior[[2]](cache.chain$chain[[4]]) ## Prior log lik starting value.
 
     ## Will need to keep track of the Jacobian for the correlation matrix.
-    decom <- decompose.cov( cache.chain$chain[[1]][[2]] )
+    decom <- decompose.cov( cache.chain$chain[[2]] )
     cache.chain$curr.r.jacobian <- sum( sapply(1:cache.data$k, function(x) log( decom$v[x]) ) ) * log( (cache.data$k-1)/2 )
     
-    cache.chain$curr.sd.prior <- prior[[3]](cache.chain$chain[[1]][[3]]) ## Prior log lik starting value.
+    cache.chain$curr.sd.prior <- prior[[3]](cache.chain$chain[[3]]) ## Prior log lik starting value.
 
     ## Need to check if this is a continuing MCMC before creating new ID and files:
     if( is.null(continue) ){
@@ -134,10 +128,6 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
         }
     }
     
-    ## Calculate chunks and create write point.
-    block <- gen/chunk
-    ##if(is.integer(block) == FALSE) stop("The division 'gen/chunk' needs to return an INTEGER value.")
-
     ## Start counter for the acceptance ratio and loglik.
     count <- 2
 
@@ -150,33 +140,29 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
         saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
     }
 
-    ## Make loop equal to the number of blocks:
-    for(jj in 1:block){
+    ## Create vector of probabilities for the sample of root vs. matrix:
+    if( prop[1] > 1 ) stop("Wrong probabilities set to 'prop' argument. Check help page.")
+    mcmc.prop <- c(prop[1], 1-prop[1]) / sum( c(prop[1], 1-prop[1]) )
+    ## Loop for the whole MCMC
+    for(i in 2:gen ){
 
-        ## Loop over the generations in each chunk:
-        for(i in 2:(chunk+1) ){
+        ## Proposals will be sampled given the 'prop' vector of probabilities.
 
-            ## Proposals will be sampled given the 'prop' vector of probabilities.
+        ## #########################################
+        ## Sample which parameter is updated:
+        ## 'prop' is a vector of probabilities for 'update.function' 1 or 2.
+        ## 1 = phylo root and 2 = R matrix.
+        up <- sample(x = c(1,2), size = 1, prob = mcmc.prop)
+        ## #########################################
 
-            ## #########################################
-            ## Sample which parameter is updated:
-            ## 'prop' is a vector of probabilities for 'update.function' 1 or 2.
-            ## 1 = phylo root and 2 = R matrix.
-            up <- sample(x = c(1,2), size = 1, prob = prop)
-            ## #########################################
+        ## #########################################
+        ## Update and accept reject steps:
+        cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w_sd, w_mu, v, files, phy)
+        ## #########################################
 
-            ## #########################################
-            ## Update and accept reject steps:
-            cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w_sd, w_mu, v, iter=i, count, files, phy)
-            ## Update counter.
-            count <- count+1
-            ## #########################################
-            
-        }
-        
         ## #########################################
         ## Write to file:
-        cache.chain <- writeToFile(files, cache.chain, chunk)
+        writeToFile(files, cache.chain)
         ## #########################################
         
     }

@@ -4,10 +4,12 @@
 \alias{print.ratematrix_single_chain}
 \title{Print method for the "ratematrix_single_chain" class.}
 \usage{
-\method{print}{ratematrix_single_chain}(x)
+\method{print}{ratematrix_single_chain}(x, ...)
 }
 \arguments{
 \item{x}{The object.}
+
+\item{...}{Additional arguments. Not used here.}
 }
 \description{
 Print method for the "ratematrix_single_chain" class.

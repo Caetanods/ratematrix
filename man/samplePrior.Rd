@@ -11,47 +11,44 @@ samplePrior(n, prior, sample.sd = TRUE, rebuild.R = FALSE)
 
 \item{prior}{the object with the prior function. See 'makePrior' for more information.}
 
-\item{sample.sd}{whether the function should sample the vector of standard deviations independently from the correlation matrices. If set to FALSE, the samples for standard deviation will be derived from the covariance matrices. If set to TRUE (default) then standard deviations are independently sampled from the own prior distribution and are not derived from the samples of the correlation matrix.}
+\item{sample.sd}{whether the function should sample the vector of standard deviations independently from the correlation matrices. See 'Details'.}
 
-\item{rebuild.R}{whether the prior sample should return a evolutionary rate matrix rather than a correlation matrix and a vector of standard deviations (default is FALSE).}
+\item{rebuild.R}{whether the prior sample should return an evolutionary rate matrix rather than a correlation matrix and a vector of standard deviations (default is FALSE). See 'Details'.}
 }
 \value{
 A list with samples from the prior distribution. The structure of this list is the same as required by the parameter 'start' of the 'ratematrixMCMC'.
 }
 \description{
-Generates samples from the prior distribution used in the MCMC chain.
+Take samples from the prior distribution.
 }
 \details{
-The function will inherit the same parameters from "make.prior.zhang" function.
+The prior samples from this function can be used to start the MCMC sampler. See the examples below. \cr
+\cr
+If 'sample.sd' is set to FALSE the samples from the standard deviations will be derived from the covariance matrices. If 'sample.sd' is set to TRUE (default) then standard deviations are independently sampled from their own prior distribution and are not derived from the samples of the correlation matrix. Option 'sample.sd = TRUE' is the one used during the MCMC. \cr
+ \cr
+The option 'rebuild.R' controls if the samples from the posterior distribution should return the standard deviation separated from the correlation matrix or if these elements should be used to rebuild the covariance matrix. Set 'rebuild.R' to TRUE if you want to obtain the covariance matrices. Otherwise, the 'plotPrior' function works better when 'rebuild.R' is set to FALSE.
 }
 \examples{
 \donttest{
-par.mu <- rbind( c(-10, 10), c(-10, 10), c(-10, 10) )
-par.sd <- c(0, 10)
-prior <- makePrior(r=3, p=1, par.mu=par.mu, par.sd=par.sd)
-## Sample prior. Standard deviation sampled independently.
-samples.ind <- samplePrior(n=1000, prior=prior, sample.sd=TRUE)
-## Now plot.
-plotRatematrix(samples.ind, set.xlim=c(-100,100))
-## Sample prior. Now standard deviation is NOT sampled, just derived from the vcv matrices
-##    sampled from the inverse-Wishart distribution.
-samples.cor <- samplePrior(n=1000, prior=prior, sample.sd=FALSE)
-## Note how the inverse-Wishart is much more informative than the 'separation strategy'.
-##    The x axis is the same.
-plotRatematrix(samples.cor, set.xlim=c(-100,100))
-
-## We can also use the sample from the prior to start the MCMC:
-par.mu <- rbind( c(-10, 10), c(-10, 10) )
-par.sd <- rbind( c(0, 10), c(0, 10) )
-prior <- makePrior(r=2, p=2, par.mu=par.mu, par.sd=par.sd)
-## Need to take a single sample to be used as the starting point.
-start <- samplePrior(n=1, prior=prior)
-data(centrarchidae)
-handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000, start=start)
+data( centrarchidae )
+dt.range <- t( apply( centrarchidae$data, 2, range ) )
+## The step size for the root value can be set given the range we need to sample from:
+w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
+par.sd <- cbind(c(0,0), sqrt( c(10,10) ))
+prior <- makePrior(r=2, p=2, den.mu="unif", par.mu=dt.range, den.sd="unif", par.sd=par.sd)
+prior.samples <- samplePrior(n = 1000, prior = prior)
+start.point <- samplePrior(n=1, prior=prior)
+## Plot the prior. Red line shows the sample from the prior that will set the starting 
+##        point for the MCMC.
+plotRatematrix(prior.samples, point.matrix = start.point$matrix, point.color = "red"
+               , point.wd = 2)
+handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
+                         , gen=10000, w_mu=w_mu, dir=tempdir())
+posterior <- readMCMC(handle, burn = 0.2, thin = 10)
+## Again, here the red line shows the starting point of the MCMC.
+plotRatematrix( posterior, point.matrix = start.point$matrix, point.color = "red"
+               , point.wd = 2)
 }
-}
-\seealso{
-\code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the samples from the prior.
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

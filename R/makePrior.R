@@ -1,43 +1,46 @@
-##' Generates prior densities for the MCMC sampler. This function is integrated within the 'ratematrixMCMC' function that runs the MCMC chain. However, this implementation allows for more control over the prior distribution for the analysis. The prior functions produced here can be easily passed to the 'ratematrixMCMC' function.
+##' Generates prior densities for the MCMC sampler.
 ##'
-##' Independent priors are defined for the phylogenetic mean, the vector of standard deviations and the structure of correlation. Thus, allowing for a wide range of configurations. Priors for the phylogenetic mean and the standard deviations can be uniform or normal (lognormal in the case of the standard deviations). The prior on the matrix of correlations is distributed as an inverse-Wishart and can be set to a marginally uniform prior or to be centered around some custom variance-covariace matrix. \cr
+##' This function is integrated within the 'ratematrixMCMC' function that runs the MCMC chain. However, this implementation allows for more control over the prior distribution for the analysis. The prior functions produced here can be easily passed to the 'ratematrixMCMC' function. See examples and more information in the 'ratematrixMCMC' function. \cr
 ##' \cr
-##' The prior for the model has two elements, one is the vector of phylogenetic means and the other is the evolutionary rate matrix regimes fitted to different branches of the tree. The vector of root values can be distributed as any continuous distribution, in this implementation the two options are the uniform and the normal distribution. On the other hand, the prior distribution for the rate matrix need to be more elaborated. Here we divide the variance-covariance matrix into two elements, the correlation matrix and the vector of standard deviations. Standard deviations can be modelled as any continuous and positive distribution, here we use a uniform or a log-normal distribution. The correlation matrix need to be derived from a distribution of covariance matrices known as the inverse-Wishart. The inverse-Wishart is controlled by two parameters; the scale matrix (Sigma) and the degrees of freedom (nu). Any variance-covariance matrix can be used as the scale matrix. To set a marginally uniform prior for the correlation structure of the evolutionary rate matrices sampled for the model one need to set 'Sigma' as an identity matrix and 'nu' as the dimension of the matrix +1. This is performed automatically by the function when the option 'unif.corr' is set to TRUE.
+##' One can use the output of this function in order to sample from the prior using the 'samplePrior' function. A sample from the prior can be set as the starting point of the MCMC sampler. \cr
+##' \cr
+##' Independent priors are defined for the phylogenetic mean, the vector of standard deviations and the structure of correlation, allowing for a wide range of configurations. Priors for the phylogenetic mean and the standard deviations can be uniform or normal (lognormal in the case of the standard deviations). The prior on the matrix of correlations is distributed as an inverse-Wishart and can be set to a marginally uniform prior or to be centered around a given variance-covariace matrix. \cr
+##' \cr
+##' The prior for the model has two elements, one is the vector of phylogenetic means (or the root values) and the other is the evolutionary rate matrices (the vcv matrices for the rate of the multivariate BM model). The vector of root values can be distributed as any continuous distribution. In this implementation the two options are the uniform and the normal distribution. On the other hand, the prior distribution for the rate matrices need to be more elaborated. Here we divide the variance-covariance matrix into two elements, a correlation matrix and a vector of standard deviations. Standard deviations can be modelled as any continuous distrbuted of positive values. Here we use a uniform or a log-normal distribution. The correlation matrix need to be derived from a distribution of covariance matrices known as the inverse-Wishart. The inverse-Wishart is controlled by two parameters; the scale matrix (Sigma) and the degrees of freedom (nu). Any variance-covariance matrix can be used as the scale matrix. To set a marginally uniform prior for the correlation structure of the evolutionary rate matrices sampled for the model one need to set 'Sigma' as an identity matrix and 'nu' as the dimension of the matrix +1. This is performed automatically by the function when the option 'unif.corr' is set to TRUE.
 ##' @title Generate prior distributions for the multivariate Brownian motion model
 ##' @param r number of traits in the model.
 ##' @param p number of evolutionary rate matrix regimes fitted to the phylogeny.
-##' @param den.mu a string to set the density type for the phylogenetic mean. One of uniform ("unif", default) or normal ("norm") distribution.
-##' @param par.mu the parameters for the prior density on the vector of phylogenetic means. Matrix with 2 columns and number of rows equal to the number of traits (r). When the density ('den.mu') is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm̉" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.
-##' @param den.sd a string to set the density type for the vector of standard deviations. One of uniform ("unif", default) or log-normal ("lnorm") distribution.
-##' @param par.sd the parameters for the density of standard deviations. Matrix with 2 columns and number of rows equal to the number of evolutionary rate matrix regimes fitted to the phylogenetic tree (p). When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "den.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(standard deviations) for the distributions. If there is only one regime fitted to the tree, then 'par.sd' is a vector with length 2.
+##' @param den.mu one of "unif" (uniform prior, default) or "norm" (normal prior).
+##' @param par.mu the parameters for the prior density on the vector of phylogenetic means. Matrix with 2 columns and number of rows equal to the number of traits (r). When the density ('den.mu') is set to "unif" then par.mu[,1] is the minimum values and par.mu[,2] is the maximum values for each trait. When the density is set to "norm" then par.mu[,1] is the mean values and par.mu[,2] is the standard deviation values for the set of normal densities around the vector of phylogenetic means.
+##' @param den.sd one of "unif" (uniform prior, default) or "lnorm" (log-normal prior).
+##' @param par.sd the parameters for the density of standard deviations. Matrix with 2 columns and number of rows equal to the number of evolutionary rate matrix regimes fitted to the phylogenetic tree (p). When "den.sd" is set to "unif", then 'par.sd[,1]' (the minimum) need to be a vector of positive values and 'par.sd[,2]' is the vector of maximum values. When "den.sd" is set to "lnorm" then 'par.sd[,1]' is the vector of log(means) for the density and 'par.sd[,2]' is the vector of log(standard deviations) for the distributions. If there is only one regime fitted to the tree, then 'par.sd' is a vector with length 2 (e.g., c(min, max)).
 ##' @param unif.corr whether the correlation structure of the prior distribution on the Sigma matrix is flat. This sets an uniformative prior (as uninformative as possible) to the evolutionary correlations among the traits. 
-##' @param Sigma the scale matrix to be used as a parameter for the inverse-Wishart distribution responsible for the generation of the correlation matrices. Need to be a list of matrices with number of elements equal to the number of evolutionary rate regimes fitted to the phylogeny, in the case of a single regime, this needs to be a matrix (not a list). The scale matrix is somewhat analogous to the mean of a normal distribution. Thus, if 'Sigma' show strong positive correlation among traits, then the distribution generated by the prior will vary around positive correlations and, as a result, be significantly informative. This parameter will be ignored if 'unif.corr' is set to TRUE.
-##' @param nu the degrees of freedom parameter for the inverse-Wishart distribution. Need to be a numeric vector with length equal to the number of evolutionary rate matrix regimes fitted to tree. Larger values of 'nu' will make the prior distribution closer around 'Sigma', where small values will increase the variance. This parameter is analogous to the variance parameter of a normal distribution, however, it has an inverted relationship.
-##' @return List of density functions that calculated the log-likelihood given parameter values, the log-likelihood of the prior is equal to the sum of the prior for the root value (first element), the prior for the correlation matrix (second element), and the prior for the vector of standard deviations (third element). The fourth element of the list is a list with the parameters used to specify the prior.
+##' @param Sigma the scale matrix to be used as a parameter for the inverse-Wishart distribution responsible for the generation of the correlation matrices. Need to be a list of matrices with number of elements equal to the number of evolutionary rate regimes fitted to the phylogeny, in the case of a single regime, this needs to be a matrix (not a list). The scale matrix is somewhat analogous to the mean of a normal distribution. Thus, if 'Sigma' show strong positive correlation among traits, then the distribution generated by the prior will vary around positive correlations. This parameter will be ignored if 'unif.corr' is set to TRUE.
+##' @param nu the degrees of freedom parameter for the inverse-Wishart distribution. Need to be a numeric vector with length equal to the number of evolutionary rate matrix regimes fitted to tree. Larger values of 'nu' will make the prior distribution closer around 'Sigma' and small values will increase the variance. This parameter is analogous to the variance parameter of a normal distribution, however, it has an inverted relationship.
+##' @return List of density functions to compute the log prior probability of parameter values.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ estimateTimeMCMC }} to estimate the time for the MCMC chain, \code{\link{ readMCMC }} for reading the output files, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the posterior,  \code{\link{ checkConvergence }} to check convergence, \code{\link{ testRatematrix }} to perform tests, and \code{\link{ logAnalyzer }} to read and analyze the log file.
 ##' @examples
-##' ## Set the prior, take a sample from it and compute the log-likelihood.
-##' par.mu <- rbind( c(-10, 10), c(-10, 10) )
-##' par.sd <- rbind( c(0, 10), c(0, 10) )
-##' prior <- makePrior(r=2, p=2, par.mu=par.mu, par.sd=par.sd)
-##' sample.prior <- samplePrior(n=1, prior=prior)
-##' ## Reconstruct the variance-covariance matrix from the correlation matrix and the variances.
-##' ## Note that the model has two evolutionary rate matrix regimes. So we need a list.
-##' R1 <- diag(sample.prior$sd[[1]]^2) %*% sample.prior$matrix[[1]] %*% diag(sample.prior$sd[[1]]^2)
-##' R2 <- diag(sample.prior$sd[[2]]^2) %*% sample.prior$matrix[[2]] %*% diag(sample.prior$sd[[2]]^2)
-##' R <- list( R1, R2 )
-##' 
-##' ## Load the data
+##' \donttest{
 ##' data( centrarchidae )
-##' ## Compute the log-likelihood.
-##' likelihoodFunction(data=centrarchidae$data, phy=centrarchidae$phy.map, root=sample.prior$mu, R=R)
-##' 
-##' ## Start a MCMC chain.
-##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000, prior=prior)
-##' posterior <- readMCMC(handle, burn=0.25, thin=1)
-##' plotRatematrix(posterior)
+##' ## Set the limits of the uniform prior on the root based on the observed traits
+##' data.range <- t( apply( centrarchidae$data, 2, range ) )
+##' ## The step size for the root value can be set given the range we need to sample from:
+##' w_mu <- ( data.range[,2] - data.range[,1] ) / 10
+##' ## Set a reasonable value for the uniform prior distribution for the standard deviation.
+##' ## Here the minimum rate for the traits is 0 and the maximum is 10 ( using 'sqrt(10)' to 
+##' ##      transform to standard deviation).
+##' par.sd <- cbind(c(0,0), sqrt( c(10,10) ))
+##' ## The proposal step on the standard deviation is a multiplier. So 0.2 is good enough for 
+##' ##     most cases.
+##' w_sd <- matrix(0.2, ncol = 2, nrow = 2)
+##' prior <- makePrior(r = 2, p = 2, den.mu = "unif", par.mu = data.range, den.sd = "unif"
+##'                    , par.sd = par.sd)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
+##'                          , gen=50000, w_mu=w_mu, w_sd=w_sd, dir=tempdir())
+##' posterior <- readMCMC(handle, burn = 0.2, thin = 10)
+##' plotRatematrix( posterior )
+##' }
 makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.corr=TRUE, Sigma=NULL, nu=NULL){
 
     ## Make a warning if 'unif.corr' is TRUE and 'Sigma' or 'nu' has values.
@@ -67,16 +70,17 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
     ## Check the number of parameters sent to the function. Those need to match.
     lpmu <- nrow(par.mu)
     if(!r == lpmu) stop("number of rows of 'par.mu' need to be equal to the number of traits in the model (r).")
-    if( is.vector(par.sd) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree.")
+    if( is.vector(par.sd) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree. So p == nrow(par.sd).")
     if( is.matrix(par.sd) && !p == nrow(par.sd) ) stop("p need to be equal to the regimes fitted to the tree. So p == nrow(par.sd).")    
     ## lpsd <- nrow(par.sd)
     ## if(!p == lpsd) stop("number of rows of 'par.sd' need to be equal to the number of R matrices fitted to the data (p).")
     if( unif.corr == FALSE ){
-        if( is.matrix(Sigma) && p > 1 ) stop("p need to be equal to the regimes fitted to the tree.")
-        if( is.list(Sigma) && !p == length(Sigma) ) stop("length of 'Sigma' need to be equal to the length of 'nu'. So length(Sigma) == length(nu).")
+        if( is.matrix(Sigma) && p > 1 ) stop("Sigma need to be a list with elements equal to the number of regimes.")
+        if( is.list(Sigma) && !p == length(Sigma) ) stop("length of 'Sigma' need to be equal to the number of regimes fitted to the tree. So length(Sigma) == p.")
+        ## if( is.list(Sigma) && !p == length(Sigma) ) stop("length of 'Sigma' need to be equal to the length of 'nu'. So length(Sigma) == length(nu).")
         ## lsig <- length(Sigma)
         lnu <- length(nu)
-        if(!p == lnu) stop("length of 'Sigma' and 'nu' need to be equal to the number of R matrices fitted to the data (p). So length(Sigma) == length(nu) == p.")
+        if(!p == lnu) stop("length of 'Sigma' and 'nu' need to be equal to the number of regimes fitted to the data. So length(Sigma) == length(nu) == p.")
     }
 
     ## Maybe add test for the correct parameter values? Would improve user experience.
@@ -85,28 +89,28 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
     ## There was a problem in this part. The list of function with level 2 was having a strange behavior due to some environment thing.
 
     if(den.mu == "unif"){
-        mn <- function(x) sum( sapply(1:r, function(i) dunif(x[i], min=par.mu[i,1], max=par.mu[i,2], log=TRUE) ) )
+        mn <- function(x) sum( sapply(1:r, function(i) stats::dunif(x[i], min=par.mu[i,1], max=par.mu[i,2], log=TRUE) ) )
     }
     if(den.mu == "norm"){
-        mn <- function(x) sum( sapply(1:r, function(i) dnorm(x[i], mean=par.mu[i,1], sd=par.mu[i,2], log=TRUE) ) )
+        mn <- function(x) sum( sapply(1:r, function(i) stats::dnorm(x[i], mean=par.mu[i,1], sd=par.mu[i,2], log=TRUE) ) )
     }
 
     if( p == 1 ){
         if(den.sd == "unif"){
-            sd <- function(x) sum( dunif(x, min=par.sd[1], max=par.sd[2], log=TRUE) )
+            sd <- function(x) sum( stats::dunif(x, min=par.sd[1], max=par.sd[2], log=TRUE) )
         }
         if(den.sd == "lnorm"){
-            sd <- function(x) sum( dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
+            sd <- function(x) sum( stats::dlnorm(x, meanlog=par.sd[1], sdlog=par.sd[2], log=TRUE) )
         }
     } else{
         ## This thing below might solve the problem:
         if(den.sd == "unif"){
             ## The 'x' elements need to match with 'par.sd' rows.
-            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE) ) ) )
+            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) stats::dunif(y, min=par.sd[i,1], max=par.sd[i,2], log=TRUE) ) ) )
         }
         if(den.sd == "lnorm"){
             ## The 'x' elements need to match with 'par.sd' rows.
-            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE) ) ) )
+            sd <- function(x) sum( sapply(1:p, function(i) sapply(x[[i]], function(y) stats::dlnorm(y, meanlog=par.sd[i,1], sdlog=par.sd[i,2], log=TRUE) ) ) )
         }
     }
 
@@ -120,13 +124,13 @@ makePrior <- function(r, p, den.mu="unif", par.mu, den.sd="unif", par.sd, unif.c
         }
     } else{
         if(p == 1){
-            if(!is.matrix(Sigma)) stop(" 'Sigma' needs to be a matrix when p == 1. ")
+            if(!is.matrix(Sigma)) stop(" 'Sigma' needs to be a matrix when a single regime is fitted to the data (p=1). ")
             if(!is.numeric(nu) || nu < r) stop(" 'nu' need to be a numeric value larger than the dimension of 'Sigma'. ")
             center <- (nu - ncol(Sigma) -1) * Sigma
             corr <- function(x) logDensityIWish(x, v=nu, center)
         } else{
             if(!all(sapply(Sigma, is.matrix))) stop(" 'Sigma' needs to be a list of matrices with length == p. ")
-            if(!all(sapply(nu, is.numeric)) || all(nu < r) ) stop(" 'nu' needs to be a vector with numeric values larger than r. ")
+            if(!all(sapply(nu, is.numeric)) || all(nu < r) ) stop(" 'nu' needs to be a vector with numeric values larger than the dimension of R. ")
             corr_regime <- list()
             center <- list()
             for( i in 1:p){

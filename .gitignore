@@ -1,0 +1,15 @@
+exported_functions.txt
+fast_example.R
+*~
+.Rhistory
+R/.Rhistory
+grid.plot.template.R
+name_changes.txt
+old_implementations/
+make_rename_package_functions/
+find_called_functions.R
+sed_to_change_names.txt
+rename_pkg.sh
+Tutorials/
+inst/doc
+testing_many_regimes/

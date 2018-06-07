@@ -4,35 +4,46 @@
 \alias{testRatematrix}
 \title{Test for difference between evolutionary rate matrix estimates}
 \usage{
-testRatematrix(chain, par = c("all", "correlation", "rates"))
+testRatematrix(chain, par = c("all", "correlation", "rates"),
+  median.test = FALSE, regimes = NULL, plot = FALSE)
 }
 \arguments{
 \item{chain}{the posterior distribution of parameter estimates as output of the function 'readMCMC'.}
 
-\item{par}{sets which of the attributes of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates' (default is 'all'). Chose 'all' to test the median overlap among all cells of the covariance matrix. Chose 'rates' to check for the median overlap among the evolutionary rates of each trait (the variance vector). Chose 'correlation' to test for the median overlap among the correlations (the distribution of correlation matrices).}
+\item{par}{the attribute of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates' (default is 'all'). Choose 'all' to compute the summary statistics for the overall matrix. Choose 'rates' to check the rates of evolution among the traits. Choose 'correlation' to compute the summary statistics for the evolutionary correlations.}
+
+\item{median.test}{whether to return a median of the summary statistics across all elements of the evolutionary rate matrices. The default is FALSE.}
+
+\item{regimes}{a numeric vector or character vector. This is the set of regimes to be compared. If numeric, then the regimes are in the same order as in the 'chain' argument. If character, than names need to match the names of the rate regimes fitted to the phylogenetic tree.}
+
+\item{plot}{whether to plot the results of the summary statistics test applied to every element of the matrix. Default is FALSE.}
 }
 \value{
-Return a matrix with the value of the test statistics. Values bellow 0.05 supports a difference between the posterior distribution of R matrices.
+Return a matrix or a list with the value of the test statistics.
 }
 \description{
-Function uses summary statistics to test for differences betwwen the posterior distribution of parameter estimates for the evolutionary rate matrix regimes.
+Function uses summary statistics to test for differences between the posterior distribution of parameter estimates for the evolutionary rate matrix regimes.
 }
 \details{
-This functions performs a test to check whether the posterior distribution of the fitted matrices are different. When the test is significant this means that the posterior distribution of the elements of the evolutionary rate matrices does not overlap more than 5\%. This test is not a p value, since this is not an estimate of a probability of deviance from a given null distribution. The test relies on the median overlap of the posterior distribution. It assumes that when the posterior distribution of two or more paramaters do not overlap, then there is a significative difference between the parameters. \cr
+This functions performs a test to check whether the posterior distribution of the fitted matrices are different. It returns the proportion of overlap between regimes. When this proportion is less than 0.05 this means that the posterior distribution of the elements of the evolutionary rate matrices does not overlap more than 5\%. This test statistics is NOT a p value! This is not an estimate of the probability of deviance from a null distribution. It assumes that when the posterior distribution of two or more paramaters do not overlap, then there is a relevant difference between the parameters. \cr
 \cr
-When a posterior distribution with more than two rate regimes is fitted to the data, the function performs all pairwise combinations tests.
+The test can be performed using the median overlap of the posterior distribution across all elements of the ratematrix or by contrasting each element separatelly. Checking each element independently provides more information. Using the median overlap will result in a single value returned, but it can be insensitive to important changes in the evolutionary rate matrices between regimes. When a posterior distribution with more than two rate regimes is fitted to the data, the function performs tests for all pairwise combinations.
 }
 \examples{
 \donttest{
-## Load data
-data(centrarchidae)
-## Run MCMC. This is just a very short chain.
-handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000)
-## Load posterior distribution, make plots and check the log.
-posterior <- readMCMC(handle, burn=0.25, thin=1)
-testRatematrix(chain=posterior, par="all")
-testRatematrix(chain=posterior, par="rates")
-testRatematrix(chain=posterior, par="correlation")
+data( centrarchidae )
+dt.range <- t( apply( centrarchidae$data, 2, range ) )
+## The step size for the root value can be set given the range we need to sample from:
+w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
+par.sd <- cbind(c(0,0), sqrt( c(1,1) ))
+prior <- makePrior(r=2, p=2, par.mu=dt.range, par.sd=par.sd)
+handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
+                         , gen=50000, w_mu=w_mu, dir=tempdir())
+posterior <- readMCMC(handle, burn = 0.2, thin = 10)
+testRatematrix(posterior, par = "all")
+testRatematrix(posterior, par = "correlation")
+testRatematrix(posterior, par = "rates")
+testRatematrix(posterior, par = "correlation", plot = TRUE)
 }
 }
 \author{

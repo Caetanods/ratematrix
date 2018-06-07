@@ -14,10 +14,10 @@
 ##' @return Return a modified 'cache.chain'.
 ##' @importFrom MASS mvrnorm
 ##' @noRd
-makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, iter, count, files){
+makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, files){
 
     ## make.prop.mean is a function to make sliding window proposal moves.
-    to.update.mu <- cache.chain$chain[[iter-1]][[1]]
+    to.update.mu <- cache.chain$chain[[1]]
     prop.root <- sapply(1:length(to.update.mu), function(x) slideWindow(to.update.mu[x], w_mu[x]) )
 
     ## Get log prior ratio. Note that the constant parameters will have a prior ratio of 1.
@@ -26,23 +26,20 @@ makePropMeanForMult <- function(cache.data, cache.chain, prior, v, w_sd, w_mu, i
 
     ## Get log likelihood ratio.
     prop.root.lik <- logLikPrunningMCMC(cache.data$X, cache.data$k, cache.data$p, cache.data$nodes, cache.data$des, cache.data$anc, cache.data$mapped.edge
-                              , R=cache.chain$chain[[iter-1]][[4]], mu=as.vector(prop.root) )
-    ll <-  prop.root.lik - cache.chain$lik[iter-1]
+                              , R=cache.chain$chain[[4]], mu=as.vector(prop.root) )
+    ll <-  prop.root.lik - cache.chain$lik
     ## Get ratio in log space.
     r <- ll + pp
 
     ## Acceptance step.
     ## This here need a trick on the for loop. The vcv block is the same as the nex gen.
-    if(exp(r) > runif(1)){ ## Accept.
+    if(exp(r) > stats::runif(1)){ ## Accept.
         cat( paste("1; 0; 0; 1; 1; ", prop.root.lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Always the phylo 1 in this case.
-        cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-        cache.chain$chain[[iter]][[1]] <- prop.root
+        cache.chain$chain[[1]] <- prop.root
         cache.chain$curr.root.prior <- prop.root.prior
-        cache.chain$lik[iter] <- prop.root.lik
+        cache.chain$lik <- prop.root.lik
     } else{                ## Reject.
-        cat( paste("0; 0; 0; 1; 1; ", cache.chain$lik[iter-1], "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Always the phylo 1 in this case.
-        cache.chain$chain[[iter]] <- cache.chain$chain[[iter-1]]
-        cache.chain$lik[iter] <- cache.chain$lik[iter-1]
+        cat( paste("0; 0; 0; 1; 1; ", cache.chain$lik, "\n", sep="") , sep="", file=files[[2]], append=TRUE) ## Always the phylo 1 in this case.
     }
 
     ## Return cache:

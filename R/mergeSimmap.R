@@ -1,16 +1,16 @@
-##' Function will merge regimes to form a new regime. The distribution of the regimes across the tree will not change. The function only re-label the regimes such that two or more regime are now recognized as an unique new regime (with a new label). The function can also drop all information about regimes and return a phylogeny of the class 'phylo'.
+##' Function will merge stochastic mapped regimes together to form a new regime. This can be used to decrease the number of regimes in the phylogeny. Additionally, the function can drop all regimes and return a phylogeny of the class 'phylo'.
 ##'
+##' The distribution of the regimes across the tree will not change. The function only modify the labels of the regimes such that two or more regimes become one (with a new label). \cr
+##' \cr
 ##' Function takes the elements of the 'merge.regimes' vector and collapse all those regimes into a single one. The branch length associated with 'merge.regimes' are summed and assigned to the regime correspondent to the first element of the 'merge.regimes' vector. Then this new regime is renamed as 'new.regime'.\cr
 ##'\cr
-##' The original distribution of the regimes across the branches of the phylogeny will not change. This function only manipulates the labels of the regimes.\cr
-##'\cr
-##' If the original phylogeny has only two regimes or if 'drop.regimes' is set to TRUE, then function will drop all the information about regimes and the phylogeny will be of class 'phylo' only.
+##' If the original phylogeny has only two regimes or if 'drop.regimes' is set to TRUE, then the output will be of class 'phylo' with no regime information.
 ##' @title Merge two or more regimes of a 'simmap' tree
 ##' @param phy a phylogeny of the 'simmap' format.
 ##' @param merge.regimes a vector with the names of the regimes to be merged.
 ##' @param new.regime the name of the new regime.
 ##' @param drop.regimes whether to simply drop all information about the regimes and return a phylogeny of class 'phylo'.
-##' @return A phylogeny of the format 'simmap' with merged regimes.
+##' @return A phylogeny of the format 'simmap' with merged regimes or a phylogeny of class 'phylo' with no regime information.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @examples
@@ -32,7 +32,6 @@
 ##' merged.phy <- mergeSimmap(phy=map.phy, merge.regimes=c("water","earth"), new.regime="mud")
 ##' plot( merged.phy )
 ##' }
-##' @seealso \code{\link{ phytools::make.simmap }} for mapping rate regimes to phylogenetic trees. 
 mergeSimmap <- function(phy, merge.regimes=NULL, new.regime=NULL, drop.regimes=FALSE){
     ## Function to merge two or more regimes into a single regime.
     ## Need to check if the regime will be unique at the end.

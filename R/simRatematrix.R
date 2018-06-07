@@ -1,6 +1,6 @@
-##' Funyction to simulate correlated traits under a multivariate Brownian motion model.
+##' Simulates correlated traits under a multivariate Brownian motion model. The function uses a covariance matrix (evolutionary rate matrix-R) to indicate the rates of the traits.
 ##'
-##' This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other applications please refer to the original implementation of 'sim.corrs' in the package 'phytools'. The function uses a covariance matrix (evolutionary rate matrix R) to indicate the rates of the traits.
+##' This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other applications please refer to the original implementation of 'sim.corrs' in the package 'phytools' wrote by Liam Revell.
 ##' @title Simulates multivariate trait evolution using a Brownian motion model
 ##' @param tree a phylogenetic tree of 'phylo' format.
 ##' @param vcv a variance covariance matrix (the evolutionary rate matrix).
@@ -9,7 +9,10 @@
 ##' @return Returns a matrix with each trait values for the tips. Traits are distributed in the rows and tips are distributed in the columns.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ phytools::sim.corrs }} for the original version of this function.
+##' @references
+##' \describe{
+##'   \item{}{Revell, L. J. 2012. phytools: an R package for phylogenetic comparative biology (and other things). Methods in Ecology and Evolution 3:217–223.}
+##' }
 simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
     if (!inherits(tree, "phylo")) 
         stop("tree should be an object of class \"phylo\".")
@@ -18,7 +21,7 @@ simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
         if (is.null(anc)) 
             anc <- rep(0, p)
         cholvcv <- chol(vcv)
-        X <- matrix(rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$edge.length), 
+        X <- matrix(stats::rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$edge.length), 
             p)), nrow(tree$edge), p)
         X <- X %*% cholvcv
     }
@@ -34,7 +37,7 @@ simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
         cholvcv <- lapply(vcv, chol)
         X <- matrix(0, nrow(tree$edge), p)
         for (i in 1:length(vcv)) {
-            Y <- matrix(rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$mapped.edge[, 
+            Y <- matrix(stats::rnorm(p * nrow(tree$edge), sd = rep(sqrt(tree$mapped.edge[, 
                 i]), p)), nrow(tree$edge), p)
             X <- X + Y %*% cholvcv[[i]]
         }

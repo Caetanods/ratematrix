@@ -3,8 +3,9 @@
 ##' Print information about object.
 ##' @title Print method for the "ratematrix_single_chain" class.
 ##' @param x The object.
+##' @param ... Additional arguments. Not used here.
 ##' @export
-print.ratematrix_single_chain <- function(x){
+print.ratematrix_single_chain <- function(x, ...){
     ## First make some calculations:
     k <- ncol( x$root )
     post.length <- nrow( x$root )

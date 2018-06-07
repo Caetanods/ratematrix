@@ -4,10 +4,12 @@
 \alias{print.ratematrix_single_mcmc}
 \title{Print method for the "ratematrix_single_mcmc" class.}
 \usage{
-\method{print}{ratematrix_single_mcmc}(x)
+\method{print}{ratematrix_single_mcmc}(x, ...)
 }
 \arguments{
 \item{x}{The object.}
+
+\item{...}{Additional arguments. Not used here.}
 }
 \description{
 Print method for the "ratematrix_single_mcmc" class.

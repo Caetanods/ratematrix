@@ -1,66 +1,64 @@
-##' Generate and plot a plate with plots showing the posterior distribution of evolutionary rate matrices. Function creates many plots, it can take some time depending on the data and number of generations.
-##'
-##' The plots are divided into three groups. Upper-diagonal plots show histograms with the posterior distribution for the covariance values between each pairwise combination of the traits. Diagonal plots show histograms with the evolutionary rate posterior distribution for each trait. Lower-diagonal plots show ellipses which represent the 95\% quantile of the pairwise bivariate distribution between traits. \cr
-##' \cr
-##' Lower-diagonal plots are ideal to visualize the evolutionary correlation and variance between two traits. The orientation of the ellipses show whether there is a positive, negative or lack of correlation (horizontal or vertical orientation) between traits. The shape of the ellipses show the major axis of variation between traits. A 'cigar-shaped' ellipse indicates that one of the traits show faster evolutionary rates than the other, so one axis of variation is much larger than the other whereas a more circular (round) ellipse is a result of comparable rates of evolution between the two traits. A completely circular shape denotes lack of evolutionary correlation between the two traits. It might help to think of the ellipses as bivariate distributions seen from the top.
-##' \cr
+##' Generates a plate with plots showing the posterior distribution of evolutionary rate matrices.
+##' 
 ##' The function provides the option to plot a single evolutionary rate matrix on top of the posterior distribution of each regime as a vertical line on the upper-diagonal and diagonal histogram plots and as an ellipse on the lower-diagonal plots. This can be set using the argument 'point.matrix' (as well as the 'point.color' and 'point.wd' options). One can use this option to contrast the posterior with some point estimate or summary statistics. \cr
 ##' \cr
-##' Colors provided can be as color names recognized by R-base plot functions or in the HEX format.
-##' @title Plot distribution of evolutionary rate matrices
-##' @param chain the posterior distribution of parameter estimates as produced by 'readMCMC'.
-##' @param p a numeric vector with the regimes to be plotted. This parameter can be used to subset the rate regimes to be plotted as well as control the order of the plotting. If 'NULL' (default), then function plot all rate regimes fitted to the data. See 'Examples'.
-##' @param colors a vector with colors for each rate regime. Vector need to have the same length p, if p=NULL then 'colors' need to have the same length as the number of evolutionary rate matrices fitted to the data. If not provided, the function will provide pre-selected colors up to 8 regimes.
+##' Colors can be provided either as color names recognized by R-base plot functions or in the HEX format. \cr
+##' \cr
+##' The lines showed by the ellipse plots (lower-diagonal) are a sample from the posterior distribution. The user can set the number of lines plotted using the argument 'n.lines'. Note that more lines will take more time to plot. \cr
+##' \cr
+##' The 'hpd' argument can be used to set some regions of the plot to be colored in white. For example, if 'hpd=95' the histograms will plot the region outside the 95\% HPD (Highest Posterior Density) in white and ellipse lines will only be showed if within this 95\% HPD interval. If the region chosen is too small (~10\% or lower), the plot might return an error. This happens because the function take random samples from the posterior distribution to plot as ellipse lines and exclude the samples that are outside the defined HPD interval. If this happens, try to choose a more inclusive percentage or increase the number of samples taken for the ellise lines (see argument 'n.lines') or repeat the plot until sucessful. [A better solution for this issue will be provided soon.] The default is 100 (no highlight is performed and ellipse lines are not restricted). \cr
+##' \cr
+##' The plots are divided into three groups. Upper-diagonal plots show histograms with the posterior distribution for the covariance values between each pairwise combination of the traits. Plot in the diagonal show histograms with the posterior distribution of evolutionary rates for each trait. Plots on the lower-diagonal slots show a collection of ellipses sampled from the posterior distribution of the model. Each ellipse line represents a bivariate distribution for the 95% CI given the pairwise correlation between the traits. \cr
+##' \cr
+##' Lower-diagonal plots are ideal to visualize the evolutionary correlation and variance between two traits. The orientation of the ellipses show whether there is a positive, negative or lack of correlation (horizontal or vertical orientation) between traits. The shape of the ellipses show the major axis of variation between traits. A 'cigar-shaped' ellipse indicates that one of the traits show faster evolutionary rates than the other, so one axis of variation is much larger than the other whereas a more circular (round) ellipse is a result of comparable rates of evolution between the two traits. A completely circular shape denotes lack of evolutionary correlation between two traits. It might help to understand the meaning of the ellipses lines by imagining each ellipse line marks the spread of the dots in a scatterplot with data generated with a particular covariance value (i.e., the covariance value the ellipse is representing).
+##' @title Plot the distribution of evolutionary rate matrices
+##' @param chain the posterior distribution of parameter estimates as produced by 'readMCMC' or samples from the prior using 'samplePrior'..
+##' @param p a numeric vector with the regimes to be plotted. This parameter can be used to subset the rate regimes to be plotted as well as to control the order of the plotting. If 'NULL' (default), then all rate regimes are plotted in the same order as in the data.
+##' @param colors a vector with colors for each rate regime with length equal to the number of regimes or to the number of regimes provided to the argument 'p'. If not provided the function will use pre-selected colors up to 8 regimes.
 ##' @param set.xlim user limits for the x axes. Need to be a vector with two elements, the minimum and the maximum.
-##' @param set.leg user defined legends of the plot. A character vector with same length as the number of traits in the model. If 'NULL' the plot function will use trait names defined by the MCMC and extrated from the data.
-##' @param l.cex a number for the 'cex' parameter for legends of the plot. See 'help(par)' for more information on 'cex'. Default is 0.7 .
+##' @param set.leg user defined legends for the trait names. A character vector with same length as the number of traits in the model.
+##' @param l.cex the 'cex' parameter for legends of the plot. See 'help(par)' for more information on 'cex'. Default is 0.7 .
 ##' @param ell.wd a number for the width of the ellipse lines. Default is 0.5 .
-##' @param alphaOff a number between 0 and 1 with the transparency of the off-diagonal plots. Default is 1.
-##' @param alphaDiag a number between 0 and 1 with the transparency of the diagonal plots. Default is 1.
-##' @param alphaEll a number between 0 and 1 with the transparency of the lines of the ellipse plots. Using transparency in the lines might enhance the visualization of regions of more overlap. Default is 1.
-##' @param hpd a number between 0 and 100 to set the proportion of the highest posterior density (HPD) to be highlighted in the plot. For example, if set to 95 the histograms will plot the region outside the 95\% HPD in white and ellipse lines will only be showed if within the 95\% HPD of the posterior distribution. If the region chosen is too small (~10\% or lower), the plot might return in an error. If this happens, try to choose a more inclusive percentage. The default is 100 (no highlight is performed and ellipse lines are not restricted).
+##' @param alphaOff a number between 0 and 1 with the transparency of the color used for the off-diagonal plots. Default is 1.
+##' @param alphaDiag a number between 0 and 1 with the transparency of the color used for the diagonal plots. Default is 1.
+##' @param alphaEll a number between 0 and 1 with the transparency of the color used for the lines of the ellipse plots. Using transparency in the lines might enhance the visualization of regions with more or less density of samples. Default is 1.
+##' @param hpd a number between 0 and 100 to set the proportion of the highest posterior density (HPD) to be highlighted in the plot.
 ##' @param show.zero whether to plot a thin blue line showing the position of the 0 value on the histograms.
-##' @param n.lines number of lines to be displayed in the ellipse plots. The lines showed by the ellipse plots (lower-diagonal) are a sample from the posterior distribution. The user can set this number as the number of generations in the posterior distribution to plot all the lines. More lines will take more time to plot. Default is 50 lines.
-##' @param n.points number of points used to plot the ellipse. Each ellipse is plotted using an approximation based on point coordinates, this argument sets the number of points used to approximate the ellipse format. 
+##' @param n.lines number of lines to be displayed in the ellipse plots. Default is 50 lines.
+##' @param n.points number of points used to approximate the shape of the ellipses. 
 ##' @param point.matrix optional argument. A list of variance-covariance matrices with length equal to p. If p=NULL then length need to be equal to the number of rate regimes fitted to the data. Each element of the list will be plotted as a single line on top of the distribution of parameter estimates.
 ##' @param point.color optional argument. A vector with color names for the matrices set in 'point.matrix'. The vector need to have same length as 'point.matrix. If not provided, the colors of the lines will be equal to the colors of the distribution (argument 'colors').
 ##' @param point.wd optional argument. The width of the lines plotted using 'point.matrix'. Default is 0.5 .
 ##' @return A plate with a grid of plots with dimension equal to the number of traits fitted to the data.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @seealso \code{\link{ readMCMC }} for reading the posterior distribution from the MCMC analisis, \code{\link{ plotPrior }} for plotting the prior, \code{\link{ plotRootValue }} for plotting the posterior for the root values.
 ##' @examples
 ##' \donttest{
-##' ## Run and plot a very short MCMC chain:
-##' data(anoles)
-##' ## This might take some minutes.
-##' handle <- ratematrixMCMC(data=anoles$data[,1:3], phy=anoles$phy, gen=2000)
-##' posterior <- readMCMC(handle)
-##' plotRatematrix(posterior)
-##' 
-##' ## Load a complete MCMC chain for a better plot.
-##' data(anolesPost)
-##' plotRatematrix(anolesPost$chain)
-##' 
-##' ## Set some custom options:
-##' plotRatematrix(anolesPost$chain, colors=c("green3","orange"), set.xlim=c(0,2)
-##'              , set.leg=c("SVL","Tail","Head"), l.cex=1, alphaOff=0.5
-##'              , alphaDiag=0.5, alphaEll=0.5)
-##' ## Same plot, but with inverted superposition of rate regimes. Set argument 'p'.
-##' plotRatematrix(anolesPost$chain, p=c(2,1), colors=c("orange","green3")
-##'              , set.xlim=c(0,2), set.leg=c("SVL","Tail","Head"), l.cex=1
-##'              , alphaOff=0.5, alphaDiag=0.5, alphaEll=0.5)
-##' 
-##' ## We can also highlight the 95% HPD of the posterior distribution:
-##' ## Bars in the tails of the distribution and plotted in white are outside the 95% HPD.
-##' plotRatematrix(anolesPost$chain, colors=c("green3","orange"), set.xlim=c(0,2)
-##'              , set.leg=c("SVL","Tail","Head"), l.cex=1, alphaOff=0.5
-##'              , alphaDiag=0.5, alphaEll=0.5, hpd=95)
-##' 
-##' ## We can increase the number of ellipses from the posterior showed in the plots.
-##' plotRatematrix(anolesPost$chain, colors=c("green3","orange"), set.xlim=c(0,2)
-##'              , set.leg=c("SVL","Tail","Head"), l.cex=1, alphaOff=0.5
-##'              , alphaDiag=0.5, alphaEll=0.5, hpd=95, n.lines=500)
+##' data( centrarchidae )
+##' dt.range <- t( apply( centrarchidae$data, 2, range ) )
+##' ## The step size for the root value can be set given the range we need to sample from:
+##' w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
+##' par.sd <- cbind(c(0,0), sqrt( c(1,1) ))
+##' prior <- makePrior(r=2, p=2, par.mu=dt.range, par.sd=par.sd)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
+##'                          , gen=50000, w_mu=w_mu, dir=tempdir())
+##' posterior <- readMCMC(handle, burn = 0.2, thin = 10)
+##' plotRatematrix( posterior )
+##' plotRatematrix( posterior, colors = c("black","red"))
+##' plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5)
+##' plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5)
+##' plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5)
+##' ref.matrix <- list( rbind(c(0.5,0),c(0,0.5)), rbind(c(0.5,0),c(0,0.5)) )
+##' plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
+##'                , point.matrix = ref.matrix)
+##' plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
+##'                , point.matrix = ref.matrix, point.color = "orange", point.wd = 3)
+##' plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
+##'                , point.matrix = ref.matrix, point.color = "orange", point.wd = 3
+##'                , alphaEll = 0.05, n.lines = 2000)
+##' plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
+##'                , point.matrix = ref.matrix, point.color = "orange", point.wd = 3
+##'                , alphaEll = 0.5, n.lines = 200, hpd = 90)
 ##' }
 plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NULL, l.cex=0.7, ell.wd=0.5, alphaOff=1, alphaDiag=1, alphaEll=1, hpd=100, show.zero=FALSE, n.lines=50, n.points=200, point.matrix=NULL, point.color=NULL, point.wd=0.5){
 
@@ -135,16 +133,16 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         cat("Plotting multiple regimes.","\n")
         
         ## Print a text with the association between the colors and the regimes.
-        name.table <- rbind(names(chain$matrix), colors)
+        name.table <- rbind(names(chain$matrix)[p], colors)
         cat("Table with regimes and colors (names or HEX):\n")
-        write.table(format(name.table, justify="right"), row.names=F, col.names=F, quote=F)
+        utils::write.table(format(name.table, justify="right"), row.names=F, col.names=F, quote=F)
         
         ## First do a batch of tests:
         check.mat <- vector()
         check.length <- vector()
-        for(i in p){
-            check.mat[i] <- ncol( chain$matrix[[i]][[1]] ) ## First element of each regime.
-            check.length[i] <- length( chain$matrix[[i]] ) ## The length of each chain regime.
+        for(i in 1:length(p)){
+            check.mat[i] <- ncol( chain$matrix[[ p[i] ]][[1]] ) ## First element of each regime.
+            check.length[i] <- length( chain$matrix[[ p[i] ]] ) ## The length of each chain regime.
         }
         equal.size <- sapply(2:length(p), function(x) check.mat[1] == check.mat[x] )
         equal.length <- sapply(2:length(p), function(x) check.length[1] == check.length[x] )
@@ -185,7 +183,7 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             qq.count <- 1
             for(i in 1:dd){
                 for(j in i:dd){
-                    qq.list[[w]][[qq.count]] <- quantile(x=LL[[w]][[i]][,j], probs=prob)
+                    qq.list[[w]][[qq.count]] <- stats::quantile(x=LL[[w]][[i]][,j], probs=prob)
                     qq.count <- qq.count + 1
                 }
             }
@@ -294,14 +292,14 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     if( i == j ){
                         ## Remember that the list 'LL' were made over the lines of the grid.
                         ## This is to calculate the x and y limits of the histogram.
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
                         ## Create the cuts for the hpd:
                         ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
                                                      , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
                         hist.count <- hist.count + 1
                     } else{
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
                         ccat[[w]][[hist.count]] <- cut(hists[[w]][[hist.count]]$breaks
                                                      , c(-Inf, qq.list[[w]][[hist.count]][1], qq.list[[w]][[hist.count]][2], Inf))             
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
@@ -319,20 +317,21 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ##       of the lines and the transparency can be modified.
         ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
         ell.lim <- do.call(rbind, ell.lim)
-        ell.lim <- apply(ell.lim, 2, range)
-        ## Need to make the ellipse plots isometric. So it is easy to compare the covariances among different traits.
+        ell.lim <- apply(ell.lim, 2, range) ## One column for each of the plots.
+        ## Need to make such that the plot uses the same limits for the x and y axis. Otherwise it is hard to
+        ##    compare the major axis of variance of the plots.
         ell.lim.iso <- c(min(ell.lim[1,]),max(ell.lim[2,]))
 
         ## Save the original par:
-        old.par <- par(no.readonly = TRUE)
+        old.par <- graphics::par(no.readonly = TRUE)
 
         ## Set par block:
-        par(mfrow = c(dd, dd))
-        par(cex = 0.6)
-        par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
-        par(tcl = -0.25)
-        par(mgp = c(2, 0.6, 0))
-        ## par(xpd = NA) ## To make plots outside plotting area.
+        graphics::par(mfrow = c(dd, dd))
+        graphics::par(cex = 0.6)
+        graphics::par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
+        graphics::par(tcl = -0.25)
+        graphics::par(mgp = c(2, 0.6, 0))
+        ## graphics::par(xpd = NA) ## To make plots outside plotting area.
 
         ## Plot the graphs in the grid:
         ## The if and else make sure that the upper.tri and the lower.tri get the correct plots.
@@ -346,9 +345,9 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ## Repeat the process for all elements of the graph, and now it will need to be a vector.
         ## colors has the color for each regime.
         ## Need to adapt this to accept both color names and HEX.
-        colOff <- adjustcolor(col=colors, alpha.f=alphaOff)
-        colDiag <- adjustcolor(col=colors, alpha.f=alphaDiag)
-        colEll <- adjustcolor(col=colors, alpha.f=alphaEll)
+        colOff <- grDevices::adjustcolor(col=colors, alpha.f=alphaOff)
+        colDiag <- grDevices::adjustcolor(col=colors, alpha.f=alphaDiag)
+        colEll <- grDevices::adjustcolor(col=colors, alpha.f=alphaEll)
         if( is.null(point.color) ){ ## Set the colors for the point matrices equal to the colors if not provided.
             point.color <- colors
         }
@@ -358,65 +357,65 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         for(i in 1:dd){
             for(j in 1:dd){
                 if(j >= i){
-                    plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
                     mid <- mean(xlim.hist)
                     first.quart <- xlim.hist[1] + (mid - xlim.hist[1])/2
                     second.quart <- mid + (xlim.hist[2] - mid)/2
-                    lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
                     if(show.zero == TRUE){
-                        lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
+                        graphics::lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
                     }
-                    box(col="grey")
+                    graphics::box(col="grey")
                     if(j != i){
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="gray"
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="gray"
                                , col=c("white", colOff[w], "white")[ccat[[w]][[hist.plot.count]]] )
                         }
                     } else{
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="black"
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, border="black"
                                , col=c("white", colDiag[w], "white")[ccat[[w]][[hist.plot.count]]] )
                         }
                         if(i == dd[1]){
-                            axis(1, at=round(c(xlim.hist[1], mean(xlim.hist), xlim.hist[2]), digits = 2) )
+                            graphics::axis(1, at=round(c(xlim.hist[1], mean(xlim.hist), xlim.hist[2]), digits = 2) )
                         }
                     }
                     if(i == 1){
-                        mtext(text=set.leg[j], side=3, cex=l.cex)
+                        graphics::mtext(text=set.leg[j], side=3, cex=l.cex)
                     }
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
+                            graphics::lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
                         }
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
-                    box(col="grey")
+                    graphics::plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::box(col="grey")
                     for( w in 1:length(p) ){
-                        invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
-                                        , type = "l", lwd = ell.wd) )
+                        invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], function(x) graphics::points(x, col = colEll[w]
+                                        , type = "l", lwd = ell.wd)) )
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            invisible( points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
+                            invisible( graphics::points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
                         }
                     }
                     ell.plot.count <- ell.plot.count + 1
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                 }            
             }
         }
         
         ## Return the old parameters:
-        par(old.par)
+        graphics::par(old.par)
        
     } else{
 
@@ -499,11 +498,11 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
                     if( i == j ){
                         ## Remember that the list 'LL' where made over the lines of the grid.
                         ## This is to calculate the x and y limits of the histogram.
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk.var)
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
                         hist.count <- hist.count + 1
                     } else{
-                        hists[[w]][[hist.count]] <- hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
+                        hists[[w]][[hist.count]] <- graphics::hist(LL[[w]][[i]][,j], plot=FALSE, breaks=brk)
                         y.hist <- max(y.hist, hists[[w]][[hist.count]]$density)
                         hist.count <- hist.count + 1
                     }
@@ -516,25 +515,27 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ell.lim <- lapply( do.call(c, ell.data), function(x) x[[1]] )
         ell.lim <- do.call(rbind, ell.lim)
         ell.lim <- apply(ell.lim, 2, range)
-        ## Need to make the axes for the ellipse plots isometric.
+        ## Need to make sure that the y and x axes have the same range. This will make it possible to compare the major axes of
+        ##    variances among the traits.
         ell.lim.iso <- c(min(ell.lim[1,]),max(ell.lim[2,]))
 
         
+        
         ## Save the original par:
-        old.par <- par(no.readonly = TRUE)
+        old.par <- graphics::par(no.readonly = TRUE)
 
         ## Set par block:
-        par(mfrow = c(dd[1], dd[1]))
-        par(cex = 0.6)
-        par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
-        par(tcl = -0.25)
-        par(mgp = c(2, 0.6, 0))
-        ## par(xpd = NA) ## To make plots outside plotting area.
+        graphics::par(mfrow = c(dd[1], dd[1]))
+        graphics::par(cex = 0.6)
+        graphics::par(mar = c(0, 0, 0, 0), oma = c(2, 2, 2, 2))
+        graphics::par(tcl = -0.25)
+        graphics::par(mgp = c(2, 0.6, 0))
+        ## graphics::par(xpd = NA) ## To make plots outside plotting area.
 
         ## Create the color for the plot:
-        colOff <- adjustcolor(col=colors, alpha.f=alphaOff)
-        colDiag <- adjustcolor(col=colors, alpha.f=alphaDiag)
-        colEll <- adjustcolor(col=colors, alpha.f=alphaEll)
+        colOff <- grDevices::adjustcolor(col=colors, alpha.f=alphaOff)
+        colDiag <- grDevices::adjustcolor(col=colors, alpha.f=alphaDiag)
+        colEll <- grDevices::adjustcolor(col=colors, alpha.f=alphaEll)
         if( is.null(point.color) ){ ## Set the colors for the point matrices equal to the colors if not provided.
             point.color <- colors
         }
@@ -551,59 +552,59 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         for(i in 1:dd){
             for(j in 1:dd){
                 if(j >= i){
-                    plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::plot(1, xlim=xlim.hist, ylim=ylim.hist, axes=FALSE, type="n", xlab="", ylab="")
                     mid <- mean(xlim.hist)
                     first.quart <- xlim.hist[1] + (mid - xlim.hist[1])/2
                     second.quart <- mid + (xlim.hist[2] - mid)/2
-                    lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
-                    lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(mid,mid), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(first.quart, first.quart), y=ylim.hist, type="l", lty = 3, col="grey")
+                    graphics::lines(x=c(second.quart, second.quart), y=ylim.hist, type="l", lty = 3, col="grey")
                     if(show.zero == TRUE){
-                        lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
+                        graphics::lines(x=c(0,0), y=ylim.hist, type="l", lty = 3, col="blue")
                     }
-                    box(col="grey")
+                    graphics::box(col="grey")
                     if(j != i){
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colOff[w], border="gray")
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colOff[w], border="gray")
                         }
                     } else{
                         for( w in 1:length(p) ){
-                            plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colDiag[w], border="black")
+                            graphics::plot(hists[[w]][[hist.plot.count]], add=TRUE, freq=FALSE, col=colDiag[w], border="black")
                         }
-                        if(i == dd){ axis(1, at=round(c(xlim.hist[1],mean(xlim.hist),xlim.hist[2]), digits = 2) ) }
+                        if(i == dd){ graphics::axis(1, at=round(c(xlim.hist[1],mean(xlim.hist),xlim.hist[2]), digits = 2) ) }
                     }
                     if(i == 1){
-                        mtext(text=set.leg[j], side=3, cex=l.cex)
+                        graphics::mtext(text=set.leg[j], side=3, cex=l.cex)
                     }
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
+                            graphics::lines(x=c(point.matrix[[w]][i,j], point.matrix[[w]][i,j]), y=ylim.hist, type="l", col=point.color[w], lwd=point.wd)
                         }
                     }
                     hist.plot.count <- hist.plot.count + 1
                 } else{
-                    plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
-                    box(col="grey")
+                    graphics::plot(1, xlim=ell.lim.iso, ylim=ell.lim.iso, axes=FALSE, type="n", xlab="", ylab="")
+                    graphics::box(col="grey")
                     for( w in 1:length(p) ){
-                    invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], points, col = colEll[w]
-                                    , type = "l", lwd = ell.wd) )
+                    invisible( lapply(ell.data[[w]][[ell.plot.count]][[2]], function(x) graphics::points(x, col = colEll[w]
+                                    , type = "l", lwd = ell.wd) ) )
                     }
                     if( !is.null(point.matrix) ){
                         for( w in 1:length(p) ){
-                            invisible( points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
+                            invisible( graphics::points(ell.point[[w]][[ell.plot.count]], col=point.color[w], type="l", lwd=point.wd) )
                         }
                     }
                     ell.plot.count <- ell.plot.count+1
                     if(j == 1){
-                        mtext(text=set.leg[i], side=2, cex=l.cex)
+                        graphics::mtext(text=set.leg[i], side=2, cex=l.cex)
                     }
                 }            
             }
         }
         ## Return the old parameters:
-        par(old.par)
+        graphics::par(old.par)
     }
 }

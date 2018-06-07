@@ -2,11 +2,28 @@
 
 *Daniel S. Caetano and Luke J. Harmon*
 
+## THIS IS THE DEVELOPMENT VERSION!
+This package version includes all the new things. Some are stable and some are not. Please send me a message if you need to use some of the development features right now. They will be soon in the stable version of the package.
+
+'ratematrixMCMC' function in this version is implemented on C++ and has a MUCH BETTER performance.
+
+To install you need to:
+
+```{r,R.options=list(max.print=20)}
+install.packages("devtools")
+library(devtools)
+install_github("Caetanods/ratematrix", ref="dev")
+```
+
 ## News and updates
+
+**May-2018 (v 0.3):** Fix minor bugs. Fix function to estimate the MCMC with no regime (single ratematrix fitted to the tree). Fix the call to the likelihood function outside the MCMC (interface issue only!). Corrects warnings from RCran checks. Almost ready for RCran.
 
 **Feb-2018 (v 0.27.1):** Makes the x and y axes for the ellipse plots of 'plotRatematrix' isometric so it is easier to compare different traits. Imports package 'ellipse' to draw the ellipse lines (improves the code for the function).
 
 **Aug-2017 (v 0.27):** Adds option to control the width of the proposal for sd and mean for each trait independently (see 'help(ratematrixMCMC)'). Drops option to force the MCMC to use a single rate. Fix bug that constrained argument 'w_sd' == 'w_mu'. Fix calculation of acceptance ratios performed by 'logAnalyzer'.
+
+**Jun-2017 (v 0.25):** Add package 'vignette' with tutorial for setting a custom starting point for the MCMC.
 
 **Jun-2017 (v 0.26):** Fix problem with 'plotRatematrix'. The ellipse lines had the x and y axes inverted. The problem is now fixed.
 

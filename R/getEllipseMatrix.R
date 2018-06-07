@@ -13,7 +13,7 @@
 ##' @return List of coordinates to plot the ellipses.
 ##' @author Daniel S. Caetano, \email{caetanods1@@gmail.com}
 ##' @noRd
-getEllipseMatrix <- function(mat, center=c(0,0), traits, sample.line=50, n.points=200){
+getEllipseMatrix <- function(mat, center=c(0,0), traits, sample.line=NULL, n.points=200){
 
     if( is.matrix(mat) ){
         ellCtr <- ellipse::ellipse(x = mat, centre = center, which = traits, n.points = n.points)

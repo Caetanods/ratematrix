@@ -1,13 +1,14 @@
 Package: ratematrix
-Title: Bayesian estimation of the evolutionary rate matrix
-Description: Estimate the Evolutionary rate matrix (R) using Markov chain Monte
-    Carlo (MCMC). The package has functions to plot the results and to summarize the
-    MCMC chains.
+Title: Bayesian Estimation of the Evolutionary Rate Matrix
+Version: 1.0
+Authors@R: c(
+    person("Daniel", "Caetano", email = "caetanods1@gmail.com", role = c("aut", "cre")),
+    person("Luke", "Harmon", email = "lukeh@uidaho.edu", role = "aut") )
+Description: Estimates the evolutionary rate matrix (R) using Markov chain Monte Carlo (MCMC) as described in Caetano and Harmon (2017) <doi:10.1111/2041-210X.12826>. The package has functions to run MCMC chains, plot results, evaluate convergence, and summarize posterior distributions.
 URL: https://github.com/Caetanods/ratematrix
-Version: 0.27.1
-License: MIT + file LICENSE
-Author: Daniel S. Caetano, Luke J. Harmon
-Maintainer: Daniel S. Caetano <caetanods1@gmail.com>
+License: GPL (>= 2.0)
+Encoding: UTF-8
+LazyData: true
 Imports:
     ape,
     geiger,
@@ -17,82 +18,16 @@ Imports:
     phylolm,
     readr,
     mvMORPH,
+    Rcpp,
     ellipse
 Suggests:
-    phytools,
     microbenchmark,
     knitr,
-    rmarkdown
+    rmarkdown,
+    phytools
 VignetteBuilder:
     knitr
 LinkingTo: 
-LazyData: true
-Collate:
-    "sampleTreeClade.R"
-    "continueMCMC.R"
-    "logAnalyzer.R"
-    "likelihoodFunction.R"
-    "makePropSingleSigmaList.R"
-    "makePropMeanList.R"
-    "mergeSimmap.R"
-    "estimateTimeMCMC.R"
-    "ratematrixMCMC.R"
-    "calcNodeToNode.R"
-    "calcNodeToTipNode.R"
-    "calcNodeToTip.R"
-    "checkConvergence.R"
-    "checkHPD.R"
-    "dataset_anoles.R"
-    "dataset_centrarchidae.R"
-    "dicMCMC.R"
-    "getEllipseMatrix.R"
-    "hastingsDensity.R"
-    "logDensityIWish.R"
-    "logDensityMvNorm.R"
-    "logLikNode.R"
-    "logLikPrunningMCMC.R"
-    "plotRatematrix.R"
-    "plotPrior.R"
-    "plotRootValue.R"
-    "makePriorBarnard.R"
-    "makePriorIWish.R"
-    "makePrior.R"
-    "makePropIWish.R"
-    "makeStart.R"
-    "mergePosterior.R"
-    "makePropMeanForMultList.R"
-    "makePropMeanForMult.R"
-    "multRegimeMCMC.R"
-    "logLikMultRegime.R"
-    "makePropMultSigmaList.R"
-    "makePropMultSigma.R"
-    "mvLogLik.R"
-    "parseResultsMCMC.R"
-    "parseResults.R"
-    "checkHeidelTest.R"
-    "makePropMean.R"
-    "postPredicSims.R"
-    "print.ratematrix_multi_chain.R"
-    "print.ratematrix_single_chain.R"
-    "print.ratematrix_multi_mcmc.R"
-    "print.ratematrix_single_mcmc.R"
-    "print.ratematrix_prior_sample.R"
-    "print.ratematrix_prior_function.R"
-    "priorDensityVcvBarnard.R"
-    "readMultRegimeMCMC.R"
-    "readSingleRegimeMCMC.R"
-    "readMCMC.R"
-    "riwish.R"
-    "samplePrior.R"
-    "samplePriorSeparationLimits.R"
-    "samplePriorBarnard.R"
-    "makePropSingleSigma.R"
-    "simRatematrix.R"
-    "singleRegimeMCMC.R"
-    "logLikSingleRegime.R"
-    "slideWindowPositive.R"
-    "slideWindow.R"
-    "testRatematrix.R"
-    "writeToFile.R"
-    "writeToMultFile.R"
+    Rcpp,
+    RcppArmadillo
 RoxygenNote: 6.0.1

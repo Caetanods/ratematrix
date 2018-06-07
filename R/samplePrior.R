@@ -1,42 +1,39 @@
-##' Generates samples from the prior distribution used in the MCMC chain.
+##' Take samples from the prior distribution.
 ##'
-##' The function will inherit the same parameters from "make.prior.zhang" function.
-##'
-##' 
+##' The prior samples from this function can be used to start the MCMC sampler. See the examples below. \cr
+##' \cr
+##' If 'sample.sd' is set to FALSE the samples from the standard deviations will be derived from the covariance matrices. If 'sample.sd' is set to TRUE (default) then standard deviations are independently sampled from their own prior distribution and are not derived from the samples of the correlation matrix. Option 'sample.sd = TRUE' is the one used during the MCMC. \cr
+##'  \cr
+##' The option 'rebuild.R' controls if the samples from the posterior distribution should return the standard deviation separated from the correlation matrix or if these elements should be used to rebuild the covariance matrix. Set 'rebuild.R' to TRUE if you want to obtain the covariance matrices. Otherwise, the 'plotPrior' function works better when 'rebuild.R' is set to FALSE.
 ##' @title Take samples from the prior distribution
 ##' @param n number of samples to be generated.
 ##' @param prior the object with the prior function. See 'makePrior' for more information.
-##' @param sample.sd whether the function should sample the vector of standard deviations independently from the correlation matrices. If set to FALSE, the samples for standard deviation will be derived from the covariance matrices. If set to TRUE (default) then standard deviations are independently sampled from the own prior distribution and are not derived from the samples of the correlation matrix.
-##' @param rebuild.R whether the prior sample should return a evolutionary rate matrix rather than a correlation matrix and a vector of standard deviations (default is FALSE).
+##' @param sample.sd whether the function should sample the vector of standard deviations independently from the correlation matrices. See 'Details'.
+##' @param rebuild.R whether the prior sample should return an evolutionary rate matrix rather than a correlation matrix and a vector of standard deviations (default is FALSE). See 'Details'.
 ##' @return A list with samples from the prior distribution. The structure of this list is the same as required by the parameter 'start' of the 'ratematrixMCMC'.
 ##' @importFrom corpcor decompose.cov
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @export
-##' @seealso \code{\link{ plotRatematrix }} and \code{\link{ plotRootValue }} for plotting the samples from the prior.
 ##' @examples
 ##' \donttest{
-##' par.mu <- rbind( c(-10, 10), c(-10, 10), c(-10, 10) )
-##' par.sd <- c(0, 10)
-##' prior <- makePrior(r=3, p=1, par.mu=par.mu, par.sd=par.sd)
-##' ## Sample prior. Standard deviation sampled independently.
-##' samples.ind <- samplePrior(n=1000, prior=prior, sample.sd=TRUE)
-##' ## Now plot.
-##' plotRatematrix(samples.ind, set.xlim=c(-100,100))
-##' ## Sample prior. Now standard deviation is NOT sampled, just derived from the vcv matrices
-##' ##    sampled from the inverse-Wishart distribution.
-##' samples.cor <- samplePrior(n=1000, prior=prior, sample.sd=FALSE)
-##' ## Note how the inverse-Wishart is much more informative than the 'separation strategy'.
-##' ##    The x axis is the same.
-##' plotRatematrix(samples.cor, set.xlim=c(-100,100))
-##' 
-##' ## We can also use the sample from the prior to start the MCMC:
-##' par.mu <- rbind( c(-10, 10), c(-10, 10) )
-##' par.sd <- rbind( c(0, 10), c(0, 10) )
-##' prior <- makePrior(r=2, p=2, par.mu=par.mu, par.sd=par.sd)
-##' ## Need to take a single sample to be used as the starting point.
-##' start <- samplePrior(n=1, prior=prior)
-##' data(centrarchidae)
-##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000, start=start)
+##' data( centrarchidae )
+##' dt.range <- t( apply( centrarchidae$data, 2, range ) )
+##' ## The step size for the root value can be set given the range we need to sample from:
+##' w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
+##' par.sd <- cbind(c(0,0), sqrt( c(10,10) ))
+##' prior <- makePrior(r=2, p=2, den.mu="unif", par.mu=dt.range, den.sd="unif", par.sd=par.sd)
+##' prior.samples <- samplePrior(n = 1000, prior = prior)
+##' start.point <- samplePrior(n=1, prior=prior)
+##' ## Plot the prior. Red line shows the sample from the prior that will set the starting 
+##' ##        point for the MCMC.
+##' plotRatematrix(prior.samples, point.matrix = start.point$matrix, point.color = "red"
+##'                , point.wd = 2)
+##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
+##'                          , gen=10000, w_mu=w_mu, dir=tempdir())
+##' posterior <- readMCMC(handle, burn = 0.2, thin = 10)
+##' ## Again, here the red line shows the starting point of the MCMC.
+##' plotRatematrix( posterior, point.matrix = start.point$matrix, point.color = "red"
+##'                , point.wd = 2)
 ##' }
 samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
     pars <- prior$pars
@@ -45,11 +42,11 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
     mu <- matrix(nrow=n, ncol=pars$r)
     if(pars$den.mu == "unif"){
         for(i in 1:pars$r){
-            mu[,i] <- runif(n=n, min=pars$par.mu[i,1], max=pars$par.mu[i,2])
+            mu[,i] <- stats::runif(n=n, min=pars$par.mu[i,1], max=pars$par.mu[i,2])
         }
     } else{
         for(i in 1:pars$r){
-            mu[,i] <- rnorm(n=n, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2])
+            mu[,i] <- stats::rnorm(n=n, mean=pars$par.mu[i,1], sd=pars$par.mu[i,2])
         }
     }
 
@@ -81,17 +78,17 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
         if(sample.sd == TRUE){    
             if(pars$den.sd == "unif"){
                 if(pars$p == 1){
-                    sd <- runif(n=pars$r, min=pars$par.sd[1], max=pars$par.sd[2])
+                    sd <- stats::runif(n=pars$r, min=pars$par.sd[1], max=pars$par.sd[2])
                 } else{
                     sd <- list()
-                    for(i in 1:pars$p){ sd[[i]] <- runif(n=pars$r, min=pars$par.sd[i,1], max=pars$par.sd[i,2]) }
+                    for(i in 1:pars$p){ sd[[i]] <- stats::runif(n=pars$r, min=pars$par.sd[i,1], max=pars$par.sd[i,2]) }
                 }
             } else{
                 if(pars$p == 1){
-                    sd <- rlnorm(n=pars$r, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
+                    sd <- stats::rlnorm(n=pars$r, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
                 } else{
                     sd <- list()
-                    for(i in 1:pars$p){ sd[[i]] <- rlnorm(n=pars$r, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2]) }
+                    for(i in 1:pars$p){ sd[[i]] <- stats::rlnorm(n=pars$r, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2]) }
                 }
             }
         } else{
@@ -125,23 +122,23 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
         if(sample.sd == TRUE){    
             if(pars$den.sd == "unif"){
                 if(pars$p == 1){
-                    sdvec <- runif(n=pars$r * n, min=pars$par.sd[1], max=pars$par.sd[2])
+                    sdvec <- stats::runif(n=pars$r * n, min=pars$par.sd[1], max=pars$par.sd[2])
                     sd <- matrix(sdvec, nrow=n, ncol=pars$r)
                 } else{
                     sd <- list()
                     for(i in 1:pars$p){
-                        sdvec <- runif(n=pars$r * n, min=pars$par.sd[i,1], max=pars$par.sd[i,2])
+                        sdvec <- stats::runif(n=pars$r * n, min=pars$par.sd[i,1], max=pars$par.sd[i,2])
                         sd[[i]] <- matrix(sdvec, nrow=n, ncol=pars$r)
                     }
                 }
             } else{
                 if(pars$p == 1){
-                    sdvec <- rlnorm(n=pars$r * n, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
+                    sdvec <- stats::rlnorm(n=pars$r * n, meanlog=pars$par.sd[1], sdlog=pars$par.sd[2])
                     sd <- matrix(sdvec, nrow=n, ncol=pars$r)
                 } else{
                     sd <- list()
                     for(i in 1:pars$p){
-                        sdvec <- rlnorm(n=pars$r * n, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2])
+                        sdvec <- stats::rlnorm(n=pars$r * n, meanlog=pars$par.sd[i,1], sdlog=pars$par.sd[i,2])
                         sd[[i]] <- matrix(sdvec, nrow=n, ncol=pars$r)
                     }
                 }
@@ -162,19 +159,19 @@ samplePrior <- function(n, prior, sample.sd=TRUE, rebuild.R=FALSE){
     if(rebuild.R == TRUE){
         if( n == 1 ){
             if(pars$p == 1){
-                R <- rebuild.cov(cov2cor(vcv), v=sd)
+                R <- rebuild.cov(stats::cov2cor(vcv), v=sd)
             } else{
-                R <- lapply(1:pars$p, function(x) rebuild.cov(cov2cor(vcv[[x]]), v=(sd[[x]])^2 ) )
+                R <- lapply(1:pars$p, function(x) rebuild.cov(stats::cov2cor(vcv[[x]]), v=(sd[[x]])^2 ) )
             }
         } else{
             if(pars$p == 1){
-                R <- lapply(1:n, function(x) rebuild.cov(cov2cor(vcv[[x]]), v=(sd[x,])^2 ) )
+                R <- lapply(1:n, function(x) rebuild.cov(stats::cov2cor(vcv[[x]]), v=(sd[x,])^2 ) )
             } else{
                 R <- list()
                 for(i in 1:pars$p){
                     R[[i]] <- list()
                     for(j in 1:n){
-                        R[[i]][[j]] <- rebuild.cov(cov2cor(vcv[[i]][[j]]), v=(sd[[i]][j,])^2 )
+                        R[[i]][[j]] <- rebuild.cov(stats::cov2cor(vcv[[i]][[j]]), v=(sd[[i]][j,])^2 )
                     }
                 }
             }

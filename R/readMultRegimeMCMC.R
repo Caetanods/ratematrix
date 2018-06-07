@@ -25,6 +25,8 @@ readMultRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
 
     ## Apply thinning and burnin.
     obs.gen <- length( mcmc )-1 ## Compute observed number of samples (Fix for unfinished chains.) Note that header is first line.
+    ## Check if we can read the MCMC. In cases when MCMC failed or something.
+    if( obs.gen <= thin ) stop("Length of mcmc samples is lower than 'thin'.")
     if( burn <= 0 ){
         post <- seq(2, obs.gen+1, by=thin) ## First line is the header.
     } else{

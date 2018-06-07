@@ -14,11 +14,10 @@ riwish <- function(v, S){
     p <- nrow(S)
     CC <- chol(S)
     Z <- matrix(0, p, p)
-    diag(Z) <- sqrt(rchisq(p, v:(v - p + 1)))
+    diag(Z) <- sqrt(stats::rchisq(p, v:(v - p + 1)))
     if (p > 1) {
         pseq <- 1:(p - 1)
-        Z[rep(p * pseq, pseq) + unlist(lapply(pseq, seq))] <- rnorm(p * 
-            (p - 1)/2)
+        Z[rep(p * pseq, pseq) + unlist(lapply(pseq, seq))] <- stats::rnorm(p *(p - 1)/2)
     }
     out <- crossprod(Z %*% CC)
     return(solve(out))
