@@ -16,7 +16,13 @@ Hermansen, J. S., J. Starrfelt, K. L. Voje, and N. C. Stenseth. 2018. Macroevolu
 
 Slater, G. J., and A. R. Friscia. 2018. Hierarchy, Morphology, and Adaptive Radiation: a Test of Osborn’s Law in the Carnivora. bioRxiv 285700. (https://www.biorxiv.org/content/early/2018/03/20/285700)
 
-## Installation
+## Install RCran (released) version
+
+Package is now available on RCran! To install you can just type: `install.packages("ratematrix")`
+
+Page for the package on RCran: https://cran.r-project.org/web/packages/ratematrix/index.html
+
+## Install development version
 
 **For Linux and Mac:**
 
