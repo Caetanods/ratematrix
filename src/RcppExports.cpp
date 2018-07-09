@@ -6,6 +6,26 @@
 
 using namespace Rcpp;
 
+// logLikMk_C
+double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type);
+RcppExport SEXP _ratematrix_logLikMk_C(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n_nodes(n_nodesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_tips(n_tipsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_states(n_statesSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type edge_len(edge_lenSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type edge_mat(edge_matSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type parents(parentsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
+    Rcpp::traits::input_parameter< int >::type root_node(root_nodeSEXP);
+    Rcpp::traits::input_parameter< int >::type root_type(root_typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(logLikMk_C(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type));
+    return rcpp_result_gen;
+END_RCPP
+}
 // logLikPrunningMCMC_C
 double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu);
 RcppExport SEXP _ratematrix_logLikPrunningMCMC_C(SEXP XSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP muSEXP) {
@@ -139,6 +159,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_ratematrix_logLikMk_C", (DL_FUNC) &_ratematrix_logLikMk_C, 10},
     {"_ratematrix_logLikPrunningMCMC_C", (DL_FUNC) &_ratematrix_logLikPrunningMCMC_C, 10},
     {"_ratematrix_cov2cor_C", (DL_FUNC) &_ratematrix_cov2cor_C, 1},
     {"_ratematrix_priorCorr_C", (DL_FUNC) &_ratematrix_priorCorr_C, 3},
