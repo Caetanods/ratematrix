@@ -6,6 +6,47 @@
 
 using namespace Rcpp;
 
+// makeSimmapMappedEdge
+arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type);
+RcppExport SEXP _ratematrix_makeSimmapMappedEdge(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n_nodes(n_nodesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_tips(n_tipsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_states(n_statesSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type edge_len(edge_lenSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type edge_mat(edge_matSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type parents(parentsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
+    Rcpp::traits::input_parameter< int >::type root_node(root_nodeSEXP);
+    Rcpp::traits::input_parameter< bool >::type root_type(root_typeSEXP);
+    rcpp_result_gen = Rcpp::wrap(makeSimmapMappedEdge(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type));
+    return rcpp_result_gen;
+END_RCPP
+}
+// makeSimmapMaps
+arma::mat makeSimmapMaps(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int max_nshifts);
+RcppExport SEXP _ratematrix_makeSimmapMaps(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP, SEXP max_nshiftsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n_nodes(n_nodesSEXP);
+    Rcpp::traits::input_parameter< int >::type n_tips(n_tipsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_states(n_statesSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type edge_len(edge_lenSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type edge_mat(edge_matSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type parents(parentsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
+    Rcpp::traits::input_parameter< int >::type root_node(root_nodeSEXP);
+    Rcpp::traits::input_parameter< bool >::type root_type(root_typeSEXP);
+    Rcpp::traits::input_parameter< int >::type max_nshifts(max_nshiftsSEXP);
+    rcpp_result_gen = Rcpp::wrap(makeSimmapMaps(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, max_nshifts));
+    return rcpp_result_gen;
+END_RCPP
+}
 // logLikMk_C
 double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type);
 RcppExport SEXP _ratematrix_logLikMk_C(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP) {
@@ -159,6 +200,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_ratematrix_makeSimmapMappedEdge", (DL_FUNC) &_ratematrix_makeSimmapMappedEdge, 10},
+    {"_ratematrix_makeSimmapMaps", (DL_FUNC) &_ratematrix_makeSimmapMaps, 11},
     {"_ratematrix_logLikMk_C", (DL_FUNC) &_ratematrix_logLikMk_C, 10},
     {"_ratematrix_logLikPrunningMCMC_C", (DL_FUNC) &_ratematrix_logLikPrunningMCMC_C, 10},
     {"_ratematrix_cov2cor_C", (DL_FUNC) &_ratematrix_cov2cor_C, 1},

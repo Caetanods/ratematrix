@@ -10,13 +10,332 @@ using namespace arma;
 // #######################################################
 
 // #######################################################
-// ###### The stochastic mapping function
+// ###### The stochastic mapping functions
 // #######################################################
 
-// arma::mat makeSimmap() {
-  // Returns the 'mapped.edge' matrix with the branch length for each state for each branch.
+arma::mat getReconStates(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type) {
+  // This is the same as the logLikFunction but it returns a matrix with the probabilities for each of the states at each node of the phylogeny.
 
-// }
+  // n_nodes = number of nodes in phy
+  // n_tips = number of tips in phy
+  // n_states = number of states in the regime.
+  // edge_len = vector with the edge length
+  // edge_mat = the edge matrix for the tree.
+  // parents = vector with the unique( edge.matrix[,1] )
+  // X = data matrix. number of columns equal to the number of states. rows in the same order as the tip.labels. a 1 marks state is present and a 0 mark state absent.
+  // Q = the transition matrix.
+  // root_node = the node number for the root node
+  // root_type = the type to compute the root probabilities. 0 = equal and 1 = madfitz
+
+  arma::mat append_mat = mat(n_nodes, n_states, fill::zeros);
+  arma::mat liks = join_vert(X, append_mat);
+  arma::vec comp = vec(n_nodes + n_tips);
+  arma::uword anc;
+  arma::uvec ii; // This is a vector of indexes.
+  arma::mat v = mat(n_states, 2); // Two descendant nodes.
+
+  // Loop to traverse the tree.
+  for(uword i=0; i < n_nodes; i++) {
+
+    // Need to check the usage of 'anc'. Is it an index or a vector test?
+    
+    anc = parents[i] - 1; // This is an index. C++ starts from 0.
+    ii = find( parents[i] == edge_mat.col(0) ); // More than one entry.
+    
+    uword des;
+    arma::vec v_root = vec(n_states, fill::ones);
+    for(uword j=0; j < 2; j++) {
+      des = as_scalar( edge_mat(ii[j], 1) ) - 1; // This is an index
+      v.col(j) = expmat(Q * edge_len[ ii[j] ]) * trans( liks.row( des ) );
+      v_root = v_root % v.col(j);
+    }
+	  
+    if( parents[i] == root_node ){ // The computations at the root
+      if( root_type == 0 ){
+	// This is the equal root probability model:
+	arma::vec equal_pi = vec(n_states, fill::ones);
+	equal_pi = equal_pi / n_states;
+	comp[ anc ] = sum( v_root % equal_pi );
+      } else{
+	// if( root_type == 1) // This needs to be TRUE
+	// This is the Maddison and Fitzjohn method.
+	// arma::vec comp_unscaled = sum( v_root.col(0) );
+	arma::vec liks_root = v_root / sum( v_root );
+	arma::vec root_p = liks_root / sum( liks_root );
+	comp[ anc ] = sum( v_root % root_p );
+      }
+    } else{
+      comp[ anc ] = sum( v_root );
+    }
+
+    liks.row(anc) = trans( v_root / comp[ anc ] ); // Need row vector.
+  }
+
+  // Get the probabilities for the states at each node:
+  // Make sure that they all sum to 1
+  arma::mat recon_states = mat(liks);
+  for(uword mr=0; mr < recon_states.n_rows; mr++) {
+    recon_states.row(mr) = liks.row(mr) / sum( liks.row(mr) );
+  }
+  
+  return recon_states;
+}
+
+int rMultinom(arma::vec p) {
+  // This is a function to make a single draw from a multinominal distribution.
+  // p is a vector of probabilities and need to sum to 1.
+  p = p / sum(p);
+  
+  double unif_draw = as_scalar(randu(1));
+
+  // Use this random draw to select one of the outcomes. Note that this is a simple map computation, the continuous draw is mapped to an integer depending on the value.
+
+  arma::uword i = 0;
+  double map_ref = p[i];
+  while( unif_draw >= map_ref ) {
+    // The loop will not break because p sums to 1.
+    i++;
+    map_ref = map_ref + p[i];
+  }
+
+  return i;  
+}
+
+// [[Rcpp::export]]
+arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type) {
+  // This function will not return the 'maps' element of the stochastic maps.
+  // For this see the function below. This one is all that is needed for computing the lielihood of the BM model.
+  // Function works by assuming that the order of the rows in sim_node_states is the same as in recon_states below. This follows because of the code in 'getReconStates' function.
+
+  // Define containers:
+  int nrow_mapped_edge = edge_mat.n_rows;
+  double time_chunk;
+  arma::mat mapped_edge = mat(nrow_mapped_edge, n_states);
+  arma::mat exp_Q = mat(Q);
+  arma::uword anc_state;
+  arma::uword des_state;
+  arma::rowvec p_des_state;
+  arma::uvec ii; // Index for many of the loops.
+  arma::mat sim_node_states = mat(nrow_mapped_edge, 2);
+  arma::vec prob_root = vec(n_states);
+  arma::uword des_node;
+  arma::uword curr_state;
+  arma::uword sample_index;
+  arma::umat trans_table_index = umat(n_states, n_states-1); // Take find output.
+  arma::mat trans_table_prob = mat(n_states, n_states-1);
+  arma::rowvec Q_row = rowvec(n_states);
+  
+  // Compute the probability for each state at each internal node given the model parameters. These are the conditional probabilities. Not the marginals.
+  arma::mat recon_states = getReconStates(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type);
+
+  // Creates a table of transition probabilities given each starting state:
+  // These only depend on Q and don't need to be computed more than once.
+  for( arma::uword j=0; j < n_states; j++ ){
+    Q_row = Q.row(j); // This is a column vector type.
+    trans_table_index.row(j) = trans( find( Q_row > 0 ) );
+    Q_row.shed_col(j);
+    trans_table_prob.row(j) = Q_row / sum( Q_row );
+  }
+  
+  // Sample the state at the root.
+  if( root_type ){ // 'madfitz'
+    // Here the vector of probabilities is the same as the estimated under the model.
+    arma::vec pi = trans( recon_states.row( root_node - 1 ) );
+    prob_root = pi % pi;
+  } else{ // root is 'equal'
+    // Here the vector of probabilities is the same for all states.
+    arma::vec pi = vec(n_states, fill::ones) / n_states;
+    prob_root = trans( recon_states.row( root_node - 1 ) ) % pi;
+  }
+  anc_state = rMultinom( prob_root );
+  ii = find( root_node == edge_mat.col(0) ); // Return length 2
+  sim_node_states(ii[0],0) = anc_state;
+  sim_node_states(ii[1],0) = anc_state;
+
+  // Now we can sample all other states:
+  // I will follow the reverse order of the post-order traversal edge matrix. This will make sure we are going from the root to the tips of the tree.
+  for(int i=(nrow_mapped_edge-1); i >= 0; i-- ){
+    
+    exp_Q = expmat(Q * edge_len[i]);
+    anc_state = sim_node_states(i,0); // This was already populated.
+    des_node = edge_mat(i,1);
+    p_des_state = exp_Q.row( anc_state ) % recon_states.row( des_node-1 ); // rowvec
+    des_state = rMultinom( trans( p_des_state ) ); // needs a colvec
+    sim_node_states(i,1) = des_state;
+    if( des_node > n_tips ){ // If the des_node is not a tip node.
+      ii = find( des_node == edge_mat.col(0) );
+      sim_node_states(ii[0],0) = des_state;
+      sim_node_states(ii[1],0) = des_state;
+    }
+	
+    // With the start and end of the state we can perform the simulation. Forward simulate from the starting state, compute the changes along the branch, stop when the simulation passed the length of the branch. Then need to check if the arrival state is the same as the selected state for that node. Otherwise need to draw again.
+    
+    // Reset the accept flag:
+    int accept = 0;
+    // Declare dt outside of the while loop:
+    arma::vec dt = vec(n_states, fill::zeros);
+    while( accept == 0 ){
+      // The vector 'dt' tracks the 'dwelling time' on each state.
+      // I am not creating the 'maps' history here.
+      // Reset the dt vector:
+      dt = vec(n_states, fill::zeros);
+      // The starting state for the simulation.
+      curr_state = anc_state;
+      
+      while( true ){
+	// Time until the next event:
+	time_chunk = R::rexp( 1/(-1.0 * Q(curr_state,curr_state)) );
+	// Add to the time in the current state.
+	if( (sum(dt) + time_chunk) > edge_len[i] ){
+	  // If the waiting time for the next event passes the edge length.
+	  // Then add the remaining branch length and break.
+	  time_chunk = edge_len[i] - sum(dt); // The rest of the time.
+	  dt[curr_state] = dt[curr_state] + time_chunk;
+	  break;
+	}
+	// Add to the time in the current state.
+	dt[curr_state] = dt[curr_state] + time_chunk;
+	// Updates the current state. Take a conditional sample based on Q:
+	sample_index = rMultinom( trans( trans_table_prob.row(curr_state) ) );
+	curr_state = trans_table_index(curr_state, sample_index);
+      }
+      
+      // Check if the simulation is valid, conditioned on the state of the des node.
+      if( curr_state == sim_node_states(i,1) ){
+	accept = 1;
+      }
+    }
+
+    // When done, store the result for this branch:
+    mapped_edge.row(i) = trans(dt);
+  }
+  
+  return mapped_edge;
+}
+
+// [[Rcpp::export]]
+arma::mat makeSimmapMaps(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int max_nshifts) {
+  // Same as the previous function. But this returns the 'maps' information that allow for reconstruction of the 'phytools' maps element.
+  // Function works by assuming that the order of the rows in sim_node_states is the same as in recon_states below. This follows because of the code in 'getReconStates' function.
+
+  // Define containers:
+  int nrow_mapped_edge = edge_mat.n_rows;
+  double time_chunk;
+  arma::mat exp_Q = mat(Q);
+  arma::uword anc_state;
+  arma::uword des_state;
+  arma::rowvec p_des_state;
+  arma::uvec ii; // Index for many of the loops.
+  arma::mat sim_node_states = mat(nrow_mapped_edge, 2);
+  arma::vec prob_root = vec(n_states);
+  arma::uword des_node;
+  arma::uword curr_state;
+  arma::uword sample_index;
+  arma::umat trans_table_index = umat(n_states, n_states-1); // Take find output.
+  arma::mat trans_table_prob = mat(n_states, n_states-1);
+  arma::rowvec Q_row = rowvec(n_states);
+  
+  // Compute the probability for each state at each internal node given the model parameters. These are the conditional probabilities. Not the marginals.
+  arma::mat recon_states = getReconStates(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type);
+
+  // Creates a table of transition probabilities given each starting state:
+  // These only depend on Q and don't need to be computed more than once.
+  for( arma::uword j=0; j < n_states; j++ ){
+    arma::urowvec index_vec = urowvec(n_states);
+    for( arma::uword jj=0; jj < n_states; jj++ ){
+      index_vec[jj] = jj;
+    }
+    index_vec.shed_col(j);
+    trans_table_index.row(j) = index_vec;
+    // trans_table_index.row(j) = trans( find( Q_row > 0 ) );
+    Q_row = Q.row(j); // This is a column vector type.
+    Q_row.shed_col(j);
+    trans_table_prob.row(j) = Q_row / sum( Q_row );
+  }
+  
+  // The C++ code is not very efficient with growing vectors. So here we need to set a maximum number of per branch shifts events to work on the stochastic maps.
+  Rcout << "Max capacity for shifts on branches: " << max_nshifts << "\n";
+  arma::umat maps_state = umat(nrow_mapped_edge, max_nshifts);
+  maps_state.fill(n_states); // Help distinguish unnused entries.
+  arma::mat maps_edge = mat(nrow_mapped_edge, max_nshifts, fill::zeros); // Zero entries are unnused.
+  
+  // Sample the state at the root.
+  if( root_type ){ // 'madfitz'
+    // Here the vector of probabilities is the same as the estimated under the model.
+    arma::vec pi = trans( recon_states.row( root_node - 1 ) );
+    prob_root = pi % pi;
+  } else{ // root is 'equal'
+    // Here the vector of probabilities is the same for all states.
+    arma::vec pi = vec(n_states, fill::ones) / n_states;
+    prob_root = trans( recon_states.row( root_node - 1 ) ) % pi;
+  }
+  anc_state = rMultinom( prob_root );
+  ii = find( root_node == edge_mat.col(0) ); // Return length 2
+  sim_node_states(ii[0],0) = anc_state;
+  sim_node_states(ii[1],0) = anc_state;
+
+  // Now we can sample all other states:
+  // I will follow the reverse order of the post-order traversal edge matrix. This will make sure we are going from the root to the tips of the tree.
+  for(int i=(nrow_mapped_edge-1); i >= 0; i-- ){
+    
+    exp_Q = expmat(Q * edge_len[i]);
+    anc_state = sim_node_states(i,0); // This was already populated.
+    des_node = edge_mat(i,1);
+    p_des_state = exp_Q.row( anc_state ) % recon_states.row( des_node-1 ); // rowvec
+    des_state = rMultinom( trans( p_des_state ) ); // needs a colvec
+    sim_node_states(i,1) = des_state;
+    if( des_node > n_tips ){ // If the des_node is not a tip node.
+      ii = find( des_node == edge_mat.col(0) );
+      sim_node_states(ii[0],0) = des_state;
+      sim_node_states(ii[1],0) = des_state;
+    }
+	
+    // With the start and end of the state we can perform the simulation. Forward simulate from the starting state, compute the changes along the branch, stop when the simulation passed the length of the branch. Then need to check if the arrival state is the same as the selected state for that node. Otherwise need to draw again.
+    
+    // Reset the accept flag:
+    int accept = 0;
+    while( accept == 0 ){
+      // Reset the id for the shifts.
+      uword id_shift = 0;
+      // Reset the values for states and shift times.
+      maps_state.row(i) = urowvec(max_nshifts, fill::ones) * n_states;
+      maps_edge.row(i) = rowvec(max_nshifts, fill::zeros);
+      // The starting state for the simulation is 'curr_state'
+      curr_state = anc_state; // Because 'anc_state' is fixed and curr_state will change.
+      maps_state(i, id_shift) = anc_state;
+	  
+      while( true ){
+	// Time until the next event:
+	time_chunk = R::rexp( 1/(-1.0 * Q(curr_state, curr_state)) );
+	// Add to the time in the current state.
+	if( (sum( maps_edge.row(i) ) + time_chunk) > edge_len[i] ){
+	  // If the waiting time for the next event passes the edge length.
+	  // Then add the remaining branch length and break.
+	  time_chunk = edge_len[i] - sum( maps_edge.row(i) ); // The rest of the time.
+	  maps_edge(i,id_shift) = time_chunk;
+	  break;
+	}	   
+	// Add to the time in the current state.
+	maps_edge(i,id_shift) = time_chunk;
+	// Updates the current state. Take a conditional sample based on Q:
+	sample_index = rMultinom( trans( trans_table_prob.row( curr_state ) ) );
+	curr_state = trans_table_index(curr_state, sample_index);
+	maps_state(i, id_shift+1) = curr_state; // Move to the next shift.
+	id_shift++; // Advance the counter.
+      }
+      
+      // Check if the simulation is valid, conditioned on the state of the des node.
+      if( curr_state == sim_node_states(i,1) ){
+	accept = 1;
+      }
+    }
+  }
+
+  // Need to consolidate the matrices in order to return.
+  arma::mat maps_state_double = conv_to<mat>::from( maps_state ); // Force to double?
+  arma::mat stack_maps = join_vert(maps_state_double, maps_edge);  
+  return stack_maps;
+}
 
 // #######################################################
 // ###### The logLikelihood functions
@@ -39,11 +358,10 @@ double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arm
 
   arma::mat append_mat = mat(n_nodes, n_states, fill::zeros);
   arma::mat liks = join_vert(X, append_mat);
-  arma::vec comp = vec(n_nodes+n_tips);
+  arma::vec comp = vec(n_nodes + n_tips);
   arma::uword anc;
   arma::uvec ii; // This is a vector of indexes.
   arma::mat v = mat(n_states, 2); // Two descendant nodes.
-  arma::vec vv = vec(n_states);
 
   // Loop to traverse the tree.
   for(uword i=0; i < n_nodes; i++) {
@@ -54,9 +372,11 @@ double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arm
     ii = find( parents[i] == edge_mat.col(0) ); // More than one entry.
     
     uword des;
+    arma::vec v_root = vec(n_states, fill::ones);
     for(uword j=0; j < 2; j++) {
       des = as_scalar( edge_mat(ii[j], 1) ) - 1; // This is an index
       v.col(j) = expmat(Q * edge_len[ ii[j] ]) * trans( liks.row( des ) );
+      v_root = v_root % v.col(j);
     }
 	  
     if( parents[i] == root_node ){ // The computations at the root
@@ -64,23 +384,20 @@ double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arm
 	// This is the equal root probability model:
 	arma::vec equal_pi = vec(n_states, fill::ones);
 	equal_pi = equal_pi / n_states;
-	arma::vec v_root = v.col(0) % v.col(1); // Element-wise multiplication
-	comp[ anc ] = sum( v_root % equal_pi );	
+	comp[ anc ] = sum( v_root % equal_pi );
       } else{
 	// if( root_type == 1) // This needs to be TRUE
 	// This is the Maddison and Fitzjohn method.
-	arma::vec v_root = v.col(0) % v.col(1);
 	// arma::vec comp_unscaled = sum( v_root.col(0) );
 	arma::vec liks_root = v_root / sum( v_root );
 	arma::vec root_p = liks_root / sum( liks_root );
 	comp[ anc ] = sum( v_root % root_p );
       }
     } else{
-      vv = v.col(0) % v.col(1);
-      comp[ anc ] = sum( vv );
+      comp[ anc ] = sum( v_root );
     }
 
-    liks.row(anc) = trans( vv / comp[ anc ] ); // Need row vector.
+    liks.row(anc) = trans( v_root / comp[ anc ] ); // Need row vector.
   }
 
   // Get the log-lik for the model:
