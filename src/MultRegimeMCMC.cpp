@@ -131,8 +131,14 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
   // Creates a table of transition probabilities given each starting state:
   // These only depend on Q and don't need to be computed more than once.
   for( arma::uword j=0; j < n_states; j++ ){
+    arma::urowvec index_vec = urowvec(n_states);
+    for( arma::uword jj=0; jj < n_states; jj++ ){
+      index_vec[jj] = jj;
+    }
+    index_vec.shed_col(j);
+    trans_table_index.row(j) = index_vec;
+    // trans_table_index.row(j) = trans( find( Q_row > 0 ) );
     Q_row = Q.row(j); // This is a column vector type.
-    trans_table_index.row(j) = trans( find( Q_row > 0 ) );
     Q_row.shed_col(j);
     trans_table_prob.row(j) = Q_row / sum( Q_row );
   }

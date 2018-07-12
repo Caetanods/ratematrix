@@ -16,7 +16,7 @@ fastSimmap(tree, x, Q, pi = "equal", nsim = 1, mc.cores = 1,
 
 \item{pi}{one of 'equal' or 'madfitz'.}
 
-\item{nsim}{number of stochastic mappings to be performed conditioned on Q.}
+\item{nsim}{number of stochastic mappings to be performed conditioned on Q. NOT IMPLEMENTED YET!}
 
 \item{mc.cores}{same as in 'parallel::mclapply'. This is used to make multiple simulations (controlled with the argument 'nsim') by calling 'parallel::mclapply'.}
 
