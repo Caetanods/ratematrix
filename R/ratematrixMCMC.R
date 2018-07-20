@@ -286,9 +286,8 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
                     fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy, dat=data[,x], model = "BM") )
                 }
                 guess.rates <- sapply(fit, function(x) coef(x)[1])
-                top.sd <- sqrt( ceiling(guess.rates) * 10 )
-                bottom.sd <- rep(0, times = length(top.sd))
-                par.sd <- cbind(bottom.sd, top.sd)
+                top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
+                par.sd <- cbind(0, top.sd)
                 prior_run <- makePrior(r=r, p=1, den.mu="norm", par.mu=data.range, par.sd=par.sd)
             }
         }

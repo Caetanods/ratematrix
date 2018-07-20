@@ -247,9 +247,9 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
             cat("Guessing magnitude of rates from the data. \n")
             fit <- lapply(1:ncol(data_BM), function(x) fitContinuous(phy = phy, dat=data_BM[,x], model = "BM") )
             guess.rates <- sapply(fit, function(x) coef(x)[1])
-            top.sd <- sqrt( ceiling(guess.rates) * 10 )
-            bottom.sd <- rep(0, times = length(top.sd))
-            par.sd <- cbind(bottom.sd, top.sd)
+            top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
+            rep.sd.regime <- rep(c(0,top.sd), times=p)
+            par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
             prior_run <- makePrior(r=r, p=p, den.mu="norm", par.mu=data.range, par.sd=par.sd)
         }
     }
