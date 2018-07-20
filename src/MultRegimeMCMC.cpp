@@ -424,7 +424,7 @@ double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arm
 double logLikNode_C(arma::vec ss, arma::mat sigma_len, arma::mat sigma_len_inv, int k) {
   double val;
   double signal;
-  arma::log_det(val, signal, sigma_len); // val is logdeterminant and signal should be 0.  
+  arma::log_det(val, signal, sigma_len); // val is logdeterminant and signal should be 0.
   return -0.5 * ( k * log(2 * arma::datum::pi) + val + as_scalar(trans(ss) * sigma_len_inv * ss));
 }
 
@@ -620,7 +620,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
   // The index 'n_nodes' is correspondent to the position 'n_nodes + 1'. Remember the indexation starts from 0.
   ss = X0.col(n_nodes-1) - mu;
   ll = ll + logLikNode_C(ss, V0.slice(n_nodes-1), inv_sympd(V0.slice(n_nodes-1)), k);
-  
+
   return(ll);
 }
 
@@ -1557,9 +1557,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   if( model_Q == "ER" ){
     Q_npar = 1;
   } else if( model_Q == "SYM" ){
-    Q_npar = ( (k * k) - k ) / 2;
+    Q_npar = ( (p * p) - p ) / 2;
   } else {
-    Q_npar = (k * k) - k;
+    Q_npar = (p * p) - p;
   }
   
   // Write the header for the mcmc file.
@@ -1670,13 +1670,13 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   // Get starting priors, likelihood, and jacobian.
   // The likelihood for the model is the sum of the logliks of these two layers.
   lik_mvBM = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu);
-  lik_Mk = logLikMk_C(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
+  lik_Mk = logLikMk_C(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
 
   curr_root_prior = priorRoot_C(mu, par_prior_mu, den_mu);
   curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
-  vec_Q = extractQ(Q, k, model_Q); // The vectorized Q matrix for the starting state of the search.
+  vec_Q = extractQ(Q, p, model_Q); // The vectorized Q matrix for the starting state of the search.
   
   curr_Q_prior = priorQ(vec_Q, par_prior_Q, den_Q); // The prior for the Q matrix.
 
@@ -1698,7 +1698,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   writeToMultFile_C(mcmc_stream, p, k, R, mu);
   // Need to make a function to write the Q matrix to file.
   // Note that the length of the vector will change depending on k and model_Q
-  writeQToFile(Q_mcmc_stream, vec_Q, k, model_Q);
+  writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);
 
   Rcout << "Starting MCMC ... \n";
   
@@ -1859,13 +1859,13 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       
       // The prior only reflects on the Q matrix. The prior for the stochastic map (conditioned on the Q matrix) is flat.
       pp = prop_Q_prior - curr_Q_prior;
-      prop_Q = buildQ(prop_vec_Q, k, model_Q); // Rebuild a matrix from the Q vector. Just to compute the lik and draw the map.
-      prop_Q_lik = logLikMk_C(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
+      prop_Q = buildQ(prop_vec_Q, p, model_Q); // Rebuild a matrix from the Q vector. Just to compute the lik and draw the map.
+      prop_Q_lik = logLikMk_C(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
 
       // UPDATE MAPPED_EDGE
       // Here the move is a new draw. So it is not a step from the previous one.
       // Technically, this makes the MCMC a Metropolis within Gibbs algorithm.
-      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
+      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
       // This the mvBM likelihood, just changed the mapped_edge.
       prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
 
@@ -1897,7 +1897,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
     } else{
       // Update the ONLY the stochastic map.
       // This is just one step to draw a stochastic map conditioned on the Q matrix and the mvBM model.
-      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
+      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
       // This the mvBM likelihood, just changed the mapped_edge.
       prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
 
@@ -1926,7 +1926,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
     // Need to use a different output file to write the Q matrix.
     writeToMultFile_C(mcmc_stream, p, k, R, mu);
     // Q here is in vector format, so we need the size of the matrix and the model to write the correct quantity.
-    writeQToFile(Q_mcmc_stream, vec_Q, k, model_Q);     
+    writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);     
   }
 
   Rcout << "Closing files... \n";
