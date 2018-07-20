@@ -86,7 +86,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     if( inherits(prior, what="character") && prior == "empirical_mean" ) cat("Using old default prior. \n")
     if( inherits(prior, what="character") && prior == "uniform_scaled" ) cat("Using new default prior. \n")
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
-    if( v == 25 && w_sd == 0.5 && w_mu == 0.5 && prop[1] == 0.05 && prop[2] == 0.475 ) cat("Using default proposal settings. \n")
+    if( v == 50 && w_sd == 0.2 && w_mu == 0.5 && prop[1] == 0.05 && prop[2] == 0.475 ) cat("Using default proposal settings. \n")
 
     ## Check if provided prior has the correct dimension:
     if( inherits(prior, what="ratematrix_prior_function") ){
