@@ -56,6 +56,8 @@ library( ratematrix )
 
 ## News and updates
 
+**Jul-2018 (v 1.0):** Fix minor problem when using the "uniform_scaled" prior (default). The function was returning an error when the number of traits was different from the number of regimes.
+
 **Jun-2018 (v 1.0):** MAJOR UPDATE! This is the list of changes: a) Implemented C++ code for the MCMC (Major speed improvement!), b) Now package works on Linux, Mac and Window systems!, c) Changed default prior (see help page for 'ratematrixMCMC', d) added new functions to facilitate computing the Effective Sample Size, extracting the evolutionary correlations among other things, e) updated the usability of many functions. (please check the help pages and examples for the updates), f) package now follow RCran policy. See change to 'dir' argument on function 'ratematrixMCMC'.
 
 **May-2018 (v 0.3):** Fix minor bugs. Fix function to estimate the MCMC with no regime (single ratematrix fitted to the tree). Fix the call to the likelihood function outside the MCMC (interface issue only!). Corrects warnings from RCran checks. Almost ready for RCran.
