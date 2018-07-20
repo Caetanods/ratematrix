@@ -190,7 +190,13 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
       
       while( true ){
 	// Time until the next event:
-	time_chunk = R::rexp( 1/(-1.0 * Q(curr_state,curr_state)) );
+	if( -1.0 * Q(curr_state,curr_state) <= 0 ){
+	  // If the rate if 0, then nothing happens for the rest of the branch.
+	  // This time_chunk will be larger than the branch. But the test below will make sure it breaks the loop and bounce it back to the correct length.
+	  time_chunk = edge_len[i] + 1.0;
+	} else{
+	  time_chunk = R::rexp( 1/(-1.0 * Q(curr_state,curr_state)) );
+	}
 	// Add to the time in the current state.
 	if( (sum(dt) + time_chunk) > edge_len[i] ){
 	  // If the waiting time for the next event passes the edge length.
@@ -215,7 +221,7 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
     // When done, store the result for this branch:
     mapped_edge.row(i) = trans(dt);
   }
-  
+
   return mapped_edge;
 }
 
@@ -312,7 +318,13 @@ arma::mat makeSimmapMaps(int n_nodes, int n_tips, int n_states, arma::vec edge_l
 	  
       while( true ){
 	// Time until the next event:
-	time_chunk = R::rexp( 1/(-1.0 * Q(curr_state, curr_state)) );
+	if( -1.0 * Q(curr_state,curr_state) <= 0 ){
+	  // If the rate if 0, then nothing happens for the rest of the branch.
+	  // This time_chunk will be larger than the branch. But the test below will make sure it breaks the loop and bounce it back to the correct length.
+	  time_chunk = edge_len[i] + 1.0;
+	} else{
+	  time_chunk = R::rexp( 1/(-1.0 * Q(curr_state,curr_state)) );
+	}
 	// Add to the time in the current state.
 	if( (sum( maps_edge.row(i) ) + time_chunk) > edge_len[i] ){
 	  // If the waiting time for the next event passes the edge length.
@@ -373,10 +385,9 @@ double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arm
   for(uword i=0; i < n_nodes; i++) {
 
     // Need to check the usage of 'anc'. Is it an index or a vector test?
-    
     anc = parents[i] - 1; // This is an index. C++ starts from 0.
     ii = find( parents[i] == edge_mat.col(0) ); // More than one entry.
-    
+
     uword des;
     arma::vec v_root = vec(n_states, fill::ones);
     for(uword j=0; j < 2; j++) {
@@ -413,12 +424,12 @@ double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arm
 double logLikNode_C(arma::vec ss, arma::mat sigma_len, arma::mat sigma_len_inv, int k) {
   double val;
   double signal;
-  arma::log_det(val, signal, sigma_len); // val is logdeterminant and signal should be 0.
+  arma::log_det(val, signal, sigma_len); // val is logdeterminant and signal should be 0.  
   return -0.5 * ( k * log(2 * arma::datum::pi) + val + as_scalar(trans(ss) * sigma_len_inv * ss));
 }
 
 // [[Rcpp::export]]
-double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu) {
+double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu) {
   // X is the data matrix with information for the tips.
   // k is the number of traits in the data.
   // p is the number of regimes in the data.
@@ -495,6 +506,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::u
 	Rs1.slice(0) += Rs1.slice(z);
 	Rs2.slice(0) += Rs2.slice(z);
       }
+
       Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
 
       ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
@@ -608,7 +620,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::u
   // The index 'n_nodes' is correspondent to the position 'n_nodes + 1'. Remember the indexation starts from 0.
   ss = X0.col(n_nodes-1) - mu;
   ll = ll + logLikNode_C(ss, V0.slice(n_nodes-1), inv_sympd(V0.slice(n_nodes-1)), k);
-
+  
   return(ll);
 }
 
@@ -744,6 +756,7 @@ double priorCorr_C(arma::cube corr, arma::vec nu, arma::cube sigma){
 
 arma::vec multiplierProposal_C(int size, arma::vec w_sd){
   // A proposal that scales with the absolute value of the parameter. (Always positive.)
+  // w_sd can be any vector of positive values.
   // in R this is doing:
   // exp( 2 * log(w_sd) * runif(1, min=-0.5, max=0.5) )
   // Get this return factor and multiply by the current value for the proposal.
@@ -817,10 +830,11 @@ void writeToMultFile_C(std::ostream& mcmc_stream, int p, int k, arma::cube R, ar
 
 // This is the MCMC function when there is only a single tree/regime configuration to be estimated. Allowing for multiple trees could be done in the same function. However, it is faster and simpler just to duplicate this function and assume that we are always working with a list of trees.
 // The function 'runRatematrixMultiMCMC_C' is doing this.
+// There is a separated function also to deal with the case of joint inference of the Markov model for the predictor traits and the stochastic mapping for the tree.
 // A similar need will happen for the MCMC with a single regime. In this case a bunch of computations are not needed. I can just simplify a lot this MCMC function. Using my own likelihood function will also means I can drop both 'mvMORPH' and 'phytools' as dependencies for the package. This will also make installation in a server much more user-friendly. [The 'rgl' dependecy of 'phytools' makes installation in servers difficult.]
 
 // [[Rcpp::export]]
-std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
+std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // The starting point parameters. These are the objects to carry on the MCMC.
@@ -1091,7 +1105,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::uvec nodes, arm
 // The MCMC function for multiple regimes:
 
 // [[Rcpp::export]]
-std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
+std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // These parameters changed from the 'runRatematrixMCMC_C' function:
@@ -1382,6 +1396,542 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::umat nodes
 
   Rcout << "Closing files... \n";
 
+  mcmc_stream.close();
+  log_stream.close();
+
+  return "Done.";
+}
+
+// The function with joint estimation for the Markov model together with the mvBM. This will sample Q matrices, will sample the stochastic mappings. Starting states are the Q matrix and the mapped_edge for the stochastic mapping.
+
+// Helping functions for the jointMk estimation.
+// These are related to the proposal, priors and write to file for the Q matrices.
+
+double priorQ(arma::vec vec_Q, arma::vec par_prior_Q, std::string den_Q){
+  // Compute the prior probability for the Q matrix rates.
+  // Can be uniform or exponential prior.
+  // The 'par_prior_Q' can be a vector with 1 or 2 elements, depeding on the density.
+  double pp = 0.0;
+  if( den_Q == "uniform" ){
+    for( arma::uword i=0; i < vec_Q.n_rows; i++ ){ // vec_Q is a column.
+      // If "unif" then 'par_prior_Q' is a vector with 2 elements.
+      pp = pp + R::dunif(vec_Q[i], par_prior_Q[0], par_prior_Q[1], true);
+    }
+  } else{ // Then it is an exponential prior.
+    for( arma::uword i=0; i < vec_Q.n_rows; i++ ){
+      // In Rcpp the exponential is '1/rate' whereas in R it is simply 'rate' .
+      // Here only one parameter is needed.
+      pp = pp + R::dexp(vec_Q[i], 1/par_prior_Q[0], true);
+    }
+  }
+  
+  return pp;
+}
+
+arma::vec extractQ(arma::mat Q, int size, std::string model_Q){
+  // Function to extract a column vector from the Q matrix.
+  // Length of the vector will depend on the type of the model for the Q matrix.
+  // Need to use the same pattern to extract and rebuild the matrix.
+  arma::vec vec_Q;
+  
+  if( model_Q == "ER" ){
+    vec_Q = vec(1, fill::zeros);
+    vec_Q[0] = Q(0,1); // All off-diagonals are the same.
+  } else if( model_Q == "SYM" ){
+    arma::uword count = 0;
+    int size_vec = ( ( size * size ) - size ) / 2;
+    vec_Q = vec(size_vec, fill::zeros);
+    for( arma::uword i=0; i < size; i++ ){
+      for( arma::uword j=0; j < size; j++ ){
+	if( i >= j ) continue;
+	vec_Q[count] = Q(i,j);
+	count++;
+      }
+    }
+  } else{ // model_Q == "ARD"
+    arma::uword count = 0;
+    int size_vec = ( size * size ) - size;
+    vec_Q = vec(size_vec, fill::zeros);
+    for( arma::uword i=0; i < size; i++ ){
+      for( arma::uword j=0; j < size; j++ ){
+	if( i == j ) continue;
+	vec_Q[count] = Q(i,j);
+	count++;
+      }
+    }
+  }
+
+  return vec_Q;
+}
+
+arma::mat buildQ(arma::vec vec_Q, int size, std::string model_Q){
+  // Function to re-build the Q matrix.
+  // Need to follow the same pattern used to extract the vector.
+  arma::mat Q = mat(size, size, fill::zeros);
+  
+  if( model_Q == "ER" ){
+    Q.fill(vec_Q[0]);
+    // Now fill the diagonal.
+    for( arma::uword i=0; i < size; i++ ){
+      Q(i,i) = -1.0 * ( sum( Q.row(i) ) - vec_Q[0] );
+    }
+  } else if( model_Q == "SYM" ){
+    Q.fill(0); // Fill the matrix with 0.
+    arma::uword count = 0;
+    // Go over the matrix and fill the upper and lower-tri.
+    for( arma::uword i=0; i < size; i++ ){
+      for( arma::uword j=0; j < size; j++ ){
+	if( i >= j ) continue;
+	Q(i,j) = vec_Q[count];
+	Q(j,i) = vec_Q[count]; // The trick to fill the lower-tri.
+	count++;
+      }
+    }
+    // Now fill the diagonal.
+    for( arma::uword i=0; i < size; i++ ){
+      Q(i,i) = -1.0 * sum( Q.row(i) );
+    }
+  } else{ // model_Q == "ARD"
+    Q.fill(0); // Fill the matrix with 0.
+    arma::uword count = 0;
+    // Go over the matrix and fill the upper and lower-tri.
+    for( arma::uword i=0; i < size; i++ ){
+      for( arma::uword j=0; j < size; j++ ){
+	if( i == j ) continue;
+	Q(i,j) = vec_Q[count];
+	count++;
+      }
+    }
+    // Now fill the diagonal.
+    for( arma::uword i=0; i < size; i++ ){
+      Q(i,i) = -1.0 * sum( Q.row(i) );
+    }
+  }
+
+  return Q;
+}
+
+void writeQToFile(std::ostream& Q_mcmc_stream, arma::vec vec_Q, int k, std::string model_Q){
+  // Note the 'std::ostream&' argument here is the use of a reference.
+  if( model_Q == "ER" ){
+    Q_mcmc_stream << vec_Q;
+  } else{
+    int print_size = vec_Q.n_rows;
+    for( arma::uword i=0; i < (print_size-1); i++ ){
+      Q_mcmc_stream << vec_Q[i];
+      Q_mcmc_stream << "; ";
+    }
+    Q_mcmc_stream << vec_Q[print_size-1];
+    Q_mcmc_stream << "\n";
+  }
+}
+
+
+// [[Rcpp::export]]
+std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header){
+  // The data parameters:
+  // X, k, p, nodes, des, anc, names_anc, mapped_edge, datMk
+  // The starting point parameters. These are the objects to carry on the MCMC.
+  // R, mu, sd, Rcorr, Q, mapped_edge
+  // Q is for the predictor regime and mapped_edge is the current stochastic mapping.
+  // The starting point priors:
+  // curr_root_prior, curr_sd_prior, Rcorr_curr_prior, curr_Q_prior
+  // The parameters for the priors:
+  // par_prior_mu, den_mu, par_prior_sd, den_sd, nu, sigma, par_prior_Q, den_Q
+  // The starting point jacobian:
+  // curr_jacobian
+  // The parameters for the proposals:
+  // w_mu, w_sd, v, w_Q
+  // The parameters to control the MCMC:
+  // prob_sample_root, prob_sample_var, prob_sample_Q, gen
+  // write_header, wheather to write the header to file or just to append.
+
+  // Open the files to write:
+  // The log_file and mcmc_file arguments (one for the mvBM model and another for the Q matrix).
+  std::ofstream log_stream (log_file, ios::out | ios::app);
+  std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
+  std::ofstream Q_mcmc_stream (Q_mcmc_file, ios::out | ios::app);
+
+  // Find the number of parameters for the Q matrix:
+  int Q_npar;
+  if( model_Q == "ER" ){
+    Q_npar = 1;
+  } else if( model_Q == "SYM" ){
+    Q_npar = ( (k * k) - k ) / 2;
+  } else {
+    Q_npar = (k * k) - k;
+  }
+  
+  // Write the header for the mcmc file.
+  if(write_header == 1){
+    for( int kk=1; kk < p+1; kk++ ){
+      for( int ii=1; ii < k+1; ii++ ){
+	for( int jj=1; jj < k+1; jj++ ){
+	  mcmc_stream << "regime.p";
+	  mcmc_stream << kk;
+	  mcmc_stream << ".";
+	  mcmc_stream << ii;
+	  mcmc_stream << jj;
+	  mcmc_stream << "; ";
+	}
+      }
+    }
+  
+    for( int kk=1; kk < k; kk++ ){
+      mcmc_stream << "trait.";
+      mcmc_stream << kk;
+      mcmc_stream << "; ";
+    }
+    mcmc_stream << "trait.";
+    mcmc_stream << k;
+    mcmc_stream << "\n";
+
+    // Write the header for the Q mcmc file.
+    for( int kk=1; kk < Q_npar; kk++ ){
+      Q_mcmc_stream << "Q.par.";
+      Q_mcmc_stream << kk;
+      Q_mcmc_stream << "; ";
+    }
+    Q_mcmc_stream << "Q.par.";
+    Q_mcmc_stream << Q_npar;
+    Q_mcmc_stream << "\n";
+    
+    // Write the header for the log file.
+  log_stream << "accepted; Q.matrix; stoch.map; matrix.corr; matrix.sd; root; log.lik \n";
+  } else{
+    // Do nothing.
+    // This is the case for a continuing MCMC.
+  }
+  
+  // Define the containers for the run:
+  // Try to set the size of the objects for better memory management.
+  
+  // The starting point log lik for each of the models:
+  double lik_mvBM;
+  double lik_Mk;
+  // The starting point prior:
+  double curr_root_prior;
+  double curr_sd_prior;
+  double Rcorr_curr_prior;
+  double curr_Q_prior;
+  
+  // The jacobian for the MCMC. There are one for each regime.
+  // Because need to track the jump separatelly.
+  arma::vec curr_jacobian = vec(k, fill::zeros);
+
+  int sample_par;
+  int sample_sd;
+  arma::vec prop_root;
+  double prop_root_prior;
+  double pp;
+  double prop_root_lik;
+  double ll;
+  double r;
+  double unif_draw;
+  arma::uword Rp;
+  arma::mat prop_sd;
+  double prop_sd_prior;
+  arma::mat prop_diag_sd;
+  arma::cube R_prop;
+  double prop_sd_lik;
+  arma::cube Rcorr_prop;
+  double Rcorr_prop_prior;
+  arma::mat diag_sd;
+  double prop_corr_lik;
+  double hh;
+  arma::vec decomp_var;
+  double prop_jacobian = 0.0; // Need always to reset this one.
+  double jj;
+  arma::vec multi_factor; // Stores the multiplier proposal scaler.
+  arma::mat prop_Q = mat(Q);
+  double prop_Q_prior;
+  double prop_Q_lik;
+  arma::vec vec_Q;
+  arma::vec prop_vec_Q;
+  arma::vec multi_Q_factor;
+  arma::mat prop_mapped_edge = mat(mapped_edge);
+  double prop_mapped_edge_lik;
+  
+  
+  // Generate some additional information:
+
+  // Set the vector of probabilities for the regimes:
+  arma::vec regime_prob = vec(p);
+  regime_prob.fill(1.0/p); // Same probability to sample any regime.
+  
+  // Branch lengths is the sum of the mapped_edges
+  arma::vec edge_len = vec(mapped_edge.n_rows);
+  for( uword i=0; i < mapped_edge.n_rows; i++ ){
+    edge_len[i] = sum( mapped_edge.row(i) );
+  }
+  
+  int root_node = n_tips + 1; // The root node for the phylogeny.
+
+  // Get starting priors, likelihood, and jacobian.
+  // The likelihood for the model is the sum of the logliks of these two layers.
+  lik_mvBM = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu);
+  lik_Mk = logLikMk_C(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
+
+  curr_root_prior = priorRoot_C(mu, par_prior_mu, den_mu);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
+  Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
+
+  vec_Q = extractQ(Q, k, model_Q); // The vectorized Q matrix for the starting state of the search.
+  
+  curr_Q_prior = priorQ(vec_Q, par_prior_Q, den_Q); // The prior for the Q matrix.
+
+  Rcout << "Starting point Log-likelihood: " << lik_mvBM + lik_Mk << "\n";
+
+  arma::mat var_vec = square(sd);
+  // Jacobian for both the regimes:
+  for( int j=0; j < p; j++ ){
+    for( int i=0; i < k; i++ ){
+      // The jacobian is computed on the variances!
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec.col(j)[j] ) * log( (k-1.0)/2.0 ) );
+    }
+  }
+
+  // Print starting point to files:
+  log_stream << "1; 0; 0; 0; 0; 0; ";
+  log_stream << lik_mvBM + lik_Mk;
+  log_stream << "\n"; 
+  writeToMultFile_C(mcmc_stream, p, k, R, mu);
+  // Need to make a function to write the Q matrix to file.
+  // Note that the length of the vector will change depending on k and model_Q
+  writeQToFile(Q_mcmc_stream, vec_Q, k, model_Q);
+
+  Rcout << "Starting MCMC ... \n";
+  
+  // Starting the MCMC.
+  for( int i=0; i < gen; i++ ){
+    // Sample between the root, rate matrix, and the Mk matrix.
+    // The result will be in the form 0: root, 1: sd, 2: corr, 3: Q, 4: stochastic map.
+    // So a single vector control the probability to sample all the parameters.
+    sample_par = rMultinom(par_prob); // par_prob needs to have length of 5 and sum to 1.
+    // If matrix or variance is updated, which regime?
+    Rp = rMultinom(regime_prob);
+    // Rp is an arma::uword index.
+	  
+    // The 'if...if...else' structure is lazy and will evaluate only the first entry.
+    if(sample_par == 0){
+      // Update the root state.
+      prop_root = slideWindow_C(mu, w_mu);
+      // Compute the prior.
+      prop_root_prior = priorRoot_C(prop_root, par_prior_mu, den_mu);
+      // The log prior ratio. curr_root_prior is the current prior density for the root.
+      // The prior for the other parameters are also constant. So they don't need to be here either.
+      pp = prop_root_prior - curr_root_prior;
+      prop_root_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, prop_root);
+      // The likelihood ratio.
+      // Because the lik for the mk model is constant here, it does not need to be computed.
+      ll = prop_root_lik - lik_mvBM;
+      // Get the ratio in log space.
+      r = ll + pp;
+
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	log_stream << "1; 0; 0; 0; 0; 1; ";
+	log_stream << prop_root_lik + lik_Mk; // The probability of the whole model.
+	log_stream << "\n";
+	mu = prop_root; // Update the value for the root. Need to carry over.
+	curr_root_prior = prop_root_prior; // Update the root prior. Need to carry over.
+	lik_mvBM = prop_root_lik; // Update likelihood. Need to carry over.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; 0; 0; 0; 0; 1; ";
+	log_stream << lik_mvBM  + lik_Mk;
+	log_stream << "\n";
+      }
+    } else if(sample_par == 1){
+      // Update the variance vector.
+      // Draw which regime to update.
+      // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+      prop_sd = sd; // The matrix of standard deviations.
+      // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
+      multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
+      prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
+      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
+      pp = prop_sd_prior - curr_sd_prior;
+  
+      // Need to rebuild the R matrix to compute the likelihood:
+      prop_diag_sd = diagmat( prop_sd.col(Rp) );
+      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      R_prop = R; // R is the current R matrix.
+      R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
+      prop_sd_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, mu);
+      ll = prop_sd_lik - lik_mvBM;
+
+      // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
+      r = ll + pp + accu(multi_factor);
+
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	log_stream << "1; 0; 0; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; ";
+	log_stream << prop_sd_lik + lik_Mk; // The lik for the whole model.
+	log_stream << "\n";
+	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
+	sd = prop_sd; // Update the standard deviation.
+	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
+	lik_mvBM = prop_sd_lik; // Update likelihood. Need to carry over.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; 0; 0; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; ";
+	log_stream << lik_mvBM + lik_Mk;
+	log_stream << "\n";
+      }
+      
+    } else if(sample_par == 2){
+      // Update the correlation matrix.
+      // Draw which regime to update.
+      // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+      // IMPORTANT: R here needs to be the vcv used to draw the correlation only.
+      // This is not the full VCV of the model.
+      Rcorr_prop = Rcorr;
+      // Here v is a vector. So the width can be controlled for each regime.
+      Rcorr_prop.slice(Rp) = makePropIWish_C(Rcorr.slice(Rp), k, v[Rp]);
+      // Computes the hastings density for this move.
+      // Hastings is computed for the covariance matrix of the correlation and NOT the evolutionary rate matrix (the reconstructed).
+      hh = hastingsDensity_C(Rcorr, Rcorr_prop, k, v, Rp);
+      // Need the prior parameters 'nu' and 'sigma' here.
+      Rcorr_prop_prior = priorCorr_C(Rcorr_prop, nu, sigma);
+      pp = Rcorr_prop_prior - Rcorr_curr_prior;
+
+      // Need to rebuild the R matrix to compute the likelihood:
+      diag_sd = diagmat( sd.col(Rp) );
+      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      R_prop = R;
+      // 'cor' is not the correct function to use here!
+      R_prop.slice(Rp) = diag_sd * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_sd;
+      prop_corr_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, mu);
+      ll = prop_corr_lik - lik_mvBM;
+      // This is the sdiance of the proposed vcv matrix.
+      decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
+      prop_jacobian = 0.0; // Always need to reset.
+      // The Jacobian of the transformation.
+      for( arma::uword i=0; i < k; i++ ){
+	prop_jacobian = prop_jacobian + log(decomp_var[i]) * log( (k-1.0)/2.0 );
+      }
+      // The curr_jacobian is a vector. There are a jacobian for each regime.
+      jj = prop_jacobian - curr_jacobian[Rp];
+
+      // Get the ratio i log space. Loglik, log prior, log hastings and log jacobian.
+      r = ll + pp + hh + jj;
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	// This line will write to the mcmc_file.
+	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
+	log_stream << "1; 0; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; 0; ";
+	log_stream << prop_corr_lik + lik_Mk; // Lik for the whole model.
+	log_stream << "\n";
+	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
+	Rcorr = Rcorr_prop; // Update the correlation matrix.
+	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
+	lik_mvBM = prop_corr_lik; // Update likelihood. Need to carry over.
+	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; 0; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; 0; ";
+	log_stream << lik_mvBM + lik_Mk; // Lik for the whole model.
+	log_stream << "\n";
+      }
+    } else if(sample_par == 3){
+      // Update the Q matrix, then make a new stochastic map.
+      // When updating the Q matrix we need also to make a new draw for the stochastic map. Otherwise, the change in the Q matrix will not match the likelihood of the mvBM model. If I don't make a new stochastic map draw we could get a ugly disconnection between the Q matrix and the stochastic maps that the mvBM models are evaluated under.
+
+      // UPDATE Q MATRIX
+      // The current 'vec_Q' was already defined in the beginning of the MCMC function.
+      // vec_Q = extractQ(Q, model_Q); // Get a vector with the parameters that describe the Q matrix.
+      // Next line assumes 'vec_Q' is a column vector.
+      multi_Q_factor = multiplierProposal_C(vec_Q.n_rows, vec_Q ); // The factor for proposal. Also proposal ratio.
+      prop_vec_Q = vec_Q % multi_Q_factor;
+      prop_Q_prior = priorQ(prop_vec_Q, par_prior_Q, den_Q);
+      
+      // The prior only reflects on the Q matrix. The prior for the stochastic map (conditioned on the Q matrix) is flat.
+      pp = prop_Q_prior - curr_Q_prior;
+      prop_Q = buildQ(prop_vec_Q, k, model_Q); // Rebuild a matrix from the Q vector. Just to compute the lik and draw the map.
+      prop_Q_lik = logLikMk_C(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
+
+      // UPDATE MAPPED_EDGE
+      // Here the move is a new draw. So it is not a step from the previous one.
+      // Technically, this makes the MCMC a Metropolis within Gibbs algorithm.
+      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
+      // This the mvBM likelihood, just changed the mapped_edge.
+      prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
+
+      // Here the likelihood ratio need to take into account the whole model.
+      ll = (prop_Q_lik + prop_mapped_edge_lik) - (lik_Mk + lik_mvBM);
+      
+      // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
+      r = ll + pp + accu(multi_Q_factor);
+
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	log_stream << "1; 1; 1; 0; 0; 0; ";
+	log_stream << prop_Q_lik + prop_mapped_edge_lik; // Lik for the whole model.
+	log_stream << "\n";
+	curr_Q_prior = prop_Q_prior;  // Update the prior. Need to carry over.
+	vec_Q = prop_vec_Q; // Passing the vectorized Q matrix.
+	Q = prop_Q; // Passing the Q matrix.
+	mapped_edge = prop_mapped_edge; // Update the stochastic map.
+	lik_Mk = prop_Q_lik;
+	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; 1; 1; 0; 0; 0; ";
+	log_stream << lik_mvBM + lik_Mk; // Lik for the whole model.
+	log_stream << "\n";
+      }
+      
+    } else{
+      // Update the ONLY the stochastic map.
+      // This is just one step to draw a stochastic map conditioned on the Q matrix and the mvBM model.
+      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, k, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
+      // This the mvBM likelihood, just changed the mapped_edge.
+      prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
+
+      // Here the likelihood ratio is only of the mvBM model. Q does not change.
+      // The prior ratio is log(1) . Because there is no prior for a draw of the stochastic map.
+      // Thus 'r = ll;' and 'll = prop_mapped_edge_lik - lik_mvBM;'
+      r = prop_mapped_edge_lik - lik_mvBM;
+
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	log_stream << "1; 0; 1; 0; 0; 0; ";
+	log_stream << prop_mapped_edge_lik + lik_Mk; // Lik for the whole model.
+	log_stream << "\n";
+	mapped_edge = prop_mapped_edge; // Update the stochastic map.
+	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; 0; 1; 0; 0; 0; ";
+	log_stream << lik_mvBM + lik_Mk; // Lik for the whole model.
+	log_stream << "\n";
+      }
+    }
+
+    // Write the current state to the MCMC file.
+    // Need to use a different output file to write the Q matrix.
+    writeToMultFile_C(mcmc_stream, p, k, R, mu);
+    // Q here is in vector format, so we need the size of the matrix and the model to write the correct quantity.
+    writeQToFile(Q_mcmc_stream, vec_Q, k, model_Q);     
+  }
+
+  Rcout << "Closing files... \n";
+  
+  Q_mcmc_stream.close();
   mcmc_stream.close();
   log_stream.close();
 
