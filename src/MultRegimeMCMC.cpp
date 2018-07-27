@@ -1874,8 +1874,20 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // The current 'vec_Q' was already defined in the beginning of the MCMC function.
       // vec_Q = extractQ(Q, model_Q); // Get a vector with the parameters that describe the Q matrix.
       // Next line assumes 'vec_Q' is a column vector.
-      multi_Q_factor = multiplierProposal_C(vec_Q.n_rows, w_Q_vec);
-      prop_vec_Q = vec_Q % multi_Q_factor;
+
+      // CHECK FOR GOOD MATRIX PROPOSAL.
+      // Getting errors because of the properties of the Q matrix.
+      bool good_prop_Q = false; // Try propose a new Q.
+      arma::mat B = mat(Q); // Matrices to make the exponential test.
+      arma::mat A = mat(Q);
+ 
+      while ( !good_prop_Q ){ // The loop to check for the exponential.
+	multi_Q_factor = multiplierProposal_C(vec_Q.n_rows, w_Q_vec);
+	prop_vec_Q = vec_Q % multi_Q_factor;
+	A = buildQ(prop_vec_Q, p, model_Q); // Rebuild the Q matrix.
+	good_prop_Q = expmat(B,A); // Should a return true if everything ok.
+      }
+      
       prop_Q_prior = priorQ(prop_vec_Q, par_prior_Q, den_Q);
       
       // The prior only reflects on the Q matrix. The prior for the stochastic map (conditioned on the Q matrix) is flat.
