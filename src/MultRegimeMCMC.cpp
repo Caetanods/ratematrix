@@ -1597,7 +1597,8 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
     Q_mcmc_stream << "\n";
     
     // Write the header for the log file.
-  log_stream << "accepted; Q.matrix; stoch.map; matrix.corr; matrix.sd; root; log.lik \n";
+    // Separate the log lik from the mvBM model from the one for the MK model.
+  log_stream << "accepted; Q.matrix; stoch.map; matrix.corr; matrix.sd; root; log.lik.BM; log.lik.MK \n";
   } else{
     // Do nothing.
     // This is the case for a continuing MCMC.
@@ -1676,7 +1677,13 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
-  vec_Q = extractQ(Q, p, model_Q); // The vectorized Q matrix for the starting state of the search.
+  // The vectorized Q matrix for the starting state of the search.
+  // Size of vector will depend on the model used for Q.
+  vec_Q = extractQ(Q, p, model_Q);
+  // Create vector with the multiplier factor for the Q matrix.
+  // This will control the multiplier proposals.
+  arma::vec w_Q_vec = vec(vec_Q);
+  w_Q_vec.fill(w_Q); // Fill with the multiplier factor.
   
   curr_Q_prior = priorQ(vec_Q, par_prior_Q, den_Q); // The prior for the Q matrix.
 
@@ -1693,7 +1700,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 
   // Print starting point to files:
   log_stream << "1; 0; 0; 0; 0; 0; ";
-  log_stream << lik_mvBM + lik_Mk;
+  log_stream << lik_mvBM;
+  log_stream << ";";
+  log_stream << lik_Mk;
   log_stream << "\n"; 
   writeToMultFile_C(mcmc_stream, p, k, R, mu);
   // Need to make a function to write the Q matrix to file.
@@ -1733,14 +1742,18 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
 	log_stream << "1; 0; 0; 0; 0; 1; ";
-	log_stream << prop_root_lik + lik_Mk; // The probability of the whole model.
+	log_stream << prop_root_lik;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
 	mu = prop_root; // Update the value for the root. Need to carry over.
 	curr_root_prior = prop_root_prior; // Update the root prior. Need to carry over.
 	lik_mvBM = prop_root_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
 	log_stream << "0; 0; 0; 0; 0; 1; ";
-	log_stream << lik_mvBM  + lik_Mk;
+	log_stream << lik_mvBM;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
       }
     } else if(sample_par == 1){
@@ -1772,7 +1785,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	log_stream << "1; 0; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; ";
-	log_stream << prop_sd_lik + lik_Mk; // The lik for the whole model.
+	log_stream << prop_sd_lik;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	sd = prop_sd; // Update the standard deviation.
@@ -1782,7 +1797,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	log_stream << "0; 0; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; ";
-	log_stream << lik_mvBM + lik_Mk;
+	log_stream << lik_mvBM;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
       }
       
@@ -1831,7 +1848,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	log_stream << "1; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; 0; ";
-	log_stream << prop_corr_lik + lik_Mk; // Lik for the whole model.
+	log_stream << prop_corr_lik;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	Rcorr = Rcorr_prop; // Update the correlation matrix.
@@ -1842,7 +1861,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	log_stream << "0; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; 0; ";
-	log_stream << lik_mvBM + lik_Mk; // Lik for the whole model.
+	log_stream << lik_mvBM;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
       }
     } else if(sample_par == 3){
@@ -1853,7 +1874,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // The current 'vec_Q' was already defined in the beginning of the MCMC function.
       // vec_Q = extractQ(Q, model_Q); // Get a vector with the parameters that describe the Q matrix.
       // Next line assumes 'vec_Q' is a column vector.
-      multi_Q_factor = multiplierProposal_C(vec_Q.n_rows, vec_Q ); // The factor for proposal. Also proposal ratio.
+      multi_Q_factor = multiplierProposal_C(vec_Q.n_rows, w_Q_vec);
       prop_vec_Q = vec_Q % multi_Q_factor;
       prop_Q_prior = priorQ(prop_vec_Q, par_prior_Q, den_Q);
       
@@ -1880,7 +1901,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
 	log_stream << "1; 1; 1; 0; 0; 0; ";
-	log_stream << prop_Q_lik + prop_mapped_edge_lik; // Lik for the whole model.
+	log_stream << prop_mapped_edge_lik;
+	log_stream << ";";
+	log_stream << prop_Q_lik;
 	log_stream << "\n";
 	curr_Q_prior = prop_Q_prior;  // Update the prior. Need to carry over.
 	vec_Q = prop_vec_Q; // Passing the vectorized Q matrix.
@@ -1890,7 +1913,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
 	log_stream << "0; 1; 1; 0; 0; 0; ";
-	log_stream << lik_mvBM + lik_Mk; // Lik for the whole model.
+	log_stream << lik_mvBM;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
       }
       
@@ -1911,13 +1936,17 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
 	log_stream << "1; 0; 1; 0; 0; 0; ";
-	log_stream << prop_mapped_edge_lik + lik_Mk; // Lik for the whole model.
+	log_stream << prop_mapped_edge_lik;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
 	mapped_edge = prop_mapped_edge; // Update the stochastic map.
 	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
 	log_stream << "0; 0; 1; 0; 0; 0; ";
-	log_stream << lik_mvBM + lik_Mk; // Lik for the whole model.
+	log_stream << lik_mvBM;
+	log_stream << ";";
+	log_stream << lik_Mk;
 	log_stream << "\n";
       }
     }
