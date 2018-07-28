@@ -1552,6 +1552,11 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
   std::ofstream Q_mcmc_stream (Q_mcmc_file, ios::out | ios::app);
 
+  // Log the parameters across the MCMC. We might be able to find some patterns.
+  std::ofstream Q_matrix_stream ("Q_matrix_snap.txt", ios::out | ios::trunc);
+  std::ofstream mapped_edge_stream ("mapped_edge_snap.txt", ios::out | ios::trunc);
+  std::ofstream R_matrix_stream ("R_matrix_snap.txt", ios::out | ios::trunc);
+
   // Find the number of parameters for the Q matrix:
   int Q_npar;
   if( model_Q == "ER" ){
@@ -1881,12 +1886,24 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // The prior only reflects on the Q matrix. The prior for the stochastic map (conditioned on the Q matrix) is flat.
       pp = prop_Q_prior - curr_Q_prior;
       prop_Q = buildQ(prop_vec_Q, p, model_Q); // Rebuild a matrix from the Q vector. Just to compute the lik and draw the map.
+      
+      // PRINT PROPOSAL FOR Q.
+      Q_matrix_stream << "Generation: " << i << "\n";
+      Q_matrix_stream << prop_Q << "\n";
+      
       prop_Q_lik = logLikMk_C(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
 
       // UPDATE MAPPED_EDGE
       // Here the move is a new draw. So it is not a step from the previous one.
       // Technically, this makes the MCMC a Metropolis within Gibbs algorithm.
       prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
+      
+      // PRINT THE PROPOSAL FOR THE MAPS AND THE R MATRICES.
+      mapped_edge_stream << "Generation: " << i << "\n";
+      mapped_edge_stream << prop_mapped_edge << "\n";
+      R_matrix_stream << "Generation: " << i << "\n";
+      R_matrix_stream << R << "\n";
+      
       // This the mvBM likelihood, just changed the mapped_edge.
       prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
 
