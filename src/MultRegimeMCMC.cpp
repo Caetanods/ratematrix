@@ -211,6 +211,9 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
       bool loop_sims = true; // Set to keep simulating.
       // Set the tolerance for the edge length check:
       double edge_tol = 1.0e-12 * edge_len[i];
+      // Track the number of trials:
+      int sims_trials = 0;
+      int alarm_limit = 1e6;
       
       while( loop_sims ){
 	// The vector 'dt' tracks the 'dwelling time' on each state.
@@ -221,6 +224,15 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
 	curr_state = anc_state;
 
 	while( true ){
+	  // sims_trials++;
+	  // if(sims_trials > alarm_limit){
+	  //   Rcout << "More than: " << alarm_limit << " trials! Branch " << i << "\n";
+	  //   Rcout << "Branch length: " << edge_len[i] << "\n";
+	  //   Rcout << "Starts: " << anc_state << " ends " << sim_node_states(i,1) << "\n";
+	  //   Rcout << "\n";
+	  //   alarm_limit = alarm_limit * 10;
+	  // }
+	    
 	  // Time until the next event:
 	  // Note that this is 1/rate when compared with rexp in R.
 	  time_chunk = R::rexp( 1/change_rate );
