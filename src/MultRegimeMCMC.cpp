@@ -190,9 +190,9 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
     
     // Before simulating, check if any change is expected to happen at this node:
     double change_rate = -1.0 * Q(anc_state,anc_state);
-    bool equal_zero = abs(change_rate) <= 1.0e-12;
+      
     // bool equal_zero = approx_equal(change_rate, 0.0, "absdiff", 1.0e-12);
-    if( change_rate < 0.0 || equal_zero ){
+    if( change_rate < 0.0 || change_rate <= 1.0e-12 ){
       // Nothing will happen at this branch.
       // Time spent in the current state (anc_state) is the total branch length.
       dt[anc_state] = edge_len[i];
