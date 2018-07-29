@@ -76,12 +76,19 @@ multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_ma
         write_header <- 1
     }
     
-    ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
+    ## ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
+    ## mapped.edge <- start_mapped.edge ## The regimes.
+    ## ## Need to take care how to match the regimes and the R matrices.
+    ## anc <- phy$edge[ord.id,1] ## Ancestral edges.
+    ## des <- phy$edge[ord.id,2] ## Descendent edges.
+    ## edge_mat <- phy$edge[ord.id,]
+    ## nodes <- unique(anc) ## The internal nodes we will traverse.
+
     mapped.edge <- start_mapped.edge ## The regimes.
     ## Need to take care how to match the regimes and the R matrices.
-    anc <- phy$edge[ord.id,1] ## Ancestral edges.
-    des <- phy$edge[ord.id,2] ## Descendent edges.
-    edge_mat <- phy$edge[ord.id,]
+    anc <- phy$edge[,1] ## Ancestral edges.
+    des <- phy$edge[,2] ## Descendent edges.
+    edge_mat <- phy$edge
     nodes <- unique(anc) ## The internal nodes we will traverse.
 
     ## Set the types for each of the nodes that are going to be visited.

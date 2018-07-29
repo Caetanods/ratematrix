@@ -374,12 +374,12 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     edge_mat <- prun.phy$edge
     root_type <- as.numeric( switch(root_Mk, "madfitz" = 1, "equal" = 0) )
     
-    mapped.edge <- makeSimmapMappedEdge(n_nodes=Nnode(phy), n_tips=Ntip(phy), n_states=p
+    mapped.edge <- makeSimmapMappedEdge(n_nodes=Nnode(prun.phy), n_tips=Ntip(prun.phy), n_states=p
                                       , edge_len=prun.phy$edge.length
                                       , edge_mat=prun.phy$edge, parents=unique( prun.phy$edge[,1] )
-                                      , X=matrix_Mk, Q=Q, root_node=(Ntip(phy)+1), root_type=root_type)
+                                      , X=matrix_Mk, Q=Q, root_node=(Ntip(prun.phy)+1), root_type=root_type)
         
-    out_mult <- multRegimeJointMCMC(X_BM=data_BM, X_Mk=matrix_Mk, phy=phy
+    out_mult <- multRegimeJointMCMC(X_BM=data_BM, X_Mk=matrix_Mk, phy=prun.phy
                                   , start=start_run
                                   , prior=prior_run, start_Q = Q, root_Mk = root_type
                                   , start_mapped.edge = mapped.edge, prior_Mk = prior_Mk
