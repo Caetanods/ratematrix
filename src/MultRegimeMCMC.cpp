@@ -198,8 +198,10 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
       dt[anc_state] = edge_len[i];
       // Double check if the ancestral state is the same of the descendant state:
       if( anc_state != sim_node_states(i,1) ){
-	// Something is not good.
-	Rcout << "smaps problem! No state change and incongruent descendant /n";
+	// Something is not good. Bad stochastic map.
+	// Return empty matrix to signalize.
+	arma::mat bad_maps = mat(size(mapped_edge), fill::zeros);
+	return bad_maps;
       }
     } else{
       // Need to perform the simulation:
@@ -1922,7 +1924,19 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // UPDATE MAPPED_EDGE
       // Here the move is a new draw. So it is not a step from the previous one.
       // Technically, this makes the MCMC a Metropolis within Gibbs algorithm.
-      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
+
+      // Need to check if the stochastic map is valid.
+      int smaps_trials = 0;
+      while( true ){
+	prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
+	if( accu( prop_mapped_edge ) > max(edge_len) ){
+	  // Checking with larger branch length on the tree. Avoid numerical issues.
+	  break;
+	} else{
+	  Rcout << "Bad stochastic map on trial: " << smaps_trials << "\n";
+	  smaps_trials++;
+	}
+      }
       
       // PRINT THE PROPOSAL FOR THE MAPS AND THE R MATRICES.
       mapped_edge_stream << "Generation: " << i << "\n";
@@ -1965,7 +1979,20 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
     } else{
       // Update the ONLY the stochastic map.
       // This is just one step to draw a stochastic map conditioned on the Q matrix and the mvBM model.
-      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
+      
+      // Need to check if the stochastic map is valid.
+      int smaps_trials = 0;
+      while( true ){
+	prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
+	if( accu( prop_mapped_edge ) > max(edge_len) ){
+	  // Checking with larger branch length on the tree. Avoid numerical issues.
+	  break;
+	} else{
+	  Rcout << "Bad stochastic map on trial: " << smaps_trials << "\n";
+	  smaps_trials++;
+	}
+      }
+      
       // This the mvBM likelihood, just changed the mapped_edge.
       prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
 
