@@ -189,7 +189,7 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
     arma::vec dt = vec(n_states, fill::zeros);
     
     // Before simulating, check if any change is expected to happen at this node:
-    double change_rate = -1.0 * Q(curr_state,curr_state);
+    double change_rate = -1.0 * Q(anc_state,anc_state);
     bool equal_zero = abs(change_rate) <= 1.0e-12;
     // bool equal_zero = approx_equal(change_rate, 0.0, "absdiff", 1.0e-12);
     if( change_rate < 0.0 || equal_zero ){
@@ -197,7 +197,7 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
       // Time spent in the current state (anc_state) is the total branch length.
       dt[anc_state] = edge_len[i];
       // Double check if the ancestral state is the same of the descendant state:
-      if( curr_state != sim_node_states(i,1) ){
+      if( anc_state != sim_node_states(i,1) ){
 	// Something is not good.
 	Rcout << "smaps problem! No state change and incongruent descendant /n";
       }
