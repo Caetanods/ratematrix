@@ -85,6 +85,15 @@ int rMultinom(arma::vec p) {
   // This is a function to make a single draw from a multinominal distribution.
   // p is a vector of probabilities and need to sum to 1.
   p = p / sum(p);
+
+  if( any(p < 0.0) ){
+    // If probabilities < 0 then bounce to 0.
+    for( arma::uword w = 0; w < p.n_rows; w++ ){
+      if( p[w] < 0.0 ){
+	p[w] = 0.0;
+      }
+    }
+  }
   
   double unif_draw = as_scalar(randu(1));
 
@@ -175,47 +184,64 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
     }
 	
     // With the start and end of the state we can perform the simulation. Forward simulate from the starting state, compute the changes along the branch, stop when the simulation passed the length of the branch. Then need to check if the arrival state is the same as the selected state for that node. Otherwise need to draw again.
-    
-    // Reset the accept flag:
-    int accept = 0;
-    // Declare dt outside of the while loop:
+
+    // Declare the dt vector:
     arma::vec dt = vec(n_states, fill::zeros);
-    while( accept == 0 ){
-      // The vector 'dt' tracks the 'dwelling time' on each state.
-      // I am not creating the 'maps' history here.
-      // Reset the dt vector:
-      dt = vec(n_states, fill::zeros);
-      // The starting state for the simulation.
-      curr_state = anc_state;
+    
+    // Before simulating, check if any change is expected to happen at this node:
+    double change_rate = -1.0 * Q(curr_state,curr_state);
+    bool equal_zero = abs(change_rate) <= 1.0e-12;
+    // bool equal_zero = approx_equal(change_rate, 0.0, "absdiff", 1.0e-12);
+    if( change_rate < 0.0 || equal_zero ){
+      // Nothing will happen at this branch.
+      // Time spent in the current state (anc_state) is the total branch length.
+      dt[anc_state] = edge_len[i];
+      // Double check if the ancestral state is the same of the descendant state:
+      if( curr_state != sim_node_states(i,1) ){
+	// Something is not good.
+	Rcout << "smaps problem! No state change and incongruent descendant /n";
+      }
+    } else{
+      // Need to perform the simulation:
+    
+      // Reset the accept flag:
+      bool loop_sims = true; // Set to keep simulating.
+      // Set the tolerance for the edge length check:
+      double edge_tol = 1.0e-12 * edge_len[i];
       
-      while( true ){
-	// Time until the next event:
-	if( -1.0 * Q(curr_state,curr_state) <= 0 ){
-	  // If the rate if 0, then nothing happens for the rest of the branch.
-	  // This time_chunk will be larger than the branch. But the test below will make sure it breaks the loop and bounce it back to the correct length.
-	  time_chunk = edge_len[i] + 1.0;
-	} else{
-	  time_chunk = R::rexp( 1/(-1.0 * Q(curr_state,curr_state)) );
-	}
-	// Add to the time in the current state.
-	if( (sum(dt) + time_chunk) > edge_len[i] ){
-	  // If the waiting time for the next event passes the edge length.
-	  // Then add the remaining branch length and break.
-	  time_chunk = edge_len[i] - sum(dt); // The rest of the time.
+      while( loop_sims ){
+	// The vector 'dt' tracks the 'dwelling time' on each state.
+	// I am not creating the 'maps' history here.
+	// Reset the dt vector:
+	dt = vec(n_states, fill::zeros);
+	// The starting state for the simulation.
+	curr_state = anc_state;
+
+	while( true ){
+	  // Time until the next event:
+	  // Note that this is 1/rate when compared with rexp in R.
+	  time_chunk = R::rexp( 1/change_rate );
+	  // Add to the time in the current state.
+	  if( (sum(dt) + time_chunk) > (edge_len[i] - edge_tol) ){
+	    // If the waiting time for the next event passes the edge length.
+	    // Then add the remaining branch length and break.
+	    time_chunk = edge_len[i] - sum(dt); // The rest of the time.
+	    dt[curr_state] = dt[curr_state] + time_chunk;
+	    break;
+	  }
+	  // Add to the time in the current state.
 	  dt[curr_state] = dt[curr_state] + time_chunk;
-	  break;
+	  // Updates the current state. Take a conditional sample based on Q:
+	  sample_index = rMultinom( trans( trans_table_prob.row(curr_state) ) );
+	  curr_state = trans_table_index(curr_state, sample_index);
 	}
-	// Add to the time in the current state.
-	dt[curr_state] = dt[curr_state] + time_chunk;
-	// Updates the current state. Take a conditional sample based on Q:
-	sample_index = rMultinom( trans( trans_table_prob.row(curr_state) ) );
-	curr_state = trans_table_index(curr_state, sample_index);
-      }
       
-      // Check if the simulation is valid, conditioned on the state of the des node.
-      if( curr_state == sim_node_states(i,1) ){
-	accept = 1;
+	// Check if the simulation is valid, conditioned on the state of the des node.
+	if( curr_state == sim_node_states(i,1) ){
+	  loop_sims = false;
+	}
       }
+
     }
 
     // When done, store the result for this branch:
