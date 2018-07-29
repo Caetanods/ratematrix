@@ -200,6 +200,7 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
       if( anc_state != sim_node_states(i,1) ){
 	// Something is not good. Bad stochastic map.
 	// Return empty matrix to signalize.
+	Rcout << "Bad map! \n";
 	arma::mat bad_maps = mat(size(mapped_edge), fill::zeros);
 	return bad_maps;
       }
@@ -1927,6 +1928,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 
       // Need to check if the stochastic map is valid.
       int smaps_trials = 0;
+      arma::mat prop_mapped_edge = mat(mapped_edge);
       while( true ){
 	prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
 	if( accu( prop_mapped_edge ) > max(edge_len) ){
@@ -1982,6 +1984,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       
       // Need to check if the stochastic map is valid.
       int smaps_trials = 0;
+      arma::mat prop_mapped_edge = mat(mapped_edge);
       while( true ){
 	prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
 	if( accu( prop_mapped_edge ) > max(edge_len) ){
