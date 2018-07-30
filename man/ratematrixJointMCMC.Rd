@@ -6,10 +6,10 @@
 \usage{
 ratematrixJointMCMC(data_BM, data_Mk, phy, prior_BM = "uniform_scaled",
   prior_Mk = "uniform", par_prior_Mk = c(0, 100), Mk_model = "SYM",
-  root_Mk = "madfitz", start = "prior_sample", start_Q = NULL, gen,
-  v = 50, w_sd = 0.2, w_q = 0.2, w_mu = 0.5, prop = c(0.05, 0.3, 0.3,
-  0.175, 0.175), dir = NULL, outname = "ratematrixJointMCMC", IDlen = 5,
-  save.handle = TRUE)
+  root_Mk = "madfitz", smap_limit = 1e+06, start = "prior_sample",
+  start_Q = NULL, gen, v = 50, w_sd = 0.2, w_q = 0.2, w_mu = 0.5,
+  prop = c(0.05, 0.3, 0.3, 0.175, 0.175), dir = NULL,
+  outname = "ratematrixJointMCMC", IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data_BM}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait. Names for the columns are used as trait labels. If labels are not provided, the function will use default labels.}
@@ -27,6 +27,8 @@ ratematrixJointMCMC(data_BM, data_Mk, phy, prior_BM = "uniform_scaled",
 \item{Mk_model}{the Markov model fitted to the predictor regimes and to make the stochastic map simulations. One of "SYM" for symmetrical rates (default value), "ARD" for all rates different, or "ER" for equal reates.}
 
 \item{root_Mk}{the root type for the Mk model for the predictor regimes. Can be one of "madfitz" (default) or "equal".}
+
+\item{smap_limit}{the maximum number of times that a stochastic map for a given branch can be attempted. If the simulation is not finished by this number of trials then the stochastic map is rejected. If set to '0' then there is no limit. The default value is 1e6.}
 
 \item{start}{the starting state for the MCMC chain. Must be one of "prior_sample" (the default), "mle", or a sample from the prior generated with the "samplePrior" functions.}
 

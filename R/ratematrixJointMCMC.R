@@ -24,6 +24,7 @@
 ##' @param par_prior_Mk either a numeric vector with length 2 with the min and max for the uniform prior when 'prior_Mk = "uniform"' or a single value for the rate of the exponential distribution when 'prior_Mk = "exponential"'.
 ##' @param Mk_model the Markov model fitted to the predictor regimes and to make the stochastic map simulations. One of "SYM" for symmetrical rates (default value), "ARD" for all rates different, or "ER" for equal reates.
 ##' @param root_Mk the root type for the Mk model for the predictor regimes. Can be one of "madfitz" (default) or "equal".
+##' @param smap_limit the maximum number of times that a stochastic map for a given branch can be attempted. If the simulation is not finished by this number of trials then the stochastic map is rejected. If set to '0' then there is no limit. The default value is 1e6.
 ##' @param start the starting state for the MCMC chain. Must be one of "prior_sample" (the default), "mle", or a sample from the prior generated with the "samplePrior" functions.
 ##' @param start_Q A matrix with the starting state for the Q matrix. Default is 'NULL' and the Q matrix is sampled from its prior distribution.
 ##' @param gen number of generations for the chain.
@@ -75,7 +76,7 @@
 ##' plotRatematrix(merged.posterior)
 ##' plotRootValue(merged.posterior)
 ##' }
-ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled", prior_Mk="uniform", par_prior_Mk=c(0, 100), Mk_model = "SYM", root_Mk = "madfitz", start="prior_sample", start_Q = NULL, gen, v=50, w_sd=0.2, w_q=0.2, w_mu=0.5, prop=c(0.05, 0.3, 0.3, 0.175, 0.175), dir=NULL, outname="ratematrixJointMCMC", IDlen=5, save.handle=TRUE){
+ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled", prior_Mk="uniform", par_prior_Mk=c(0, 100), Mk_model = "SYM", root_Mk = "madfitz", smap_limit=1e6, start="prior_sample", start_Q = NULL, gen, v=50, w_sd=0.2, w_q=0.2, w_mu=0.5, prop=c(0.05, 0.3, 0.3, 0.175, 0.175), dir=NULL, outname="ratematrixJointMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -373,14 +374,26 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     prun.phy <- reorder.phylo(x = phy, order = "postorder")
     edge_mat <- prun.phy$edge
     root_type <- as.numeric( switch(root_Mk, "madfitz" = 1, "equal" = 0) )
-    
+
+    ## This is the starting stochastic map.
+    ## We need at least one to start. Let's try 100 times. If we cannot get a stochastic map after trying 100 times, then return and error.
+    ntimes <- 1
+    while( TRUE ){
     mapped.edge <- makeSimmapMappedEdge(n_nodes=Nnode(prun.phy), n_tips=Ntip(prun.phy), n_states=p
-                                      , edge_len=prun.phy$edge.length
+                                      , edge_len=prun.phy$edge.length, sims_limit=smap_limit
                                       , edge_mat=prun.phy$edge, parents=unique( prun.phy$edge[,1] )
                                       , X=matrix_Mk, Q=Q, root_node=(Ntip(prun.phy)+1), root_type=root_type)
+    if( sum( mapped.edge ) > prun.phy$edge.length[1] ){
+        break
+    }
+    ntimes <- ntimes + 1
+    if( ntimes >= 101 ){
+        stop("Starting Q matrix failed to generate a stochastic maps within the 'smap_limit'. Please read details and consider increasing value of 'smap_limit' or changing the starting Q matrix.")
+        }
+    }
         
     out_mult <- multRegimeJointMCMC(X_BM=data_BM, X_Mk=matrix_Mk, phy=prun.phy
-                                  , start=start_run
+                                  , start=start_run, smap_limit=smap_limit
                                   , prior=prior_run, start_Q = Q, root_Mk = root_type
                                   , start_mapped.edge = mapped.edge, prior_Mk = prior_Mk
                                   , par_prior_Mk = par_prior_Mk, Mk_model = Mk_model

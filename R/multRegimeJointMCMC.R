@@ -32,7 +32,7 @@
 ##' @importFrom corpcor rebuild.cov
 ##' @importFrom stats cov2cor
 ##' @noRd
-multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_mapped.edge, prior_Mk, par_prior_Mk, Mk_model, root_Mk, gen, v, w_sd, w_mu, w_q, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL, ID=NULL){
+multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_mapped.edge, prior_Mk, par_prior_Mk, Mk_model, root_Mk, smap_limit, gen, v, w_sd, w_mu, w_q, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL, ID=NULL){
 
     ## This is the call for the C++ function:
     ## std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::vec datMk, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header){
@@ -173,7 +173,8 @@ multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_ma
                               , par_prior_sd=par_sd, den_sd=den_sd
                               , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name
                               , mcmc_file=mcmc_file_name, Q_mcmc_file=Q_mcmc_file_name
-                              , par_prob = prop, gen = gen, write_header = write_header)
+                              , par_prob = prop, gen = gen, write_header = write_header
+                              , sims_limit = smap_limit)
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
 
