@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // makeSimmapMappedEdge
-arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type);
-RcppExport SEXP _ratematrix_makeSimmapMappedEdge(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP) {
+arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int sims_limit);
+RcppExport SEXP _ratematrix_makeSimmapMappedEdge(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP, SEXP sims_limitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,7 +22,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
     Rcpp::traits::input_parameter< int >::type root_node(root_nodeSEXP);
     Rcpp::traits::input_parameter< bool >::type root_type(root_typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(makeSimmapMappedEdge(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type));
+    Rcpp::traits::input_parameter< int >::type sims_limit(sims_limitSEXP);
+    rcpp_result_gen = Rcpp::wrap(makeSimmapMappedEdge(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, sims_limit));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -199,8 +200,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // runRatematrixMCMC_jointMk_C
-std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header);
-RcppExport SEXP _ratematrix_runRatematrixMCMC_jointMk_C(SEXP XSEXP, SEXP datMkSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP n_tipsSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP edge_matSEXP, SEXP n_nodesSEXP, SEXP QSEXP, SEXP w_QSEXP, SEXP model_QSEXP, SEXP root_typeSEXP, SEXP den_QSEXP, SEXP par_prior_QSEXP, SEXP RSEXP, SEXP muSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_muSEXP, SEXP par_prior_muSEXP, SEXP den_muSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP Q_mcmc_fileSEXP, SEXP par_probSEXP, SEXP genSEXP, SEXP write_headerSEXP) {
+std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header, int sims_limit);
+RcppExport SEXP _ratematrix_runRatematrixMCMC_jointMk_C(SEXP XSEXP, SEXP datMkSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP n_tipsSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP edge_matSEXP, SEXP n_nodesSEXP, SEXP QSEXP, SEXP w_QSEXP, SEXP model_QSEXP, SEXP root_typeSEXP, SEXP den_QSEXP, SEXP par_prior_QSEXP, SEXP RSEXP, SEXP muSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_muSEXP, SEXP par_prior_muSEXP, SEXP den_muSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP Q_mcmc_fileSEXP, SEXP par_probSEXP, SEXP genSEXP, SEXP write_headerSEXP, SEXP sims_limitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -241,13 +242,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type par_prob(par_probSEXP);
     Rcpp::traits::input_parameter< int >::type gen(genSEXP);
     Rcpp::traits::input_parameter< int >::type write_header(write_headerSEXP);
-    rcpp_result_gen = Rcpp::wrap(runRatematrixMCMC_jointMk_C(X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, write_header));
+    Rcpp::traits::input_parameter< int >::type sims_limit(sims_limitSEXP);
+    rcpp_result_gen = Rcpp::wrap(runRatematrixMCMC_jointMk_C(X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, write_header, sims_limit));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_ratematrix_makeSimmapMappedEdge", (DL_FUNC) &_ratematrix_makeSimmapMappedEdge, 10},
+    {"_ratematrix_makeSimmapMappedEdge", (DL_FUNC) &_ratematrix_makeSimmapMappedEdge, 11},
     {"_ratematrix_makeSimmapMaps", (DL_FUNC) &_ratematrix_makeSimmapMaps, 11},
     {"_ratematrix_logLikMk_C", (DL_FUNC) &_ratematrix_logLikMk_C, 10},
     {"_ratematrix_logLikPrunningMCMC_C", (DL_FUNC) &_ratematrix_logLikPrunningMCMC_C, 10},
@@ -256,7 +258,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_makePropIWish_C", (DL_FUNC) &_ratematrix_makePropIWish_C, 3},
     {"_ratematrix_runRatematrixMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_C, 27},
     {"_ratematrix_runRatematrixMultiMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMultiMCMC_C, 27},
-    {"_ratematrix_runRatematrixMCMC_jointMk_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_jointMk_C, 37},
+    {"_ratematrix_runRatematrixMCMC_jointMk_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_jointMk_C, 38},
     {NULL, NULL, 0}
 };
 

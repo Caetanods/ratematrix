@@ -111,10 +111,12 @@ int rMultinom(arma::vec p) {
 }
 
 // [[Rcpp::export]]
-arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type) {
+arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int sims_limit) {
   // This function will not return the 'maps' element of the stochastic maps.
   // For this see the function below. This one is all that is needed for computing the lielihood of the BM model.
   // Function works by assuming that the order of the rows in sim_node_states is the same as in recon_states below. This follows because of the code in 'getReconStates' function.
+
+  // NOTE: sims_limit controls the maximum number of times the stochastic map simulation will try to simulate for any particular branch (not cumulative!). If the value is 0, then no limit is stablished.
 
   // Define containers:
   int nrow_mapped_edge = edge_mat.n_rows;
@@ -200,7 +202,6 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
       if( anc_state != sim_node_states(i,1) ){
 	// Something is not good. Bad stochastic map.
 	// Return empty matrix to signalize.
-	Rcout << "Bad map! \n";
 	arma::mat bad_maps = mat(size(mapped_edge), fill::zeros);
 	return bad_maps;
       }
@@ -211,9 +212,8 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
       bool loop_sims = true; // Set to keep simulating.
       // Set the tolerance for the edge length check:
       double edge_tol = 1.0e-12 * edge_len[i];
-      // Track the number of trials:
+      // Track the number of trials. This will be used to break the simulation if necessary.
       int sims_trials = 0;
-      int alarm_limit = 1e6;
       
       while( loop_sims ){
 	// The vector 'dt' tracks the 'dwelling time' on each state.
@@ -224,14 +224,18 @@ arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec 
 	curr_state = anc_state;
 
 	while( true ){
-	  // sims_trials++;
-	  // if(sims_trials > alarm_limit){
-	  //   Rcout << "More than: " << alarm_limit << " trials! Branch " << i << "\n";
-	  //   Rcout << "Branch length: " << edge_len[i] << "\n";
-	  //   Rcout << "Starts: " << anc_state << " ends " << sim_node_states(i,1) << "\n";
-	  //   Rcout << "\n";
-	  //   alarm_limit = alarm_limit * 10;
-	  // }
+	  
+	  // Here we record the number of times to make a valid simulation on the branch.
+	  // We use the argument 'sims_limit' to break the stochastic map is the number of simulations
+	  //    pass this limit. This particular proposal of stochastic map will be rejected by the MCMC.
+	  sims_trials++;
+	  if( sims_limit > 0 ){
+	    // Trigger to check the limit.
+	    if(sims_trials > sims_limit){
+	      arma::mat bad_maps = mat(size(mapped_edge), fill::zeros);
+	      return bad_maps;
+	    }
+	  }
 	    
 	  // Time until the next event:
 	  // Note that this is 1/rate when compared with rexp in R.
@@ -1569,7 +1573,10 @@ void writeQToFile(std::ostream& Q_mcmc_stream, arma::vec vec_Q, int k, std::stri
 
 
 // [[Rcpp::export]]
-std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header){
+std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header, int sims_limit){
+
+  // NOTE: 'sims_limit' is a parameter to reject the stochastic maps if it pass this limit.
+  
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge, datMk
   // The starting point parameters. These are the objects to carry on the MCMC.
@@ -1592,11 +1599,6 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   std::ofstream log_stream (log_file, ios::out | ios::app);
   std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
   std::ofstream Q_mcmc_stream (Q_mcmc_file, ios::out | ios::app);
-
-  // Log the parameters across the MCMC. We might be able to find some patterns.
-  std::ofstream Q_matrix_stream ("Q_matrix_snap.txt", ios::out | ios::trunc);
-  std::ofstream mapped_edge_stream ("mapped_edge_snap.txt", ios::out | ios::trunc);
-  std::ofstream R_matrix_stream ("R_matrix_snap.txt", ios::out | ios::trunc);
 
   // Find the number of parameters for the Q matrix:
   int Q_npar;
@@ -1644,7 +1646,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
     
     // Write the header for the log file.
     // Separate the log lik from the mvBM model from the one for the MK model.
-  log_stream << "accepted; Q.matrix; stoch.map; matrix.corr; matrix.sd; root; log.lik.BM; log.lik.MK \n";
+  log_stream << "accepted; Q.matrix; stoch.map; smaps.limit; matrix.corr; matrix.sd; root; log.lik.BM; log.lik.MK \n";
   } else{
     // Do nothing.
     // This is the case for a continuing MCMC.
@@ -1745,7 +1747,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   }
 
   // Print starting point to files:
-  log_stream << "1; 0; 0; 0; 0; 0; ";
+  log_stream << "1; 0; 0; 0; 0; 0; 0; ";
   log_stream << lik_mvBM;
   log_stream << ";";
   log_stream << lik_Mk;
@@ -1787,7 +1789,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 0; 0; 0; 1; ";
+	log_stream << "1; 0; 0; 0; 0; 0; 1; ";
 	log_stream << prop_root_lik;
 	log_stream << ";";
 	log_stream << lik_Mk;
@@ -1796,7 +1798,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	curr_root_prior = prop_root_prior; // Update the root prior. Need to carry over.
 	lik_mvBM = prop_root_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 0; 0; 0; 1; ";
+	log_stream << "0; 0; 0; 0; 0; 0; 1; ";
 	log_stream << lik_mvBM;
 	log_stream << ";";
 	log_stream << lik_Mk;
@@ -1828,7 +1830,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 0; 0; ";
+	log_stream << "1; 0; 0; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; ";
 	log_stream << prop_sd_lik;
@@ -1840,7 +1842,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
 	lik_mvBM = prop_sd_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 0; 0; ";
+	log_stream << "0; 0; 0; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; ";
 	log_stream << lik_mvBM;
@@ -1891,7 +1893,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       if( exp(r) > unif_draw ){ // Accept.
 	// This line will write to the mcmc_file.
 	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
-	log_stream << "1; 0; 0; ";
+	log_stream << "1; 0; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; 0; ";
 	log_stream << prop_corr_lik;
@@ -1904,7 +1906,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	lik_mvBM = prop_corr_lik; // Update likelihood. Need to carry over.
 	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 0; ";
+	log_stream << "0; 0; 0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; 0; ";
 	log_stream << lik_mvBM;
@@ -1927,36 +1929,25 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // The prior only reflects on the Q matrix. The prior for the stochastic map (conditioned on the Q matrix) is flat.
       pp = prop_Q_prior - curr_Q_prior;
       prop_Q = buildQ(prop_vec_Q, p, model_Q); // Rebuild a matrix from the Q vector. Just to compute the lik and draw the map.
-      
-      // PRINT PROPOSAL FOR Q.
-      Q_matrix_stream << "Generation: " << i << "\n";
-      Q_matrix_stream << prop_Q << "\n";
-      
-      prop_Q_lik = logLikMk_C(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
 
       // UPDATE MAPPED_EDGE
-      // Here the move is a new draw. So it is not a step from the previous one.
-      // Technically, this makes the MCMC a Metropolis within Gibbs algorithm.
-
       // Need to check if the stochastic map is valid.
-      int smaps_trials = 0;
-      arma::mat prop_mapped_edge = mat(mapped_edge);
-      while( true ){
-	prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
-	if( accu( prop_mapped_edge ) > max(edge_len) ){
-	  // Checking with larger branch length on the tree. Avoid numerical issues.
-	  break;
-	} else{
-	  Rcout << "Bad stochastic map on trial: " << smaps_trials << "\n";
-	  smaps_trials++;
-	}
+      // If the returned mapped matrix has accu of 0, then reject this move.
+      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type, sims_limit);
+      if( accu( prop_mapped_edge ) < max(edge_len) ){
+	// The mapped_edge returned an invalid matrix.
+	// Reject, mark the 'smaps.limit' column.
+	log_stream << "0; 1; 1; 1; 0; 0; 0; ";
+	log_stream << lik_mvBM;
+	log_stream << ";";
+	log_stream << lik_Mk;
+	log_stream << "\n";
+	// Break generation.
+	continue;
       }
-      
-      // PRINT THE PROPOSAL FOR THE MAPS AND THE R MATRICES.
-      mapped_edge_stream << "Generation: " << i << "\n";
-      mapped_edge_stream << prop_mapped_edge << "\n";
-      R_matrix_stream << "Generation: " << i << "\n";
-      R_matrix_stream << R << "\n";
+
+      // Compute the liklihood for the Q matrix
+      prop_Q_lik = logLikMk_C(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
       
       // This the mvBM likelihood, just changed the mapped_edge.
       prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
@@ -1971,7 +1962,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 1; 1; 0; 0; 0; ";
+	log_stream << "1; 1; 1; 0; 0; 0; 0; ";
 	log_stream << prop_mapped_edge_lik;
 	log_stream << ";";
 	log_stream << prop_Q_lik;
@@ -1983,7 +1974,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	lik_Mk = prop_Q_lik;
 	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 1; 1; 0; 0; 0; ";
+	log_stream << "0; 1; 1; 0; 0; 0; 0; ";
 	log_stream << lik_mvBM;
 	log_stream << ";";
 	log_stream << lik_Mk;
@@ -1992,20 +1983,21 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       
     } else{
       // Update the ONLY the stochastic map.
-      // This is just one step to draw a stochastic map conditioned on the Q matrix and the mvBM model.
-      
+
+      // UPDATE MAPPED_EDGE
       // Need to check if the stochastic map is valid.
-      int smaps_trials = 0;
-      arma::mat prop_mapped_edge = mat(mapped_edge);
-      while( true ){
-	prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
-	if( accu( prop_mapped_edge ) > max(edge_len) ){
-	  // Checking with larger branch length on the tree. Avoid numerical issues.
-	  break;
-	} else{
-	  Rcout << "Bad stochastic map on trial: " << smaps_trials << "\n";
-	  smaps_trials++;
-	}
+      // If the returned mapped matrix has accu of 0, then reject this move.
+      prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type, sims_limit);
+      if( accu( prop_mapped_edge ) < max(edge_len) ){
+	// The mapped_edge returned an invalid matrix.
+	// Reject, mark the 'smaps.limit' column.
+	log_stream << "0; 1; 1; 1; 0; 0; 0; ";
+	log_stream << lik_mvBM;
+	log_stream << ";";
+	log_stream << lik_Mk;
+	log_stream << "\n";
+	// Break generation.
+	continue;
       }
       
       // This the mvBM likelihood, just changed the mapped_edge.
@@ -2020,7 +2012,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 1; 0; 0; 0; ";
+	log_stream << "1; 0; 1; 0; 0; 0; 0; ";
 	log_stream << prop_mapped_edge_lik;
 	log_stream << ";";
 	log_stream << lik_Mk;
@@ -2028,7 +2020,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	mapped_edge = prop_mapped_edge; // Update the stochastic map.
 	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 1; 0; 0; 0; ";
+	log_stream << "0; 0; 1; 0; 0; 0; 0; ";
 	log_stream << lik_mvBM;
 	log_stream << ";";
 	log_stream << lik_Mk;
@@ -2045,7 +2037,6 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 
   Rcout << "Closing files... \n";
   
-  Q_mcmc_stream.close();
   mcmc_stream.close();
   log_stream.close();
 
