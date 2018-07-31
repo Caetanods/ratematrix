@@ -2039,6 +2039,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   
   mcmc_stream.close();
   log_stream.close();
+  Q_mcmc_stream.close();
 
   return "Done.";
 }
