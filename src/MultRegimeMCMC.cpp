@@ -1942,6 +1942,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	log_stream << ";";
 	log_stream << lik_Mk;
 	log_stream << "\n";
+	// Write the current generation to files (note the continue flag after).
+	writeToMultFile_C(mcmc_stream, p, k, R, mu);
+	writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);     
 	// Break generation.
 	continue;
       }
@@ -1996,6 +1999,9 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	log_stream << ";";
 	log_stream << lik_Mk;
 	log_stream << "\n";
+	// Write the current generation to files (note the continue flag after).
+	writeToMultFile_C(mcmc_stream, p, k, R, mu);
+	writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);     
 	// Break generation.
 	continue;
       }
