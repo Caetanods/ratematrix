@@ -319,7 +319,6 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
             }
         }
 
-        ## Notice that singleRegimeMCMC will break now because of the 'prop' vector.
         out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
                                      , prop=prop, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
                                       , save.handle=save.handle)
