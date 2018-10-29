@@ -51,7 +51,7 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     root_type <- switch(pi, "equal" = 0, "madfitz" = 1)
 
     ## Get the maps list:
-    get.maps <- ratematrix:::makeSimmapMaps(n_nodes=n_nodes, n_tips=n_tips, n_states=n_states
+    get.maps <- makeSimmapMaps(n_nodes=n_nodes, n_tips=n_tips, n_states=n_states
                                           , edge_len=edge_len, edge_mat=edge_mat
                                           , parents=parents, X=X, Q=Q, root_node=root_node
                                           , root_type=root_type, max_nshifts = max_nshifts)
@@ -85,7 +85,7 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     rownames( prun.tree$mapped.edge ) <- apply(prun.tree$edge, 1, function(x) paste(x, collapse=",") )
     prun.tree$Q <- Q
     ## Get the log likelihood for the Q. This is an element of the simmap object.
-    prun.tree$logL <- ratematrix:::logLikMk_C(n_nodes=n_nodes, n_tips=n_tips
+    prun.tree$logL <- logLikMk_C(n_nodes=n_nodes, n_tips=n_tips
                                             , n_states=n_states, edge_len=edge_len
                                             , edge_mat=edge_mat, parents=parents, X=X, Q=Q
                                             , root_node=root_node, root_type=root_type)
