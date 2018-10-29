@@ -1,6 +1,6 @@
 Package: ratematrix
 Title: Bayesian Estimation of the Evolutionary Rate Matrix
-Version: 1.0
+Version: 1.1
 Authors@R: c(
     person("Daniel", "Caetano", email = "caetanods1@gmail.com", role = c("aut", "cre")),
     person("Luke", "Harmon", email = "lukeh@uidaho.edu", role = "aut") )

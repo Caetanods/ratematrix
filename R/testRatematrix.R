@@ -6,6 +6,7 @@
 ##' @title Test for difference between evolutionary rate matrix estimates
 ##' @param chain the posterior distribution of parameter estimates as output of the function 'readMCMC'.
 ##' @param par the attribute of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates' (default is 'all'). Choose 'all' to compute the summary statistics for the overall matrix. Choose 'rates' to check the rates of evolution among the traits. Choose 'correlation' to compute the summary statistics for the evolutionary correlations.
+##' @param diff.test whether to return the pairwise difference between the parameters computed from the joint posterior distribution. If set to FALSE (default), then the results will be based on the overlap percentage.
 ##' @param median.test whether to return a median of the summary statistics across all elements of the evolutionary rate matrices. The default is FALSE.
 ##' @param regimes a numeric vector or character vector. This is the set of regimes to be compared. If numeric, then the regimes are in the same order as in the 'chain' argument. If character, than names need to match the names of the rate regimes fitted to the phylogenetic tree.
 ##' @param plot whether to plot the results of the summary statistics test applied to every element of the matrix. Default is FALSE.
@@ -28,7 +29,7 @@
 ##' testRatematrix(posterior, par = "rates")
 ##' testRatematrix(posterior, par = "correlation", plot = TRUE)
 ##' }
-testRatematrix <- function(chain, par=c("all","correlation","rates"), median.test=FALSE, regimes=NULL, plot=FALSE){
+testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=FALSE, median.test=FALSE, regimes=NULL, plot=FALSE){
 
     par <- match.arg(par)
 

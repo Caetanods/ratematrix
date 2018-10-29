@@ -5,12 +5,14 @@
 \title{Test for difference between evolutionary rate matrix estimates}
 \usage{
 testRatematrix(chain, par = c("all", "correlation", "rates"),
-  median.test = FALSE, regimes = NULL, plot = FALSE)
+  diff.test = FALSE, median.test = FALSE, regimes = NULL, plot = FALSE)
 }
 \arguments{
 \item{chain}{the posterior distribution of parameter estimates as output of the function 'readMCMC'.}
 
 \item{par}{the attribute of the rate matrices that are checked by the test. One of 'all', 'correlation', or 'rates' (default is 'all'). Choose 'all' to compute the summary statistics for the overall matrix. Choose 'rates' to check the rates of evolution among the traits. Choose 'correlation' to compute the summary statistics for the evolutionary correlations.}
+
+\item{diff.test}{whether to return the pairwise difference between the parameters computed from the joint posterior distribution. If set to FALSE (default), then the results will be based on the overlap percentage.}
 
 \item{median.test}{whether to return a median of the summary statistics across all elements of the evolutionary rate matrices. The default is FALSE.}
 
