@@ -45,11 +45,12 @@ readMultRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
     for( i in 1:out$p ){
         RR[[i]] <- lapply(2:dim(mcmc)[2], function(x) matrix( as.matrix(mcmc)[init[i]:end[i],x], nrow=out$k ) )
     }
-    ## names(RR) <- c("regime1","regime2") ## This need to be the name of the regimes!!
+    ## Set the name for the regimes in the correct order:
+    names(RR) <- out$regime.names
     
     ## Now find the root values.
     root <- t(sapply(2:dim(mcmc)[2], function(x) as.numeric( as.matrix(mcmc)[(end[out$p]+1):(end[out$p]+out$k),x])))
-    colnames(root) <- out$names ## This need to be the names from the data matrix.
+    colnames(root) <- out$trait.names ## This need to be the names from the data matrix.
     
     ## The the loglik:
     ## lik <- sapply(2:dim(mcmc)[2], function(x) as.matrix(mcmc)[dim(mcmc)[1],x])
