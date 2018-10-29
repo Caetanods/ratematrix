@@ -113,7 +113,7 @@ int rMultinom(arma::vec p) {
 // [[Rcpp::export]]
 arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int sims_limit) {
   // This function will not return the 'maps' element of the stochastic maps.
-  // For this see the function below. This one is all that is needed for computing the lielihood of the BM model.
+  // For this see the function below. This one is all that is needed for computing the likelihood of the BM model.
   // Function works by assuming that the order of the rows in sim_node_states is the same as in recon_states below. This follows because of the code in 'getReconStates' function.
 
   // NOTE: sims_limit controls the maximum number of times the stochastic map simulation will try to simulate for any particular branch (not cumulative!). If the value is 0, then no limit is stablished.
