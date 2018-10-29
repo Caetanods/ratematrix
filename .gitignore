@@ -13,3 +13,5 @@ rename_pkg.sh
 Tutorials/
 inst/doc
 testing_many_regimes/
+config.log
+config.status
