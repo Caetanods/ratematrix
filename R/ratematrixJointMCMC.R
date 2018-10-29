@@ -45,7 +45,7 @@
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape Ntip
 ##' @importFrom geiger fitContinuous
-##' @importFrom stats coef
+##' @importFrom stats coef rexp
 ##' @examples
 ##' \donttest{
 ##' data( centrarchidae )
