@@ -1,0 +1,192 @@
+---
+title: "Introduction to using the 'ratematrix' package"
+author: "Daniel S. Caetano"
+output: 
+  pdf_document:
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{Introdution to ratematrix}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Running a MCMC
+
+Here we will use data on the Centrarchidae fishes to understand how to setup and run a MCMC using the 'ratematrix' package.
+
+There are two main functions on this package: 'ratematrixMCMC' estimates the posterior distribution for the evolutionary rate matrices for one or multiple regimes conditioned on a pool of stochastic maps. 'ratematrixJointMCMC' will perform a joint estimate for both the evolutionary rate matrices and the stochastic maps. So the input for each of the functions differ.
+
+As a general advice, the joint estimation will be better than the estimation conditioned on a fixed pool of stochastic maps. However, there is no problem in using the 'ratematrixMCMC' with a pool of stochastic maps or even a single regime configuration. This option provides flexibility on the way to use the package.
+
+## Input data format
+
+The 'ratematrixJointMCMC' function requires the data for the response trait (continuous), the data for the predictor trait (discrete), and a phylogenetic tree. More information, such as prior distribution, generation number, output name and etc can also be set using the arguments of the function. I strongly recomend reading the help page for the 'ratematrixMCMC' and 'ratematrixJointMCMC' functions before using each.
+
+First we will load the data for the Centrarchidae fishes that accompanies the package.
+
+```{r}
+## Load the package
+library( ratematrix )
+## Load the data
+data( "centrarchidae" )
+## A list with data, phy.map, and pred
+names( centrarchidae )
+```
+
+The data is a matrix with the continuous response traits. This matrix need to have row.names matching the species labels on the phylogeny.
+
+```{r}
+resp.data <- centrarchidae$data
+class( resp.data )
+head( resp.data )
+```
+
+The predictor data is a vector with the information for the rate regimes. The vector need to have names equal to the species labels of the phylogeny.
+
+```{r}
+pred.data <- centrarchidae$pred
+names( pred.data )
+## Table show the distribution of the data for the predictor regime.
+table( pred.data )
+```
+
+Finally, we need the phylogeny for the group. The branch lengths are important for this model. It is also important to have an ultrametric phylogeny. Here we will discard the regimes already mapped in this phylogeny in order to perform a joint estimation of the multivariate Brownian motion model and the predictor for the rate regimes.
+
+```{r}
+phy <- centrarchidae$phy.map
+## Drop the regimes of the stochastic map.
+phy <- mergeSimmap(phy, drop.regimes = TRUE)
+```
+
+Now we have the necessary data to run the analysis.
+
+## Setting up the joint MCMC estimation
+
+For a very quick MCMC analyses we can provide the data, the number of MCMC generations and the directory to run the analyses. You can substitute the argument 'dir' for something more useful, such as dir = "results_mcmc", to write the results to the folder in the current directory.
+
+```{r, echo=FALSE}
+load( system.file("extdata", "intro_vignette.RData", package = "ratematrix") )
+```
+```{r, eval=FALSE}
+handle <- ratematrixJointMCMC(data_BM = resp.data, data_Mk = pred.data, phy = phy
+                              , gen = 100000, dir = tempdir())
+mcmc <- readMCMC(handle)
+```
+
+We can read the results and make a quick plot of the posterior distribution.
+
+```{r}
+plotRatematrix(mcmc)
+```
+
+## Choosing parameters for the MCMC analyses
+
+The previous run used only the default parameters to run the chain. These options will likely work for your data set. But please read the help page for the ratematrixJointMCMC or ratematrixMCMC functions to know what options you are using. Keep in mind that the default prior is a prior that I decided to use. ;) Is it good for you?
+
+## Checking for convergence
+
+The best check for convergence requires to run at least two independent MCMC chains. Let's run a second chain:
+
+```{r, eval=FALSE}
+handle2 <- ratematrixJointMCMC(data_BM = resp.data, data_Mk = pred.data, phy = phy
+                               , gen = 100000, dir = tempdir())
+mcmc2 <- readMCMC(handle2)
+```
+
+Now we can use the function to check for convergence:
+
+```{r}
+Rfactor <- checkConvergence(mcmc, mcmc2)
+Rfactor
+```
+
+The output of this function shows both the result of Gelman and Rubin potential scale reduction factor (Gelman's R) for each variable in the model and the estimated effective sample size (ESS) from the all the MCMC chains combined.
+
+A good convergence is achieved when Gelman's R is close to 1 AND the ESS for all the parameters is large. Note that the 200 ESS threshould often used in phylogenetics is not a clear cut. The ESS is the effective size of the sample. In other words, how many points is enough to have a good estimate of the parameter for your model?
+
+The results above show that we should run the MCMC chains for more time. The estimates for Gelman's R are not far from 1, so it will not take too many more generations to achieve good convergence. Here we will assume the sample is good enough for practical reasons.
+
+## Computing summary statistics from the posterior distribution
+
+The "ratematrix" package has some summary statistics ready to be computed from the posterior distribution. Many more are possible. The next topic will show how to extract the posterior samples from the result of the mcmc.
+
+First, let's merge the result from the independent MCMC chains. This help to use all the available results to compute summary statistics.
+
+```{r}
+merged.mcmc <- mergePosterior(mcmc, mcmc2)
+```
+
+
+### Extract the correlation from the model
+
+We can extract and plot the correlation for the model from the merged MCMC. The output from the "extractCorrelation" function will be a named list with pairwise correlations among all traits for each of the regimes in the model.
+
+```{r}
+corr <- extractCorrelation(merged.mcmc)
+names( corr )
+dim( corr$generalist )
+```
+
+We can make histograms to show the distribution of correlation among the traits. Note that here we have only two traits and one evolutionary correlation estimate for each regime fitted to the phylogeny.
+
+```{r}
+hist(x = corr$generalist, xlim = c(-1,1), main = "Generalist", col = "grey"
+     , border = "white", breaks = 20, freq = FALSE)
+hist(x = corr$specialist, xlim = c(-1,1), main = "Specialist", col = "grey"
+     , border = "white", breaks = 20, freq = FALSE)
+```
+
+We can see that the correlation estimates for the specialist lineages are a little stronger, but the two groups largely overlap each other:
+
+```{r}
+corr.matrix <- data.frame(corr$generalist, corr$specialist)
+colnames(corr.matrix) <- c("generalist", "specialist")
+summary(corr.matrix)
+```
+
+### Using overlap tests
+
+We can apply tests to check the proportion of overlap between the joint posterior estimate for the evolutionary rate matrix regimes. Here we can test for overlap on the rates of evolutio:
+
+```{r}
+testRatematrix(chain = merged.mcmc, par = "rates")
+```
+
+```{r}
+testRatematrix(chain = merged.mcmc, par = "correlation")
+```
+
+## Extracting the posterior samples of rate matrices
+
+The MCMC object is a list with the posterior samples for all the parameters in the model. Below I show how to extract the posterior distribution for each of the parameters for the model.
+
+Extract the root values. Each row of the matrix is a sample of the MCMC.
+
+```{r}
+names( merged.mcmc )
+head( merged.mcmc$root )
+```
+
+Extract the evolutionary rate matrices:
+
+```{r}
+names( merged.mcmc$matrix )
+class( merged.mcmc$matrix$generalist )
+length( merged.mcmc$matrix$generalist )
+gen.rate <- merged.mcmc$matrix$generalist
+spec.rate <- merged.mcmc$matrix$specialist
+
+## The first element of the list:
+gen.rate[[1]]
+spec.rate[[1]]
+```
+
+Note that the posterior for the rate matrices are each a list of matrices. So we can use the "lapply" function to extract quantities from each of the samples from the MCMC:
+
+```{r}
+## Extracts the rates for the first trait from the posterior distribution of generalists.
+rate.tr1.gen <- sapply(gen.rate, function(x) x[1,1])
+summary( rate.tr1.gen )
+```
+
+Done!
