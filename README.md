@@ -16,7 +16,7 @@ Please check the package vignettes for tutorials on how to use the package. The 
 
 An introduction to the package usage is here: <https://github.com/Caetanods/ratematrix/raw/master/inst/doc/Intro_on_the_package.pdf>
 
-Information on how to set up prior probabilities can be found here: <https://github.com/Caetanods/ratematrix/blob/master/inst/doc/Making_prior_on_ratematrix.pdf>
+Information on how to set up prior probabilities can be found here: <https://github.com/Caetanods/ratematrix/raw/master/inst/doc/Making_prior_on_ratematrix.pdf>
 
 ## Examples from the literature
 
