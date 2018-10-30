@@ -56,6 +56,8 @@ library( ratematrix )
 
 ## News and updates
 
+**Oct-2018 (v 1.1.0):** Major updates on the package. Adds new functions to perform the joint estimate of the evolutionary rate matrix and the stochastic mapping regimes together. Implements stochastic mapping algorithm on C++ (another major improvement on speed!).
+
 **Jul-2018 (v 1.0):** Fix minor problem when using the "uniform_scaled" prior (default). The function was returning an error when the number of traits was different from the number of regimes.
 
 **Jun-2018 (v 1.0):** MAJOR UPDATE! This is the list of changes: a) Implemented C++ code for the MCMC (Major speed improvement!), b) Now package works on Linux, Mac and Window systems!, c) Changed default prior (see help page for 'ratematrixMCMC', d) added new functions to facilitate computing the Effective Sample Size, extracting the evolutionary correlations among other things, e) updated the usability of many functions. (please check the help pages and examples for the updates), f) package now follow RCran policy. See change to 'dir' argument on function 'ratematrixMCMC'.
