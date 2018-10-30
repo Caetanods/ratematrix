@@ -1,8 +1,9 @@
 ---
 title: "Set custom starting point with 'ratematrix'"
 author: "Daniel S. Caetano"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: 
+  pdf_document:
+    fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{Set custom starting point}
   %\VignetteEngine{knitr::rmarkdown}

@@ -1,10 +1,11 @@
 ---
 title: "Introduction to using the 'ratematrix' package"
 author: "Daniel S. Caetano"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: 
+  pdf_document:
+    fig_caption: yes
 vignette: >
-  %\VignetteIndexEntry{Set custom starting point}
+  %\VignetteIndexEntry{Introdution to ratematrix}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -61,14 +62,14 @@ Now we have the necessary data to run the analysis.
 
 ## Setting up the joint MCMC estimation
 
-For a very quick MCMC analyses we can provide the data, the number of MCMC generations and the directory to run the analyses. You can substitute the argument 'dir' for something more useful, such as `dir = "results_mcmc"`, to write the results to the folder in the current directory.
+For a very quick MCMC analyses we can provide the data, the number of MCMC generations and the directory to run the analyses. You can substitute the argument 'dir' for something more useful, such as dir = "results_mcmc", to write the results to the folder in the current directory.
 
 ```{r, echo=FALSE}
 load( system.file("extdata", "intro_vignette.RData", package = "ratematrix") )
 ```
 ```{r, eval=FALSE}
-handle <- ratematrixJointMCMC(data_BM = resp.data, data_Mk = pred.data, phy = phy, gen = 100000
-                              , dir = tempdir())
+handle <- ratematrixJointMCMC(data_BM = resp.data, data_Mk = pred.data, phy = phy
+                              , gen = 100000, dir = tempdir())
 mcmc <- readMCMC(handle)
 ```
 
@@ -87,8 +88,8 @@ The previous run used only the default parameters to run the chain. These option
 The best check for convergence requires to run at least two independent MCMC chains. Let's run a second chain:
 
 ```{r, eval=FALSE}
-handle2 <- ratematrixJointMCMC(data_BM = resp.data, data_Mk = pred.data, phy = phy, gen = 100000
-                              , dir = tempdir())
+handle2 <- ratematrixJointMCMC(data_BM = resp.data, data_Mk = pred.data, phy = phy
+                               , gen = 100000, dir = tempdir())
 mcmc2 <- readMCMC(handle2)
 ```
 
@@ -107,7 +108,7 @@ The results above show that we should run the MCMC chains for more time. The est
 
 ## Computing summary statistics from the posterior distribution
 
-The `ratematrix` package has some summary statistics ready to be computed from the posterior distribution. Many more are possible. The next topic will show how to extract the posterior samples from the result of the mcmc.
+The "ratematrix" package has some summary statistics ready to be computed from the posterior distribution. Many more are possible. The next topic will show how to extract the posterior samples from the result of the mcmc.
 
 First, let's merge the result from the independent MCMC chains. This help to use all the available results to compute summary statistics.
 
@@ -118,7 +119,7 @@ merged.mcmc <- mergePosterior(mcmc, mcmc2)
 
 ### Extract the correlation from the model
 
-We can extract and plot the correlation for the model from the merged MCMC. The output from the `extractCorrelation` function will be a named list with pairwise correlations among all traits for each of the regimes in the model.
+We can extract and plot the correlation for the model from the merged MCMC. The output from the "extractCorrelation" function will be a named list with pairwise correlations among all traits for each of the regimes in the model.
 
 ```{r}
 corr <- extractCorrelation(merged.mcmc)
@@ -180,10 +181,12 @@ gen.rate[[1]]
 spec.rate[[1]]
 ```
 
-Note that the posterior for the rate matrices are each a list of matrices. So we can use the `lapply` function to extract quantities from each of the samples from the MCMC:
+Note that the posterior for the rate matrices are each a list of matrices. So we can use the "lapply" function to extract quantities from each of the samples from the MCMC:
 
 ```{r}
 ## Extracts the rates for the first trait from the posterior distribution of generalists.
 rate.tr1.gen <- sapply(gen.rate, function(x) x[1,1])
 summary( rate.tr1.gen )
 ```
+
+Done!
