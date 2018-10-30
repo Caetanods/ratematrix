@@ -6,11 +6,17 @@
 
 R package for the study of patterns of evolutionary correlation among two or more traits using phylogenetic trees. 'ratematrix' offers a suite of tools to estimate the evolutionary rate matrix (R) incorporating uncertainty in the form of a posterior distribution using Markov-chain Monte Carlo.
 
-For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article available at (http://biorxiv.org/content/early/2017/01/25/102939)
+For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article published on Systematic Biology: "Caetano, D. S., and L. J. Harmon. 2018. Estimating correlated rates of trait evolution with uncertainty. Syst Biol, doi: 10.1093/sysbio/syy067"
 
-If you use the package please cite "Caetano, D. S., and L. J. Harmon. 2017. ratematrix: an R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecolology and Evolution http://dx.doi.org/10.1111%2F2041-210X.12826 "
+An overview of the package can be found at "Caetano, D. S., and L. J. Harmon. 2017. ratematrix: an R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecolology and Evolution http://dx.doi.org/10.1111%2F2041-210X.12826"
 
-## Examples in the literature
+## Tutorials
+
+Please check the package vignettes for tutorials on how to use the package. The pdf files can be found on the directory `inst/doc/` of this repository.
+
+An introduction on the package usage is here: `inst/doc/Intro_on_the_package.pdf`
+
+## Examples from the literature
 
 Hermansen, J. S., J. Starrfelt, K. L. Voje, and N. C. Stenseth. 2018. Macroevolutionary consequences of sexual conflict. Biology Letters 14:20180186. (http://rsbl.royalsocietypublishing.org/content/14/6/20180186)
 
@@ -20,7 +26,7 @@ Slater, G. J., and A. R. Friscia. 2018. Hierarchy, Morphology, and Adaptive Radi
 
 Package is now available on RCran! To install you can just type: `install.packages("ratematrix")`
 
-Page for the package on RCran: https://cran.r-project.org/web/packages/ratematrix/index.html
+Page for the package on RCran: https://cran.r-project.org/package=ratematrix
 
 ## Install development version
 
@@ -28,8 +34,7 @@ Page for the package on RCran: https://cran.r-project.org/web/packages/ratematri
 
 ```{r,R.options=list(max.print=20)}
 install.packages("devtools")
-library(devtools)
-install_github("Caetanods/ratematrix")
+devtools::install_github("Caetanods/ratematrix")
 ```
 
 NOTE: In case you are working with an older version of R and have problems to install the package using 'devtools', try to set this option as a workaround:
@@ -37,26 +42,9 @@ NOTE: In case you are working with an older version of R and have problems to in
 options(download.file.method = "wget")
 ```
 
-**For Windows:**
-
-In this case you need to use the binary file. You can download it from this Dropbox link: https://www.dropbox.com/s/uvga0x04fakmiji/ratematrix_1.0.zip?dl=0 [please send me an email message if the file is not available]
-
-Then install using the following lines. Of course, need to fix the path to the file to match the directory on your computer.
-
-```{r,R.options=list(max.print=20)}
-## First install the dependencies:
-install.packages(pkgs=c("ape", "geiger", "coda", "corpcor", "MASS", "phylolm", "readr"
-                        , "mvMORPH", "Rcpp", "ellipse"))
-## Now install the 'ratematrix' package from binary:
-install.packages("C:/Users/minion/Desktop/ratematrix_1.0.zip", repos = NULL, type = "win.binary")
-## Try to load the package.
-library( ratematrix )
-## If you get an error message. Check if additional packages need to be installed.
-```
-
 ## News and updates
 
-**Oct-2018 (v 1.1.0):** Major updates on the package. Adds new functions to perform the joint estimate of the evolutionary rate matrix and the stochastic mapping regimes together. Implements stochastic mapping algorithm on C++ (another major improvement on speed!).
+**Oct-2018 (v 1.1):** Major updates on the package. Adds new functions to perform the joint estimate of the evolutionary rate matrix and the stochastic mapping regimes together. Implements stochastic mapping algorithm on C++ (another major improvement on speed!).
 
 **Jul-2018 (v 1.0):** Fix minor problem when using the "uniform_scaled" prior (default). The function was returning an error when the number of traits was different from the number of regimes.
 
