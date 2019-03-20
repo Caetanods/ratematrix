@@ -46,6 +46,8 @@ options(download.file.method = "wget")
 
 ## News and updates
 
+**Mar-2019 (v 1.2):** Updated citations for functions. Corrected BUG when merging a list of single regime MCMC chains. Corrected a potential conflict when using default priors under a 'mclapply' call to run multiple MCMC chains.
+
 **Oct-2018 (v 1.1):** Major updates on the package. Adds new functions to perform the joint estimate of the evolutionary rate matrix and the stochastic mapping regimes together. Implements stochastic mapping algorithm on C++ (another major improvement on speed!).
 
 **Jul-2018 (v 1.0):** Fix minor problem when using the "uniform_scaled" prior (default). The function was returning an error when the number of traits was different from the number of regimes.
