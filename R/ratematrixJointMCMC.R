@@ -250,7 +250,8 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
             cat("Computing step size for root value proposal from the data. \n")
             w_mu <- ( data.range[,2] - data.range[,1] ) / 10
             cat("Guessing magnitude of rates from the data. \n")
-            fit <- lapply(1:ncol(data_BM), function(x) fitContinuous(phy = phy, dat=data_BM[,x], model = "BM") )
+            ## Using a single core to compute BM model.
+            fit <- lapply(1:ncol(data_BM), function(x) fitContinuous(phy = phy, dat=data_BM[,x], model = "BM", ncores = 1) )
             guess.rates <- sapply(fit, function(x) coef(x)[1])
             top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
             rep.sd.regime <- rep(c(0,top.sd), times=p)

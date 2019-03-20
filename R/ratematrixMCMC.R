@@ -285,9 +285,11 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
                 w_mu <- ( data.range[,2] - data.range[,1] ) / 10
                 cat("Guessing magnitude of rates from the data. \n")
                 if( is.list(phy[[1]]) ){ ## List of phylo.
-                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM") )
+                    ## Using a single core to compute BM model.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM", ncores = 1) )
                 } else{ ## Only one phylo.
-                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy, dat=data[,x], model = "BM") )
+                    ## Using a single core to compute BM model.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy, dat=data[,x], model = "BM", ncores = 1) )
                 }
                 guess.rates <- sapply(fit, function(x) coef(x)[1])
                 top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
@@ -368,9 +370,11 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
                 w_mu <- ( data.range[,2] - data.range[,1] ) / 10
                 cat("Guessing magnitude of rates from the data. \n")
                 if( is.list(phy[[1]]) ){ ## List of phylo.
-                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM") )
+                    ## Using a single core to compute BM model.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM", ncores = 1) )
                 } else{ ## Only one phylo.
-                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy, dat=data[,x], model = "BM") )
+                    ## Using a single core to compute BM model.
+                    fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy, dat=data[,x], model = "BM", ncores = 1) )
                 }
                 guess.rates <- sapply(fit, function(x) coef(x)[1])
                 top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
