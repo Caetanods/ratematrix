@@ -37,15 +37,15 @@ mergePosterior <- function(...){
     
     chains <- list(...)
 
-    if( inherits(chains[[1]], what = "ratematrix_multi_chain") ){
+    if( inherits(chains[[1]], what = c("ratematrix_multi_chain", "ratematrix_single_chain") ) ){
         ## Probably a single posterior as input.
         if( length( chains[[1]] ) == 1 ) stop( "Need two or more posterior distributions to merge." )
     } else if( inherits(chains[[1]], what = "list") ){
         ## Input likely a list of posteriors.
-        if( inherits(chains[[1]][[1]], what = "ratematrix_multi_chain" ) ){
+        if( inherits(chains[[1]][[1]], what = c("ratematrix_multi_chain", "ratematrix_single_chain") ) ){
             ## Yes, this is a list of posteriors:
             if( length( chains[[1]] ) == 1 ) stop( "Need two or more posterior distributions to merge." )
-            class.post <- sapply(chains[[1]], function(x) inherits(x, what = "ratematrix_multi_chain" ))
+            class.post <- sapply(chains[[1]], function(x) inherits(x, what = c("ratematrix_multi_chain", "ratematrix_single_chain") ))
             if( !all( class.post ) ) stop( "All input objects need to be posterior distributions." )
             chains <- chains[[1]] ## Decrease one level in the listing structure.
         } else{
