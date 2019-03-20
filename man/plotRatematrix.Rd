@@ -7,8 +7,8 @@
 plotRatematrix(chain, p = NULL, colors = NULL, set.xlim = NULL,
   set.leg = NULL, l.cex = 0.7, ell.wd = 0.5, alphaOff = 1,
   alphaDiag = 1, alphaEll = 1, hpd = 100, show.zero = FALSE,
-  n.lines = 50, n.points = 200, point.matrix = NULL, point.color = NULL,
-  point.wd = 0.5)
+  n.lines = 50, n.points = 200, point.matrix = NULL,
+  point.color = NULL, point.wd = 0.5)
 }
 \arguments{
 \item{chain}{the posterior distribution of parameter estimates as produced by 'readMCMC' or samples from the prior using 'samplePrior'..}

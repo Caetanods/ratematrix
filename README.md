@@ -12,7 +12,7 @@ An overview of the package can be found at "Caetano, D. S., and L. J. Harmon. 20
 
 ## Tutorials
 
-Please check the package vignettes for tutorials on how to use the package. The pdf files can be found on the directory `inst/doc/` of this repository.
+Please check the package vignettes for tutorials on how to use the package. Vignettes can be found on the RCran page for the package "https://cran.r-project.org/web/packages/ratematrix/index.html". The pdf files can also be accessed on the directory `inst/doc/` of this repository.
 
 An introduction to the package usage is here: <https://github.com/Caetanods/ratematrix/raw/master/inst/doc/Intro_on_the_package.pdf>
 
@@ -22,7 +22,7 @@ Information on how to set up prior probabilities can be found here: <https://git
 
 Hermansen, J. S., J. Starrfelt, K. L. Voje, and N. C. Stenseth. 2018. Macroevolutionary consequences of sexual conflict. Biology Letters 14:20180186. (http://rsbl.royalsocietypublishing.org/content/14/6/20180186)
 
-Slater, G. J., and A. R. Friscia. 2018. Hierarchy, Morphology, and Adaptive Radiation: a Test of Osborn’s Law in the Carnivora. bioRxiv 285700. (https://www.biorxiv.org/content/early/2018/03/20/285700)
+Slater, G. J., and A. R. Friscia. 2019. Hierarchy in adaptive radiation: A case study using the Carnivora (Mammalia). Evolution 73(3):524-539. (https://doi.org/10.1111/evo.13689)
 
 ## Install RCran (released) version
 

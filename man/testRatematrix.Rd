@@ -5,7 +5,8 @@
 \title{Test for difference between evolutionary rate matrix estimates}
 \usage{
 testRatematrix(chain, par = c("all", "correlation", "rates"),
-  diff.test = FALSE, median.test = FALSE, regimes = NULL, plot = FALSE)
+  diff.test = FALSE, median.test = FALSE, regimes = NULL,
+  plot = FALSE)
 }
 \arguments{
 \item{chain}{the posterior distribution of parameter estimates as output of the function 'readMCMC'.}

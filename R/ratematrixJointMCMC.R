@@ -39,6 +39,10 @@
 ##' @param save.handle whether the handle for the MCMC should be saved to the directory in addition to the output files.
 ##' @return Function returns the 'handle' object and writes the posterior distribution and log as files in the directory (see 'dir'). The handle is a list with the details of the MCMC chain. It is composed by: *k* the number of traits; *p* the number of R regimes fitted to the tree; *ID* the unique identifier of the run; *dir* the directory where the posterior and log files were saved; *outname* the name for the chain; *trait.names* a vector with the label for the traits; *regime.names* a vector with the label for the rate regimes; *data* the data used in the analysis; *phy* a single phylogeny or the list of phylogenies; *prior* a list with the prior functions; *start* a list with the starting parameters for the chain; *gen* the number of generations for the chain; *mcmc.par* a list with the tunning parameters for the MCMC.
 ##' @author Daniel S. Caetano and Luke J. Harmon
+##' @references Revell, L. J., and L. J. Harmon. 2008. Testing quantitative genetic hypotheses about the evolutionary rate matrix for continuous characters. Evolutionary Ecology Research 10:311.
+##' @references Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
+##' @references Caetano, D. S., and L. J. Harmon. 2017. ratematrix: An R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecology and Evolution 8:1920–1927.
+##' @references Caetano, D. S., and L. J. Harmon. 2018. Estimating Correlated Rates of Trait Evolution with Uncertainty. Systematic Biology, doi: 10.1093/sysbio/syy067.
 ##' @export
 ##' @importFrom mvMORPH mvBM
 ##' @importFrom corpcor decompose.cov

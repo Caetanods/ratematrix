@@ -108,6 +108,15 @@ plotRatematrix(merged.posterior)
 plotRootValue(merged.posterior)
 }
 }
+\references{
+Revell, L. J., and L. J. Harmon. 2008. Testing quantitative genetic hypotheses about the evolutionary rate matrix for continuous characters. Evolutionary Ecology Research 10:311.
+
+Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
+
+Caetano, D. S., and L. J. Harmon. 2017. ratematrix: An R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecology and Evolution 8:1920–1927.
+
+Caetano, D. S., and L. J. Harmon. 2018. Estimating Correlated Rates of Trait Evolution with Uncertainty. Systematic Biology, doi: 10.1093/sysbio/syy067.
+}
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }

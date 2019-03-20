@@ -4,9 +4,10 @@
 \alias{ratematrixMCMC}
 \title{Estimate the evolutionary rate matrix using Markov-chain Monte Carlo}
 \usage{
-ratematrixMCMC(data, phy, prior = "uniform_scaled", start = "prior_sample",
-  gen, v = 50, w_sd = 0.2, w_mu = 0.5, prop = c(0.05, 0.475, 0.475),
-  dir = NULL, outname = "ratematrixMCMC", IDlen = 5, save.handle = TRUE)
+ratematrixMCMC(data, phy, prior = "uniform_scaled",
+  start = "prior_sample", gen, v = 50, w_sd = 0.2, w_mu = 0.5,
+  prop = c(0.05, 0.475, 0.475), dir = NULL,
+  outname = "ratematrixMCMC", IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait. Names for the columns is used as trait labels. If labels are not provided, the function will use default labels.}
@@ -88,6 +89,15 @@ merged.posterior <- mergePosterior(posterior.list)
 plotRatematrix(merged.posterior)
 plotRootValue(merged.posterior)
 }
+}
+\references{
+Revell, L. J., and L. J. Harmon. 2008. Testing quantitative genetic hypotheses about the evolutionary rate matrix for continuous characters. Evolutionary Ecology Research 10:311.
+
+Revell, L. J., and D. C. Collar. 2009. Phylogenetic Analysis of the Evolutionary Correlation Using Likelihood. Evolution 63:1090–1100.
+
+Caetano, D. S., and L. J. Harmon. 2017. ratematrix: An R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecology and Evolution 8:1920–1927.
+
+Caetano, D. S., and L. J. Harmon. 2018. Estimating Correlated Rates of Trait Evolution with Uncertainty. Systematic Biology, doi: 10.1093/sysbio/syy067.
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon
