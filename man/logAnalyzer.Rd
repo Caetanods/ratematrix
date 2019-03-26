@@ -8,7 +8,7 @@ logAnalyzer(handle, burn = 0.25, thin = 100, show.plots = TRUE,
   print.result = TRUE, dir = NULL)
 }
 \arguments{
-\item{handle}{the output object from the 'ratematrixMCMC' function.}
+\item{handle}{the output object from 'ratematrixMCMC', 'ratematrixJointMCMC', or 'ratematrixPolytopeMCMC' functions.}
 
 \item{burn}{the proportion of burn-in. A numeric value between 0 and 1.}
 
@@ -24,7 +24,7 @@ logAnalyzer(handle, burn = 0.25, thin = 100, show.plots = TRUE,
 A named vector with the acceptance ratio for the whole MCMC and each of the parameters of the model. If a list of phylogenetic trees was provided to the MCMC chain, then the output is a list with the acceptance ratio for the parameters and a table showing the frequency in which each of the phylogenies was accepted in a move step.
 }
 \description{
-Reads the log file produced by the 'ratematrixMCMC' function. Calculates acceptance ratio and shows the trace plot. Check the function 'computeESS' to compute the Effective Sample Size of the posterior distribution.
+Reads the log file produced by the 'ratematrixMCMC', 'ratematrixJointMCMC', or 'ratematrixPolytopeMCMC' functions. Calculates acceptance ratio and shows the trace plot. Check the function 'computeESS' to compute the Effective Sample Size of the posterior distribution.
 }
 \details{
 The log shows the acceptance ratio for the parameters of the model and also for each of the phylogenies provided to the 'ratematrixMCMC' function (if more than one was provided as input). Also see function 'ratematrixMCMC' for a brief discussion about acceptance ratio for the parameters in 'Details'.\cr

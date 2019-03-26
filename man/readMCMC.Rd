@@ -7,7 +7,7 @@
 readMCMC(handle, burn = 0.25, thin = 100, dir = NULL)
 }
 \arguments{
-\item{handle}{the output object from the 'ratematrixMCMC' function.}
+\item{handle}{the output object from the 'ratematrixMCMC', 'ratematrixJointMCMC', or 'ratematrixPolytopeMCMC' functions.}
 
 \item{burn}{the proportion of the burnin to be pruned from the MCMC chain. A number between 0 and 1 (default is 0.25).}
 

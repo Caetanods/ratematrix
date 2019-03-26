@@ -1,4 +1,4 @@
-##' Reads the log file produced by the 'ratematrixMCMC' function. Calculates acceptance ratio and shows the trace plot. Check the function 'computeESS' to compute the Effective Sample Size of the posterior distribution.
+##' Reads the log file produced by the 'ratematrixMCMC', 'ratematrixJointMCMC', or 'ratematrixPolytopeMCMC' functions. Calculates acceptance ratio and shows the trace plot. Check the function 'computeESS' to compute the Effective Sample Size of the posterior distribution.
 ##'
 ##' The log shows the acceptance ratio for the parameters of the model and also for each of the phylogenies provided to the 'ratematrixMCMC' function (if more than one was provided as input). Also see function 'ratematrixMCMC' for a brief discussion about acceptance ratio for the parameters in 'Details'.\cr
 ##' \cr
@@ -6,7 +6,7 @@
 ##' \cr
 ##' If you provided a list of phylogenies to the MCMC chain, then the sampler will randomly sample one of these phylogenies and use it to compute the likelihood of the model at each step of the MCMC. The pool of trees and/or regime configurations provided effectivelly works as a prior distribution. It is important to note that this is not equivalent to a joint estimation of the comparative model of trait evolution and phylogenetic tree, since the moves proposed by the MCMC chain are restricted to the parameters of the phylogenetic comparative model. Some of the phylogenies provided in the pool might be accepted more than others during the MCMC. When this happens, the acceptance ratio for a given tree, or set of trees, will be relativelly lower when compared to the rest. This means that the information presented in such a tree (or trees) is less represented in the posterior distribution than other trees. If this issue happens, we advise users to investigate whether these trees show a different pattern (potentially biologically informative) when compared to the other set of trees. Additionally, one might also repeat the analysis with these trees in separate in order to check whether parameters estimates are divergent.
 ##' @title Make analysis of the log file of the MCMC chain
-##' @param handle the output object from the 'ratematrixMCMC' function.
+##' @param handle the output object from 'ratematrixMCMC', 'ratematrixJointMCMC', or 'ratematrixPolytopeMCMC' functions.
 ##' @param burn the proportion of burn-in. A numeric value between 0 and 1.
 ##' @param thin the number of generations to skip when reading the posterior distributionfrom the files. Since the files contain each step of the sampler, one can check the posterior with different 'thin' values without the need of reanalyses.
 ##' @param show.plots whether to show a trace plot of the log-likelihood and the acceptance ratio. Default is TRUE.
@@ -62,15 +62,25 @@ logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.resu
     accept.all <- sum( as.logical( log.mcmc[,1]) ) / nrow(log.mcmc)
     ## Compute the cumulative acceptance ratio for all the parameters across the generations. This is based on the log after burn-in and thinning.
     cum.accept <- cumsum(log.mcmc[,1]) / 1:length(log.mcmc[,1])
-    ## The accept ratio for each of the parameters in separate.
-    accept.par <- sapply(2:4, function(x) sum( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) / length( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) )
-    ## Make report object:
-    accept <- c(accept.all, accept.par)
-    names(accept) <- c("all", "correlation", "sd", "root")
-    
-    ## The proportion of times that each phylo of the list was present when a proposal was accepted.
-    ## This is the 'mixing' for the pool of phylogenetic trees.
-    mix.phylo <- table( log.mcmc[ as.logical(log.mcmc[,1]), 5] ) / length( log.mcmc[ as.logical(log.mcmc[,1]), 5 ] )
+
+    ## Need to check the number of columns of the log file. If shorter, then the model does not include root values.
+    if( ncol( log.mcmc ) == 6 ){
+        ## Root values are included.
+        accept.par <- sapply(2:4, function(x) sum( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) / length( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) )
+        ## Make report object:
+        accept <- c(accept.all, accept.par)
+        names(accept) <- c("all", "correlation", "sd", "root")
+        ## The proportion of times that each phylo of the list was present when a proposal was accepted.
+        ## This is the 'mixing' for the pool of phylogenetic trees.
+        mix.phylo <- table( log.mcmc[ as.logical(log.mcmc[,1]), 5] ) / length( log.mcmc[ as.logical(log.mcmc[,1]), 5 ] )
+    } else{
+        ## Root values are not included.
+        accept.par <- sapply(2:3, function(x) sum( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) / length( log.mcmc[ as.logical( log.mcmc[,x] ), 1] ) )
+        ## Make report object:
+        accept <- c(accept.all, accept.par)
+        names(accept) <- c("all", "correlation", "sd")
+        mix.phylo <- table( log.mcmc[ as.logical(log.mcmc[,1]), 4] ) / length( log.mcmc[ as.logical(log.mcmc[,1]), 4] )
+    }
 
     ## Create object to help making the plot.
     at.gen <- round( seq(from=1, to=length(post), length.out = 5) )
@@ -92,7 +102,7 @@ logAnalyzer <- function(handle, burn=0.25, thin=100, show.plots=TRUE, print.resu
 
         graphics::par( mfrow = c(2,1) )
         graphics::par(mar = c(1, 0, 0, 0), oma = c(3, 4, 2, 0))
-        graphics::plot(x=1:nrow( log.mcmc ), y=log.mcmc[,6], type="l", axes=FALSE, xlab="", ylab="")
+        graphics::plot(x=1:nrow( log.mcmc ), y=log.mcmc[,ncol(log.mcmc)], type="l", axes=FALSE, xlab="", ylab="")
         graphics::axis(side=2)
         graphics::mtext("Log-likelihood", side=2, line=2, cex=1)
         graphics::plot(x=1:nrow( log.mcmc ), y=cum.accept, type="l", axes=FALSE, xlab="", ylab="")

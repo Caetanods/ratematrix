@@ -52,7 +52,7 @@ readSingleRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
     ## lik <- sapply(1:dim(mcmc)[2], function(x) as.matrix(mcmc)[dim(mcmc)[1],x])
 
     ## out <- list(root = root, matrix = RR, log.lik = lik)
-    out <- list(root = root, matrix = RR)
+    out <- list(root = root, matrix = RR, trait.names = out$trait.names, n_post_samples = nrow( root ) )
     class(out) <- "ratematrix_single_chain"
     
     return( out )

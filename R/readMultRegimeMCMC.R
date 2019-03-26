@@ -56,7 +56,7 @@ readMultRegimeMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL){
     ## lik <- sapply(2:dim(mcmc)[2], function(x) as.matrix(mcmc)[dim(mcmc)[1],x])
 
     ## out <- list(root = root, matrix = RR, log.lik = lik)
-    out <- list(root = root, matrix = RR)
+    out <- list(root = root, matrix = RR, trait.names = out$trait.names, n_post_samples = nrow( root ) )
     class(out) <- "ratematrix_multi_chain"
     
     return( out )

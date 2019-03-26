@@ -41,3 +41,11 @@ runRatematrixMCMC_jointMk_C <- function(X, datMk, k, p, nodes, n_tips, des, anc,
     .Call('_ratematrix_runRatematrixMCMC_jointMk_C', PACKAGE = 'ratematrix', X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, write_header, sims_limit)
 }
 
+logLikPrunningFixedAnc <- function(tips_poly, X0, k, p, nodes, des, anc, names_anc, mapped_edge, R) {
+    .Call('_ratematrix_logLikPrunningFixedAnc', PACKAGE = 'ratematrix', tips_poly, X0, k, p, nodes, des, anc, names_anc, mapped_edge, R)
+}
+
+runRatematrixPolytopeMCMC <- function(X_poly, anc_poly, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_sample_sd, gen, write_header) {
+    .Call('_ratematrix_runRatematrixPolytopeMCMC', PACKAGE = 'ratematrix', X_poly, anc_poly, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_sample_sd, gen, write_header)
+}
+

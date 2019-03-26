@@ -2049,3 +2049,580 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 
   return "Done.";
 }
+
+// #######################################################
+// ###### Functions to work with polytopes
+// #######################################################
+
+// Functions to estimate the model that samples from hypervolumes to incorporate the within-species variation for the multivariate traits. The approach is an extension of work by Lemey et al. (2010) Mol Biol Evol. In this work the authors sampled from an area to estimate a relaxed random walk for phylogeography.
+// The central idea is to use data augmentation to directly sample the ancestrals and sample the tip values from their volumes defined by the variation observed in the species.
+// The simplest case will have a single rate across the whole tree. Then we can also use predictive regimes and, finally, the most complex case is a relaxed random walk across the branches. The relaxed random walk allows every branch to have their own scaler i.i.d. from an underlying discretized rate distribution (Drummond et al., 2006). This is similar to the Gamma-distributed rate variation with MK models.
+
+arma::mat samplePolytope(arma::mat edge) {
+  // Function to sample a single point from the polytope given the edges with min and max for the traits.
+  // This assumes that the space is a n-dimensional cube, with straight lines making the limits of the space.
+  // We sample from the volume delimited by the max and min values for each of the dimentions.
+
+  int dim_poly = edge.n_cols / 2; // number of dimensions.
+  int n_samples = edge.n_rows; // number of samples to be taken.
+  // Retuning container need to have samples as rows and traits as columns (same format as other functions).
+  arma::mat samples = mat(n_samples, dim_poly);
+  arma::vec rand_sample = vec(dim_poly);
+  arma::vec range_axis = vec(dim_poly);
+  arma::vec min_axis = vec(dim_poly);
+  int axis_count;
+
+  for(uword i=0; i < n_samples; i++) {
+    // Need to sample from a uniform distribution for each of the dimensions.
+    rand_sample = randu(dim_poly);
+    axis_count = 0;
+
+    for(uword j=0; j < edge.n_cols; ) { // No advancement statement here.
+      // Create the vector with the range.
+      range_axis(axis_count) = edge(i,j+1) - edge(i,j);
+      min_axis(axis_count) = edge(i,j);
+      // Make the advancement:
+      j += 2;
+      axis_count++;
+    }
+
+    // Here need to transpose the col vector to a row vector.
+    samples.row(i) = trans( min_axis + ( rand_sample % range_axis ) );
+  }
+
+  arma::mat samples_trans = trans(samples);
+  return samples_trans;
+}
+
+// [[Rcpp::export]]
+double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat X0, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R) {
+  // Function to compute the likelihood of the model conditioned on know values for the ancestral nodes.
+  // Note that this is computing the Restricted likelihood (REML) and not the full likelihood. This happens because we cannot compute the contrast at the root node if we assumed all ancestral nodes as fixed.
+  // tips_poly: Data for the tips of the phylogeny, same as X.
+  // X0: Observations for the internal nodes of the phylogeny same order as nodes vector.
+  // k is the number of traits in the data.
+  // p is the number of regimes in the data.
+  // nodes is a vector with the indexes for the nodes. STARTING IN 0!!!
+  // des is a vector with the descendents of the nodes. STARTING IN 0!!!
+  // anc is a vector with the ancestrals of the nodes. STARTING IN 0!!!
+  // mapped_edge is a matrix with the stochastic map.
+  // R is a cube with the evolutionary rate matrices.
+
+  // All vector of indexes are straight from R. So need to take care when calling values from containers, since R indexing starts from 1.
+
+  // Initiate all the objects.
+  arma::uword des_node0;
+  arma::uword des_node1;
+  arma::vec ss = vec(k); // Number of traits.
+  arma::cube Rs1 = cube(R);
+  arma::cube Rs2 = cube(R);
+  arma::mat Rinv = mat(k, k);
+  arma::uvec des_node_vec = uvec(2);
+  arma::uword nd;
+  arma::uword nd_id;
+  arma::uword key_id;
+  arma::uword tip;
+  arma::uword tip_id;
+  arma::uword key_id0;
+  arma::uword key_id1;
+  int n_nodes = nodes.n_elem;
+
+  // In this case we don't need to compute the constrasts for the internal nodes.
+  // The X0 matrix is already provided:
+  // arma::mat X0 = mat(k, n_nodes + 1);
+  
+  arma::cube V0 = cube(k, k, n_nodes + 1);
+  arma::uvec key = uvec(n_nodes); // Not needed at the ROOT.
+  arma::uword type;
+  // Need to initialize ll as a 0 value.
+  double ll = 0.0;
+  // node_id are the nodes which ancestral is node 'i'.
+  // This will **always** have length 2 assuming the tree is a bifurcating tree.
+  arma::uvec node_id = uvec(2);
+
+  // Note: The vector 'anc' is originally a named vector and the names are important.
+  //       Here I am assuming a new vector 'names_anc' which is a integer vector (arma::uvec) with the names of the 'anc' cohersed into numeric.
+  // 'names_anc' are important to find which type of contrast is done: node & node, tip & tip, or tip & node. Each has a different form of computing the quantities.
+
+  // Loop to traverse the tree.
+  // Will visit all the internal nodes including the ROOT.
+  for(int i=0; i < n_nodes; i++) {
+    
+    // The index for the 'des', 'anc', and 'mapped_edge (lines)'.
+    node_id = find( anc == nodes[i] );
+    type = names_anc[node_id[0]];
+    
+    // Next is the contrast calculations. This will be different for each 'type' of ancestral node.
+    // In this structure of if...else just a single clause will be evaluated.
+    // This can reduce the number of if clauses that need to be tested.
+    // Insert the order following the most abundant node types. This will minimize the number of if...else clauses to be evaluated.
+
+    if(type == 1) {
+      // Executes for node to tips contrast.
+      // Former: NodeToTip function.
+      des_node0 = des(node_id[0]) - 1; // des is a vector of indexes from R.
+      des_node1 = des(node_id[1]) - 1;
+      ss = tips_poly.col(des_node0) - tips_poly.col(des_node1); // Contrast value.
+    
+      // Multiply each R matrix by the respective branch length (due to the regime) and sum the result. So this is a loop over the number of regimes 'p'.
+      // Need to do this for each of the daughter lineages.
+      for(arma::uword j = 0; j < p; j++) {
+	// Multiply each R matrix for the correspondent branch length.
+	Rs1.slice(j) = R.slice(j) * mapped_edge(node_id[0],j);
+	Rs2.slice(j) = R.slice(j) * mapped_edge(node_id[1],j);
+      }
+      // Join all slices together, sum everything into a single matrix.
+      for(arma::uword z = 1; z < p; z++) {
+	Rs1.slice(0) += Rs1.slice(z);
+	Rs2.slice(0) += Rs2.slice(z);
+      }
+
+      Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
+
+      ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
+
+      key[i] = anc(node_id[0]) - 1; // 'anc' is a vector from R, so need to change the indexing here.
+      
+      // Take care with the indexes starting from 0, need to reduce a unit from the length here.
+      // No need for the node value computation.
+      // X0.col(i) = ((Rs1.slice(0) * Rinv) * X.col(des_node1)) + ((Rs2.slice(0) * Rinv)  * X.col(des_node0));
+      V0.slice(i) = inv_sympd( inv_sympd(Rs1.slice(0)) + inv_sympd(Rs2.slice(0)) );
+  
+    } else if(type == 3) {
+      // Executes for node to tip & node contrast.
+      // Former NodeToTipNode function.
+      // Here using a bifurcating tree always, so just need two objects.
+      // des is a vector from R. Need to correct the indexes.
+      des_node_vec[0] = des(node_id[0]) - 1;
+      des_node_vec[1] = des(node_id[1]) - 1;
+      // This will give the nodes associated with the descendants (from the key).
+      // Here nd is the node of the tree.
+      // Need to generate some indexes to be used by the function.
+      nd = max( des_node_vec );
+      tip = min( des_node_vec );
+      nd_id = node_id[as_scalar( find( nd == des_node_vec ) )];
+      tip_id = node_id[as_scalar( find( tip == des_node_vec ) )];
+      // Here I am using key.head() to search only in the populated values of key.
+      // The position 'i' will only be populated some lines down in the code.
+      key_id = as_scalar( find( key.head(i) == nd ) );
+
+      // Compute the contrast for the nodes.
+      ss = tips_poly.col(tip) - X0.col(key_id);
+
+      // 'Rs1' is relative to the branch leading to a tip 'tip_id' and 'Rs2' to the branch leading to a node 'nd_id'.
+      for(arma::uword j = 0; j < p; j++) {
+	// Note the stop condition for the loop. We can use the number of regimes here because the loop will stop when j=1 < p=2 !! And NOT when j=2 !!
+	// Multiply each R matrix for the correspondent branch length.
+	Rs1.slice(j) = R.slice(j) * mapped_edge(tip_id,j);
+	Rs2.slice(j) = R.slice(j) * mapped_edge(nd_id,j);
+      }
+      // Rf_PrintValue( wrap( row2 ) );
+      // Join all slices together, sum everything into a single matrix.
+      // Without copying it all again! Awesome!
+      for(arma::uword z = 1; z < p; z++) {
+	Rs1.slice(0) += Rs1.slice(z);
+	Rs2.slice(0) += Rs2.slice(z);
+      }
+      // Here need to add some addicional variance that carries over from the pruning.
+      // Doing this just for the node. No additional variance associated with the tip.
+      Rs2.slice(0) += V0.slice(key_id);
+
+      Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
+
+      ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
+
+      key[i] = anc(node_id[0]) - 1; // Need to decrease the value of 'anc' by 1. This comes from R.
+  
+      // Take care with the indexes starting from 0, need to reduce a unit from the length here.
+      // Now we need to multiply the tip with the node and the node with the tip. That is why the relationship here is inverted. It is correct!
+      // No need for the node value computation.
+      // X0.col(i) = ((Rs1.slice(0) * Rinv) * X0.col(key_id)) + ((Rs2.slice(0) * Rinv) * X.col(tip));
+      V0.slice(i) = inv_sympd( inv_sympd(Rs1.slice(0)) + inv_sympd(Rs2.slice(0)) );
+  
+    } else {
+      // Executes for node to nodes contrast.
+      // Former NodeToNode function.
+      // Here using a bifurcating tree always, so just need two objects.
+      des_node0 = des(node_id[0]) - 1; // 'des' is a vector from R.
+      des_node1 = des(node_id[1]) - 1;
+
+      // This will give the nodes associated with the descendants (from the key).
+      // This also depends on the correction of 'anc' when populating the key vector.
+      // Using key.head(i) to assure that find is only looking to populated positions in the vector.
+      key_id0 = as_scalar( find(key.head(i) == des_node0) );
+      key_id1 = as_scalar( find(key.head(i) == des_node1) );
+  
+      // Compute the contrast for the nodes.
+      ss = X0.col(key_id0) - X0.col(key_id1);
+      // Multiply each R matrix by the respective branch length (due to the regime) and sum the result. So this is a loop over the number of regimes 'p'.
+      // Need to do this for each of the daughter lineages.
+      for(arma::uword j = 0; j < p; j++) {
+	// Note the stop condition for the loop. We can use the number of regimes here because the loop will stop when j=1 < p=2 !! And NOT when j=2 !!
+	// Multiply each R matrix for the correspondent branch length.
+	Rs1.slice(j) = R.slice(j) * mapped_edge(node_id[0],j);
+	Rs2.slice(j) = R.slice(j) * mapped_edge(node_id[1],j);
+      }
+      // Join all slices together, sum everything into a single matrix.
+      // Without copying it all again! Awesome!
+      for(arma::uword z = 1; z < p; z++) {
+	Rs1.slice(0) += Rs1.slice(z);
+	Rs2.slice(0) += Rs2.slice(z);
+      }
+      // Here need to add some addicional variance that carries over from the pruning.
+      Rs1.slice(0) += V0.slice(key_id0);
+      Rs2.slice(0) += V0.slice(key_id1);
+  
+      Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
+
+      ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
+      
+      // ## 'key is for both X0 and V0.
+      // Here need to decrease in one unit the value of the 'anc' vector. This is a vector coming from R.
+      key[i] = anc(node_id[0]) - 1;
+  
+      // Take care with the indexes starting from 0, need to reduce a unit from the length here.
+      // No need for the node value computation.
+      // X0.col(i) = ((Rs1.slice(0) * Rinv) * X0.col(key_id1)) + ((Rs2.slice(0) * Rinv) * X0.col(key_id0));
+      V0.slice(i) = inv_sympd( inv_sympd(Rs1.slice(0)) + inv_sympd(Rs2.slice(0)) );
+    }
+
+  }
+
+  // At the end, need to compute the contrast for the ROOT.
+  // Make the calculation for the root log-likelihood.
+  // The index 'n_nodes' is correspondent to the position 'n_nodes + 1'. Remember the indexation starts from 0.
+  // NOTE: The constrast at the ROOT depend on the provided root value (mu) and the estimated node value computed with the weighted average given the values of the last two tips of the pruning algorithm. Because here we are setting a priori values for each of the nodes of the tree, there is no likelihood to be computed at the root. The difference between the root value and the fixed root value is, trivially, 0 because these are the same quantities.
+  // Here we will use the REML for the mvBM. This is the likelihood of the model after ignoring the root.
+  // The X0 matrix, therefore, need only to have a number of columns equal to n_nodes - 1.
+  // ss = X0.col(n_nodes-1) - mu;
+  // ll = ll + logLikNode_C(ss, V0.slice(n_nodes-1), inv_sympd(V0.slice(n_nodes-1)), k);
+
+  return(ll);
+}
+
+void writeToMultFileNoRoot(std::ostream& mcmc_stream, int p, int k, arma::cube R){
+  // Same as the 'writeToMultFile_C' function but without the root value.
+  // Note the 'std::ostream&' argument here is the use of a reference.
+
+  // Will need a work-around to be able to close the line.
+  for( int i=0; i < p-1; i++ ){
+    for( int j=0; j < k; j++ ){
+      for( int z=0; z < k; z++ ){
+	mcmc_stream << R.slice(i)(j,z);
+	mcmc_stream << "; ";
+      }
+    }
+  }
+
+  for( int j=0; j < k; j++ ){
+    for( int z=0; z < k; z++ ){
+      mcmc_stream << R.slice(p-1)(j,z);
+      if( j == k-1 && z == k-1 ) {
+	// Finish the line on the last element.
+	mcmc_stream << "\n";
+      } else{
+	// Not the last, add a separator.
+	mcmc_stream << "; ";
+      }
+    }
+  }
+  
+}
+
+void writePolySample(std::ostream& poly_stream, arma::mat poly_tips, arma::mat poly_nodes){
+  // Write the sample for the tip states and for the internal nodes to file.
+
+  // Need to write down by row.
+  for( int i=0; i < poly_tips.n_rows; i++ ) {
+    for( int j=0; j < poly_tips.n_cols; j++ ) {
+      poly_stream << poly_tips(i,j);
+      poly_stream << "; ";
+    }
+  }
+
+  for( int i=0; i < poly_nodes.n_rows; i++ ) {
+    for( int j=0; j < poly_nodes.n_cols; j++ ) {
+      poly_stream << poly_nodes(i,j);
+      if( i == (poly_nodes.n_rows-1) && j == (poly_nodes.n_cols-1) ) {
+	// Last element, add a line end.
+	poly_stream << "\n";
+      } else{
+	// Not the last element. Add a separator.
+	poly_stream << "; ";
+      }
+    }
+  }
+
+}
+
+// [[Rcpp::export]]
+std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, double prob_sample_sd, int gen, int write_header){
+  // This function differs from 'runRatematrixMultiMCMC_C' because it uses data augmentation to sample points from a polytope at the tips of the phylogeny and at the internal nodes.
+  // Also, here we are using the REML for the mvBM model instead of the full ML, so the root value is not estimated.
+  // The input data is the max and min bounds for the polytopes for the species.
+  
+  // X_poly: matrix, nrow equal to the number of species. columns are min and max for each of the dimensions. So 6 columns means: min_t1, max_t1, min_t2, max_t2, min_t3, max_t3 (3 traits).
+  // anc_poly: matrix, nrow equal to the number of internal nodes - 1 (same order as the nodes vector, but excluding the root). Root is not included because the REML is computed here. Columns are min and max for each of the dimensions. Same configuration as "X_poly".
+  // mu_poly: same as 'mu' (vector of root states), but here is a vector with the min and max for each of the dimensions of the ancestral polytope.
+  // poly_file: name of the file to write the samples for the tips and ancestral nodes.
+  
+  // Other parameters are the same as 'runRatematrixMultiMCMC_C'.
+
+  // Open the files to write:
+  // The log_file, mcmc_file, and poly_file arguments.
+  std::ofstream log_stream (log_file, ios::out | ios::app);
+  std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
+  std::ofstream poly_stream (poly_file, ios::out | ios::app);
+
+  if(write_header == 1){
+    // Write the header for the mcmc file.
+    for( int kk=1; kk < p+1; kk++ ){
+      for( int ii=1; ii < k+1; ii++ ){
+	for( int jj=1; jj < k+1; jj++ ){
+	  mcmc_stream << "regime.p";
+	  mcmc_stream << kk;
+	  mcmc_stream << ".";
+	  mcmc_stream << ii;
+	  mcmc_stream << jj;
+	  if( kk == p && ii == k && jj == k ){
+	    // Last element, write the end of the line.
+	    mcmc_stream << "\n";
+	  } else{
+	    // Not the last element. Add a separator.
+	    mcmc_stream << "; ";
+	  }
+	}
+      }
+    }
+
+    // Write the header for the log file.
+    log_stream << "accepted; matrix.corr; matrix.sd; which.phylo; log.lik \n";
+
+    // Write the header for the poly file.
+    int n_tips = X_poly.n_rows; // Number of species.
+    for( int ssp=1; ssp < n_tips+1; ssp++ ){
+      for( int kk=1; kk < k+1; kk++ ){
+	poly_stream << "tip.";
+	poly_stream << ssp;
+	poly_stream << "_tr.";
+	poly_stream << kk;
+	poly_stream << "; ";
+      }
+    }
+
+    // The samples are for all internal nodes except the root node.
+    // The root node is the last element of the nodes vector.
+    int n_nodes = (nodes.n_elem-1);
+    for( uword anc=0; anc < n_nodes; anc++ ){ // Index for nodes vector.
+      for( int kk=1; kk < k+1; kk++ ){
+	poly_stream << "anc.";
+	poly_stream << nodes(anc);
+	poly_stream << "_tr.";
+	poly_stream << kk;
+	if( kk == k && anc == (n_nodes-1) ){
+	  // Last element. Write the end of the line.
+	  poly_stream << "\n";
+	} else{
+	  // Not last, add a separator.
+	  poly_stream << "; ";
+	}
+      }
+    }
+    
+    
+  } else{
+    // Do nothing.
+  }
+  
+  // Define the containers for the run:
+  // The starting point log lik:
+  double lik;
+  // The starting point prior:
+  double curr_sd_prior;
+  double Rcorr_curr_prior;
+  // The jacobian for the MCMC. There are one for each regime.
+  // Because need to track the jump separatelly.
+  arma::vec curr_jacobian = vec(k, fill::zeros);
+
+  int sample_sd;
+  double pp;
+  double ll;
+  double r;
+  double unif_draw;
+  int Rp;
+  arma::mat prop_sd;
+  double prop_sd_prior;
+  arma::mat prop_diag_sd;
+  arma::cube R_prop;
+  double prop_sd_lik;
+  arma::cube Rcorr_prop;
+  double Rcorr_prop_prior;
+  arma::mat diag_sd;
+  double prop_corr_lik;
+  double hh;
+  arma::vec decomp_var;
+  double prop_jacobian = 0.0; // Need always to reset this one.
+  double jj;
+  arma::vec multi_factor; // Stores the multiplier proposal scaler.
+  arma::mat sample_poly_tips;
+  arma::mat sample_poly_nodes;
+
+  // Make starting sample from polytopes.
+  sample_poly_tips = samplePolytope(X_poly);
+  sample_poly_nodes = samplePolytope(anc_poly); // This might include the root node, which will not be used.
+  
+  // Get starting priors, likelihood, and jacobian.
+  lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
+  Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
+
+  Rcout << "Starting point Log-likelihood: " << lik << "\n";
+
+  arma::mat var_vec = square(sd);
+  // Jacobian for both the regimes:
+  for( int j=0; j < p; j++ ){
+    for( int i=0; i < k; i++ ){
+      // The jacobian is computed on the variances!
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec.col(j)[j] ) * log( (k-1.0)/2.0 ) );
+    }
+  }
+
+  // Print starting point to files:
+  log_stream << "1; 0; 0; 1; ";
+  log_stream << lik;
+  log_stream << "\n"; 
+  writeToMultFileNoRoot(mcmc_stream, p, k, R);
+  writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
+
+  Rcout << "Starting MCMC ... \n";
+  // Starting the MCMC.
+  for( int i=0; i < gen; i++ ){
+    // If the matrix is updated, do we update the vector of variances?
+    sample_sd = R::rbinom(1, prob_sample_sd);
+    // If matrix or variance is updated, which regime?
+    Rp = Rcpp::as<int >(Rcpp::sample(p, 1)) - 1; // Need to subtract 1 from the result here.
+    // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+
+    // Take sample for the tips and for the internal nodes.
+    sample_poly_tips = samplePolytope(X_poly);
+    sample_poly_nodes = samplePolytope(anc_poly);
+    // Write samples to file.
+    writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
+    
+    if(sample_sd == 1){
+      // Update the variance vector.
+      // Draw which regime to update.
+      // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+      prop_sd = sd; // The matrix of standard deviations.
+      // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
+      multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
+      prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
+      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
+      pp = prop_sd_prior - curr_sd_prior;
+  
+      // Need to rebuild the R matrix to compute the likelihood:
+      prop_diag_sd = diagmat( prop_sd.col(Rp) );
+      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      R_prop = R; // R is the current R matrix.
+      R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
+      prop_sd_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
+      ll = prop_sd_lik - lik;
+
+      // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
+      r = ll + pp + accu(multi_factor);
+
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	log_stream << "1; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 1; ";
+	log_stream << prop_sd_lik;
+	log_stream << "\n";
+	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
+	sd = prop_sd; // Update the standard deviation.
+	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
+	lik = prop_sd_lik; // Update likelihood. Need to carry over.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; 0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 1; ";
+	log_stream << lik;
+	log_stream << "\n";
+      }
+      
+    } else{
+      // Update the correlation matrix.
+      // Draw which regime to update.
+      // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
+      // IMPORTANT: R here needs to be the vcv used to draw the correlation only.
+      // This is not the full VCV of the model.
+      Rcorr_prop = Rcorr;
+      // Here v is a vector. So the width can be controlled for each regime.
+      Rcorr_prop.slice(Rp) = makePropIWish_C(Rcorr.slice(Rp), k, v[Rp]);
+      // Computes the hastings density for this move.
+      // Hastings is computed for the covariance matrix of the correlation and NOT the evolutionary rate matrix (the reconstructed).
+      hh = hastingsDensity_C(Rcorr, Rcorr_prop, k, v, Rp);
+      // Need the prior parameters 'nu' and 'sigma' here.
+      Rcorr_prop_prior = priorCorr_C(Rcorr_prop, nu, sigma);
+      pp = Rcorr_prop_prior - Rcorr_curr_prior;
+
+      // Need to rebuild the R matrix to compute the likelihood:
+      diag_sd = diagmat( sd.col(Rp) );
+      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      R_prop = R;
+      // 'cor' is not the correct function to use here!
+      R_prop.slice(Rp) = diag_sd * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_sd;
+      prop_corr_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
+      ll = prop_corr_lik - lik;
+      // This is the sdiance of the proposed vcv matrix.
+      decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
+      prop_jacobian = 0.0; // Always need to reset.
+      // The Jacobian of the transformation.
+      for( int i=0; i < k; i++ ){
+	prop_jacobian = prop_jacobian + log(decomp_var[i]) * log( (k-1.0)/2.0 );
+      }
+      // The curr_jacobian is a vector. There are a jacobian for each regime.
+      jj = prop_jacobian - curr_jacobian[Rp];
+
+      // Get the ratio i log space. Loglik, log prior, log hastings and log jacobian.
+      r = ll + pp + hh + jj;
+      // Advance to the acceptance step.
+      // Here we are only updating the root, so all other parameters are the same.
+      unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
+      if( exp(r) > unif_draw ){ // Accept.
+	// This line will write to the mcmc_file.
+	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
+	log_stream << "1; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; 1; ";
+	log_stream << prop_corr_lik;
+	log_stream << "\n";
+	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
+	Rcorr = Rcorr_prop; // Update the correlation matrix.
+	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
+	lik = prop_corr_lik; // Update likelihood. Need to carry over.
+	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
+      } else{ // Reject. Keep the values the same.
+	log_stream << "0; ";
+	log_stream << Rp+1; // Here is the regime.
+	log_stream << "; 0; 1; ";
+	log_stream << lik;
+	log_stream << "\n";
+      }
+    }
+
+    // Write the current state to the MCMC file.
+    writeToMultFileNoRoot(mcmc_stream, p, k, R);
+    
+  }
+
+  Rcout << "Closing files... \n";
+
+  mcmc_stream.close();
+  log_stream.close();
+  poly_stream.close();
+
+  return "Done.";
+}

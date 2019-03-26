@@ -34,8 +34,13 @@
 ##' computeESS(mcmc=posterior, p=2)
 ##' }
 computeESS <- function(mcmc, p){
+    ## Will need to make some modifications to work with the new class:
+    ## Avoid computing quantities for the root value and compute the quantities for the trait samples.
+
     if( missing(p) ) stop("Need to specify number of regimes as argument 'p'.")
-    root <- mcmc$root
+    if( inherits(mcmc, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ){
+        root <- mcmc$root
+    }
     rates <- list()
     corr <- list()
 
@@ -76,7 +81,11 @@ computeESS <- function(mcmc, p){
         }
     }
 
-    mcmc.root <- coda::mcmc(root)
+    if( inherits(mcmc, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ){
+        mcmc.root <- coda::mcmc(root)
+        ess.root <- coda::effectiveSize(x=mcmc.root)
+    }
+    
     mcmc.rate <- lapply(rates, coda::mcmc)
     if( k < 3 ){
         mcmc.corr <- lapply(corr_vec, coda::mcmc)
@@ -84,38 +93,79 @@ computeESS <- function(mcmc, p){
         mcmc.corr <- lapply(corr, coda::mcmc)
     }
 
-    ess.root <- coda::effectiveSize(x=mcmc.root)
     ess.rate <- lapply(mcmc.rate, coda::effectiveSize)
     ess.corr <- lapply(mcmc.corr, coda::effectiveSize)
-    
-    if( p == 1 ){
-        cat("ESS root values \n")
-        print( ess.root )
-        cat("\n")
-        cat("ESS rates \n")
-        print( ess.rate[[1]] )
-        cat("\n")
-        cat("ESS correlation \n")
-        print( ess.corr[[1]] )
-        cat("\n")
-        res <- list( ess.root, ess.rate[[1]], ess.corr[[1]] )
-        names( res ) <- c("ESS_root","ESS_rates","ESS_corr")
-        return( res )
+
+    if( inherits(mcmc, what="ratematrix_poly_chain") ){
+        ## Compute the ESS for the trait samples.
+        ## Will divide by trait and by category, tips and ancestral values (Meaning that we will pool the trait samples across species)
+        range.ess.trait.tip <- range( apply(mcmc$tip_samples, MARGIN = 2, coda::effectiveSize) )
+        range.ess.trait.anc <- range( apply(mcmc$anc_samples, MARGIN = 2, coda::effectiveSize) )
+        range.ess.trait.tip <- setNames(range.ess.trait.tip, c("min","max"))
+        range.ess.trait.anc <- setNames(range.ess.trait.anc, c("min","max"))
     }
 
-    if( p > 1 ){
-        cat("ESS root values \n")
-        print( ess.root )
-        cat("\n")
-        cat("ESS rates \n")
-        print( ess.rate )
-        cat("\n")
-        cat("ESS correlation \n")
-        print( ess.corr )
-        cat("\n")
-        res <- list( ess.root, ess.rate, ess.corr )
-        names( res ) <- c("ESS_root","ESS_rates","ESS_corr")
-        return( res )
+    if( inherits(mcmc, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ){
+        if( p == 1 ){
+            cat("ESS root values \n")
+            print( ess.root )
+            cat("\n")
+            cat("ESS rates \n")
+            print( ess.rate[[1]] )
+            cat("\n")
+            cat("ESS correlation \n")
+            print( ess.corr[[1]] )
+            cat("\n")
+            res <- list( ess.root, ess.rate[[1]], ess.corr[[1]] )
+            names( res ) <- c("ESS_root","ESS_rates","ESS_corr")
+        }
+        if( p > 1 ){
+            cat("ESS root values \n")
+            print( ess.root )
+            cat("\n")
+            cat("ESS rates \n")
+            print( ess.rate )
+            cat("\n")
+            cat("ESS correlation \n")
+            print( ess.corr )
+            cat("\n")
+            res <- list( ess.root, ess.rate, ess.corr )
+            names( res ) <- c("ESS_root","ESS_rates","ESS_corr")
+        }
     }
     
+    if( inherits(mcmc, what="ratematrix_poly_chain") ){
+        if( p == 1 ){
+            cat("ESS rates \n")
+            print( ess.rate[[1]] )
+            cat("\n")
+            cat("ESS correlation \n")
+            print( ess.corr[[1]] )
+            cat("ESS traits sampled at the tips (range) \n")
+            print( range.ess.trait.tip )
+            cat("ESS traits sampled at the nodes (range) \n")
+            print( range.ess.trait.anc )
+            cat("\n")
+            res <- list( ESS_rates=ess.rate[[1]], ESS_corr=ess.corr[[1]]
+                      , ESS_tip_traits=setNames(range.ess.trait.tip, c("min","max"))
+                      , ESS_anc_traits=setNames(range.ess.trait.anc, c("min","max")) )
+        }
+        if( p > 1 ){
+            cat("ESS rates \n")
+            print( ess.rate )
+            cat("\n")
+            cat("ESS correlation \n")
+            print( ess.corr )
+            cat("ESS traits sampled at the tips (range) \n")
+            print( range.ess.trait.tip )
+            cat("ESS traits sampled at the nodes (range) \n")
+            print( range.ess.trait.anc )
+            cat("\n")
+            res <- list( ESS_rates=ess.rate, ESS_corr=ess.corr
+                      , ESS_tip_traits=setNames(range.ess.trait.tip, c("min","max"))
+                      , ESS_anc_traits=setNames(range.ess.trait.anc, c("min","max")) )
+        }
+    }
+
+    return( res )
 }
