@@ -16,6 +16,7 @@
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param prop a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.
+##' @param n_nodes_prop the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.
 ##' @param dir path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
@@ -40,7 +41,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", prior="uniform_scaled", start="prior_sample", gen, v=50, w_sd=0.2, prop=c(0.5, 0.5), dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", prior="uniform_scaled", start="prior_sample", gen, v=50, w_sd=0.2, prop=c(0.5, 0.5), n_nodes_prop=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -498,7 +499,7 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
         }
         
         ## Pass the parameters and run the C++ MCMC function:
-        runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=anc_poly
+        runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=anc_poly, n_input_move=n_nodes_prop
                                 , k=k, p=p, nodes=nodes, des=des, anc=anc
                                 , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
                                 , sd=sqrt(startvar), Rcorr=startCorr, w_sd=w_sd

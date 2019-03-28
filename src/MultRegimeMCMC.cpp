@@ -2356,13 +2356,14 @@ void writePolySample(std::ostream& poly_stream, arma::mat poly_tips, arma::mat p
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, double prob_sample_sd, int gen, int write_header){
+std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, double prob_sample_sd, int gen, int write_header){
   // This function differs from 'runRatematrixMultiMCMC_C' because it uses data augmentation to sample points from a polytope at the tips of the phylogeny and at the internal nodes.
   // Also, here we are using the REML for the mvBM model instead of the full ML, so the root value is not estimated.
   // The input data is the max and min bounds for the polytopes for the species.
   
   // X_poly: matrix, nrow equal to the number of species. columns are min and max for each of the dimensions. So 6 columns means: min_t1, max_t1, min_t2, max_t2, min_t3, max_t3 (3 traits).
   // anc_poly: matrix, nrow equal to the number of internal nodes - 1 (same order as the nodes vector, but excluding the root). Root is not included because the REML is computed here. Columns are min and max for each of the dimensions. Same configuration as "X_poly".
+  // n_input_move: Sets the number of values to be sampled from the prior at each MCMC generation. These are sampled from a common pool including all the tip and internal node values. 
   // mu_poly: same as 'mu' (vector of root states), but here is a vector with the min and max for each of the dimensions of the ancestral polytope.
   // poly_file: name of the file to write the samples for the tips and ancestral nodes.
   
@@ -2464,10 +2465,21 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   double prop_jacobian = 0.0; // Need always to reset this one.
   double jj;
   arma::vec multi_factor; // Stores the multiplier proposal scaler.
-  arma::mat sample_poly_tips;
-  arma::mat sample_poly_nodes;
+  arma::mat sample_poly_tips; // Current tip values.
+  arma::mat sample_poly_nodes; // Current node values.
+  arma::mat sample_poly_tips_prop; // Proposed tip values.
+  arma::mat sample_poly_nodes_prop; // Proposed tip values.
+  arma::mat sample_poly_tips_tmp; // Temporary new sample. Will take subset from it.
+  arma::mat sample_poly_nodes_tmp; // Temporary new sample. Will take subset from it.
 
+  // Define the bounds for the samples during the MCMC:
+  // Total of elements, not the indexes.
+  int max_sample_id = X_poly.n_rows + anc_poly.n_rows;
+  int limit_tip_sample = X_poly.n_rows; // Make sure this is defined.
+  int which_sample; // The container for the id samples.
+  
   // Make starting sample from polytopes.
+  // Here it is a random sample for all the tip and internal nodes.
   sample_poly_tips = samplePolytope(X_poly);
   sample_poly_nodes = samplePolytope(anc_poly); // This might include the root node, which will not be used.
   
@@ -2504,10 +2516,30 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
 
     // Take sample for the tips and for the internal nodes.
-    sample_poly_tips = samplePolytope(X_poly);
-    sample_poly_nodes = samplePolytope(anc_poly);
-    // Write samples to file.
-    writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
+    // Here we will sample 'n_input_move' nodes from a pool with the tip and internal nodes together.
+    sample_poly_tips_tmp = samplePolytope(X_poly);
+    sample_poly_nodes_tmp = samplePolytope(anc_poly);
+    // Set the prop value equal to the current value, will update on the next step.
+    sample_poly_tips_prop = sample_poly_tips;
+    sample_poly_nodes_prop = sample_poly_nodes;
+
+    // Note that the loop below is not protected against proposing the same index.
+    // With a lower change we can be proposing less elements than we expect.
+    // So the n samples here should be defined as up to.
+    // Generate proposal value for the traits:
+    for( int samp_it=0; samp_it < n_input_move; samp_it++ ){
+      // Take care here because we will sample the indexes, starting from 0.
+      // Here we have: ceiling( runif(n = 1, min = 0-1, max = max_sample_id - 1) )
+      which_sample = std::ceil( as_scalar( randu(1) ) * ( (max_sample_id - 1) - 1) );
+      if(which_sample < limit_tip_sample){
+	// Sample belongs to the tip matrix. Update with the same index.
+	sample_poly_tips_prop.col(which_sample) = sample_poly_tips_tmp.col(which_sample);
+      } else{
+	// Need to adjust the id to fit the nodes matrix.
+	which_sample = which_sample - limit_tip_sample; // The adjusted index.
+	sample_poly_nodes_prop.col(which_sample) = sample_poly_nodes_tmp.col(which_sample);
+      }
+    }
     
     if(sample_sd == 1){
       // Update the variance vector.
@@ -2525,7 +2557,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
       R_prop = R; // R is the current R matrix.
       R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
-      prop_sd_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
+      prop_sd_lik = logLikPrunningFixedAnc(sample_poly_tips_prop, sample_poly_nodes_prop, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
       ll = prop_sd_lik - lik;
 
       // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
@@ -2544,12 +2576,16 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	sd = prop_sd; // Update the standard deviation.
 	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
 	lik = prop_sd_lik; // Update likelihood. Need to carry over.
+	sample_poly_tips = sample_poly_tips_prop; // Update the trait samples.
+	sample_poly_nodes = sample_poly_nodes_prop; // Update the trait samples.
+	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
       } else{ // Reject. Keep the values the same.
 	log_stream << "0; 0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 1; ";
 	log_stream << lik;
 	log_stream << "\n";
+	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write current state.
       }
       
     } else{
@@ -2604,12 +2640,16 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
 	lik = prop_corr_lik; // Update likelihood. Need to carry over.
 	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
+	sample_poly_tips = sample_poly_tips_prop; // Update the trait samples.
+	sample_poly_nodes = sample_poly_nodes_prop; // Update the trait samples.
+	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write to file.
       } else{ // Reject. Keep the values the same.
 	log_stream << "0; ";
 	log_stream << Rp+1; // Here is the regime.
 	log_stream << "; 0; 1; ";
 	log_stream << lik;
 	log_stream << "\n";
+	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write current state.
       }
     }
 
