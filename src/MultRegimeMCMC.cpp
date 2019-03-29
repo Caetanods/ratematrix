@@ -2529,8 +2529,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     // Generate proposal value for the traits:
     for( int samp_it=0; samp_it < n_input_move; samp_it++ ){
       // Take care here because we will sample the indexes, starting from 0.
-      // Here we have: ceiling( runif(n = 1, min = 0-1, max = max_sample_id - 1) )
-      which_sample = std::ceil( as_scalar( randu(1) ) * ( (max_sample_id - 1) - 1) );
+      // The sample below goes from 0 to ( max_sample_id - 1 ). This is used for the indexes.
+      which_sample = std::ceil( ( as_scalar(randu(1)) * max_sample_id ) - 1 );
       if(which_sample < limit_tip_sample){
 	// Sample belongs to the tip matrix. Update with the same index.
 	sample_poly_tips_prop.col(which_sample) = sample_poly_tips_tmp.col(which_sample);
