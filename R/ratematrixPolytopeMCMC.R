@@ -59,6 +59,25 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     name.list <- names(data)
     if( is.null(name.list) ) stop("Data needs to be a named list. See help page.")
     if( !all( name.list %in% phy$tip.label ) ) stop("List names need to match the names of the tip labels of the phylogeny.")
+    
+    ## Check if some of the species have a single observation.
+    ## This can be either a matrix with one row or a vector.
+    data.vec <- !sapply(data, is.matrix)
+    if( any(data.vec) ){
+        ## At least one of the elements of the data is a vector (not a matrix).
+        for( i in which(data.vec) ){
+            data[[i]] <- matrix(data[[i]], ncol=2, nrow=1)
+        }
+    }
+    single.obs <- sapply(data, function(x) nrow(x) == 1)
+    if( any(single.obs) ){
+        cat("Some species have a single observation. Using fixed value. \n")
+        ## Single we compute the range to set up the matrix for the MCMC, need to replicate the single obs for the range function to work.
+        for( i in which(single.obs) ){
+            data[[i]] <- rbind( data[[i]], data[[i]] )
+        }
+    }
+
     ## Check if all matrices have the same number of columns.
     ncol.list <- sapply(data, ncol)
     if( length( unique( ncol.list ) ) > 1 ) stop("All matrices with trait observations need to have the same number of traits.")

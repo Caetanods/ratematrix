@@ -2087,7 +2087,14 @@ arma::mat samplePolytope(arma::mat edge) {
     }
 
     // Here need to transpose the col vector to a row vector.
+    if( all(range_axis) ){
+      // If all elements of the range are non-zero:
     samples.row(i) = trans( min_axis + ( rand_sample % range_axis ) );
+    } else{
+      // At least one of the elements is zero. Do not compute the difference.
+      // Keep the min values, since the max and min are equal.
+      samples.row(i) = trans( min_axis );
+    }
   }
 
   arma::mat samples_trans = trans(samples);
