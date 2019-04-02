@@ -984,7 +984,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(j,i) ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
   }
 
@@ -1266,7 +1266,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(j,i) ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
   }
 
@@ -1747,7 +1747,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(j,i) ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
   }
 
@@ -2403,7 +2403,7 @@ void writePolySample(std::ostream& poly_stream, arma::mat poly_tips, arma::mat p
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, double prob_sample_sd, int gen, int write_header){
+std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, double prob_sample_sd, int gen, arma::vec post_seq, int write_header){
   // This function differs from 'runRatematrixMultiMCMC_C' because it uses data augmentation to sample points from a polytope at the tips of the phylogeny and at the internal nodes.
   // Also, here we are using the REML for the mvBM model instead of the full ML, so the root value is not estimated.
   // The input data is the max and min bounds for the polytopes for the species.
@@ -2525,6 +2525,9 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   int max_sample_id = X_poly.n_rows + anc_poly.n_rows;
   int limit_tip_sample = X_poly.n_rows; // Make sure this is defined.
   int which_sample; // The container for the id samples.
+
+  // A counter to help control when to write the sample to file.
+  arma::uword post_seq_id = 0; // Keep track of the id for the gen seq to write.
   
   // Make starting sample from polytopes.
   // Here it is a random sample for all the tip and internal nodes.
@@ -2546,20 +2549,25 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(j,i) ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
   }
 
-  // Print starting point to files:
-  log_stream << "1; 0; 0; 1; ";
-  log_stream << lik;
-  log_stream << "\n"; 
-  writeToMultFileNoRoot(mcmc_stream, p, k, R);
-  writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
+  if( post_seq[post_seq_id] == 1 ){
+    // Print starting point to files:
+    log_stream << "1; 0; 0; 1; ";
+    log_stream << lik;
+    log_stream << "\n"; 
+    writeToMultFileNoRoot(mcmc_stream, p, k, R);
+    writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
+    // Update the id to write to file.
+    post_seq_id++;
+  }
 
   Rcout << "Starting MCMC ... \n";
   // Starting the MCMC.
   for( int i=0; i < gen; i++ ){
+
     // If the matrix is updated, do we update the vector of variances?
     sample_sd = R::rbinom(1, prob_sample_sd);
     // If matrix or variance is updated, which regime?
@@ -2623,25 +2631,31 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 1; ";
-	log_stream << prop_sd_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // Write gen to file.
+	  log_stream << "1; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 1; ";
+	  log_stream << prop_sd_lik;
+	  log_stream << "\n";
+	  writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	sd = prop_sd; // Update the standard deviation.
 	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
 	lik = prop_sd_lik; // Update likelihood. Need to carry over.
 	sample_poly_tips = sample_poly_tips_prop; // Update the trait samples.
 	sample_poly_nodes = sample_poly_nodes_prop; // Update the trait samples.
-	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 1; ";
-	log_stream << lik;
-	log_stream << "\n";
-	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write current state.
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // Write gen to file.
+	  log_stream << "0; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 1; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	  writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write current state.
+	}
       }
       
     } else{
@@ -2684,13 +2698,16 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	// This line will write to the mcmc_file.
-	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
-	log_stream << "1; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 1; ";
-	log_stream << prop_corr_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // This line will write to the mcmc_file.
+	  // Instead of 'paste' I am using a line for each piece. Should have the same effect.
+	  log_stream << "1; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 1; ";
+	  log_stream << prop_corr_lik;
+	  log_stream << "\n";
+	  writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write to file.
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	Rcorr = Rcorr_prop; // Update the correlation matrix.
 	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
@@ -2698,19 +2715,24 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
 	sample_poly_tips = sample_poly_tips_prop; // Update the trait samples.
 	sample_poly_nodes = sample_poly_nodes_prop; // Update the trait samples.
-	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write to file.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 1; ";
-	log_stream << lik;
-	log_stream << "\n";
-	writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write current state.
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 1; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	  writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes); // Write current state.
+	}
       }
     }
 
-    // Write the current state to the MCMC file.
-    writeToMultFileNoRoot(mcmc_stream, p, k, R);
+    // Write the current state to the MCMC file and update the counter for the posterior samples to keep.
+    // Note that the counter will not be updated until the sample is reached and written to file.
+    if( post_seq[post_seq_id] == (i+1) ){
+      writeToMultFileNoRoot(mcmc_stream, p, k, R);
+      post_seq_id++;
+    }
     
   }
 

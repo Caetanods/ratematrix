@@ -13,6 +13,8 @@
 ##' @param prior the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.
 ##' @param start the starting state for the MCMC chain. Must be one of "prior_sample" (the default) or a sample from the prior generated with the "samplePrior" functions.
 ##' @param gen number of generations for the chain.
+##' @param burn percentage to discard as burn in. Set 'burn' in to 0.0 to start writing from the first generation.
+##' @param thin number of generations to be skipped as thinning. Set 'thin' to 0 to write every generation to the file.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param prop a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.
@@ -41,11 +43,16 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", prior="uniform_scaled", start="prior_sample", gen, v=50, w_sd=0.2, prop=c(0.5, 0.5), n_nodes_prop=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, prop=c(0.5, 0.5), n_nodes_prop=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
 
+    ## Check burn and thin and create the vector of generations.
+    ## Note here that the first generation is gen 0.
+    post_seq <- seq(from = gen * burn, to = (gen-1), by = thin)
+    post_seq <- post_seq + 1 ## Bounce the generation vector forward to start from 1.
+    
     ## Quickly check if a directory was provided. If not return an error.
     if( is.null(dir) ) stop('Need to provide a path to write MCMC samples. Use dir="." to write files to current directory.')
     if( !inherits(dir, what="character") ) stop("Value for argument 'dir' need to be a character. See help page.")
@@ -66,7 +73,7 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     if( any(data.vec) ){
         ## At least one of the elements of the data is a vector (not a matrix).
         for( i in which(data.vec) ){
-            data[[i]] <- matrix(data[[i]], ncol=2, nrow=1)
+            data[[i]] <- matrix(data[[i]], ncol=length( data[[i]] ), nrow=1)
         }
     }
     single.obs <- sapply(data, function(x) nrow(x) == 1)
@@ -500,7 +507,7 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
                             , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
                             , sigma=sigma_array, v=v, log_file=log_file_name
                             , mcmc_file=mcmc_file_name, poly_file=poly_file_name
-                            , prob_sample_sd=prob_sample_sd, gen=gen
+                            , prob_sample_sd=prob_sample_sd, gen=gen, post_seq=post_seq
                             , write_header=write_header)
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )

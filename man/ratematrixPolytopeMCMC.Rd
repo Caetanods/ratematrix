@@ -5,9 +5,10 @@
 \title{Joint estimate the multidimentional phenotypic space for ancestrals and the evolutionary rate matrix}
 \usage{
 ratematrixPolytopeMCMC(data, phy, ancestral_priors = "descendants",
-  prior = "uniform_scaled", start = "prior_sample", gen, v = 50,
-  w_sd = 0.2, prop = c(0.5, 0.5), n_nodes_prop = 1, dir = NULL,
-  outname = "ratematrixPolyMCMC", IDlen = 5, save.handle = TRUE)
+  prior = "uniform_scaled", start = "prior_sample", gen, burn = 0.25,
+  thin = 100, v = 50, w_sd = 0.2, prop = c(0.5, 0.5),
+  n_nodes_prop = 1, dir = NULL, outname = "ratematrixPolyMCMC",
+  IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.}
@@ -21,6 +22,10 @@ ratematrixPolytopeMCMC(data, phy, ancestral_priors = "descendants",
 \item{start}{the starting state for the MCMC chain. Must be one of "prior_sample" (the default) or a sample from the prior generated with the "samplePrior" functions.}
 
 \item{gen}{number of generations for the chain.}
+
+\item{burn}{percentage to discard as burn in. Set 'burn' in to 0.0 to start writing from the first generation.}
+
+\item{thin}{number of generations to be skipped as thinning. Set 'thin' to 0 to write every generation to the file.}
 
 \item{v}{value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.}
 
