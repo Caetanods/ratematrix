@@ -757,21 +757,25 @@ double priorRoot_C(arma::vec mu, arma::mat par_prior_mu, std::string den_mu){
   return pp;
 }
 
-double priorSD_C(arma::mat sd, arma::mat par_prior_sd, std::string den_sd){
+double priorSD_C(arma::mat sd, arma::mat par_prior_sd, std::string den_sd, int p){
   // FUNCTION FOR 2 OR MORE RATE REGIMES.
   // 'sd' is a matrix with number of columns equal to 'p', number of regimes.
-  // This function will work even if there is only a single regime, because Armadillo treats the vectors as column vector. So 'sd' will be a matrix with a single column.
+  // 'par_prior_sd' is a matrix with parameters, each row for each regime.
+  // p is the number of regimes in the model.
+
+  // Here we are checking the number of regimes instead of the dimensions of the matrix.
+
   double pp = 0.0;
   if( den_sd == "unif" ){
     for( int i=0; i < sd.n_rows; i++ ){
-      for( int j=0; j < sd.n_cols; j++){
+      for( int j=0; j < p; j++){
 	// Each line of the 'par_prior_sd' correspond to each of the sd vectors stored as the columns of the 'sd' matrix.
 	pp = pp + R::dunif(sd(i,j), par_prior_sd(j,0), par_prior_sd(j,1), true);
       }
     }
   } else{
     for( int i=0; i < sd.n_rows; i++ ){
-      for( int j=0; j < sd.n_cols; j++){
+      for( int j=0; j < p; j++){
 	// Each line of the 'par_prior_sd' correspond to each of the sd vectors stored as the columns of the 'sd' matrix.
 	pp = pp + R::dlnorm(sd(i,j), par_prior_sd(j,0), par_prior_sd(j,1), true);
       }
@@ -970,7 +974,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
   // Get starting priors, likelihood, and jacobian.
   lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu);
   curr_root_prior = priorRoot_C(mu, par_prior_mu, den_mu);
-  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd, p);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
   Rcout << "Starting point Log-likelihood: " << lik << "\n";
@@ -1038,7 +1042,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
       // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
       multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
       prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
-      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
+      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd, p);
       pp = prop_sd_prior - curr_sd_prior;
   
       // Need to rebuild the R matrix to compute the likelihood:
@@ -1252,7 +1256,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   // Here using the first tree (the curr_phy).
   lik = logLikPrunningMCMC_C(X, k, p, nodes.col(curr_phy), des.col(curr_phy), anc.col(curr_phy), names_anc.col(curr_phy), mapped_edge.slice(curr_phy), R, mu);
   curr_root_prior = priorRoot_C(mu, par_prior_mu, den_mu);
-  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd, p);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
   Rcout << "Starting point Log-likelihood (using first tree/regime in the list): " << lik << "\n";
@@ -1328,7 +1332,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
       // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
       multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
       prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
-      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
+      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd, p);
       pp = prop_sd_prior - curr_sd_prior;
   
       // Need to rebuild the R matrix to compute the likelihood:
@@ -1601,6 +1605,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   std::ofstream Q_mcmc_stream (Q_mcmc_file, ios::out | ios::app);
 
   // Find the number of parameters for the Q matrix:
+  // Dimensions is equal to the number of regimes on the model.
   int Q_npar;
   if( model_Q == "ER" ){
     Q_npar = 1;
@@ -1722,7 +1727,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   lik_Mk = logLikMk_C(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, Q, root_node, root_type);
 
   curr_root_prior = priorRoot_C(mu, par_prior_mu, den_mu);
-  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd, p);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
   // The vectorized Q matrix for the starting state of the search.
@@ -1812,7 +1817,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
       multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
       prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
-      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
+      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd, p);
       pp = prop_sd_prior - curr_sd_prior;
   
       // Need to rebuild the R matrix to compute the likelihood:
@@ -2115,6 +2120,10 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat X0, int k, int p, a
   // mapped_edge is a matrix with the stochastic map.
   // R is a cube with the evolutionary rate matrices.
 
+  // This function has been adapted to work with single regime models as well as multiple regime models.
+  // When there is a single regime, then p = 1 and the arma::cube R is a cube with depth = 1, meaning that only the R.slice(0) can be accessed.
+  // In the case of a single regime model we do not need to sum after the multiplication for the different regimes.
+  
   // All vector of indexes are straight from R. So need to take care when calling values from containers, since R indexing starts from 1.
 
   // Initiate all the objects.
@@ -2157,7 +2166,7 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat X0, int k, int p, a
     
     // The index for the 'des', 'anc', and 'mapped_edge (lines)'.
     node_id = find( anc == nodes[i] );
-    type = names_anc[node_id[0]];
+    type = names_anc[ node_id[0] ];
     
     // Next is the contrast calculations. This will be different for each 'type' of ancestral node.
     // In this structure of if...else just a single clause will be evaluated.
@@ -2175,13 +2184,17 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat X0, int k, int p, a
       // Need to do this for each of the daughter lineages.
       for(arma::uword j = 0; j < p; j++) {
 	// Multiply each R matrix for the correspondent branch length.
+	// For single regime, then only slice(0) exists and only the first column of the 'mapped_edge' is visited.
 	Rs1.slice(j) = R.slice(j) * mapped_edge(node_id[0],j);
 	Rs2.slice(j) = R.slice(j) * mapped_edge(node_id[1],j);
       }
-      // Join all slices together, sum everything into a single matrix.
-      for(arma::uword z = 1; z < p; z++) {
-	Rs1.slice(0) += Rs1.slice(z);
-	Rs2.slice(0) += Rs2.slice(z);
+      
+      if(p > 1){ // In the case of multiple regimes.
+	// Join all slices together, sum everything into a single matrix.
+	for(arma::uword z = 1; z < p; z++) {
+	  Rs1.slice(0) += Rs1.slice(z);
+	  Rs2.slice(0) += Rs2.slice(z);
+	}
       }
 
       Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
@@ -2219,17 +2232,22 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat X0, int k, int p, a
       // 'Rs1' is relative to the branch leading to a tip 'tip_id' and 'Rs2' to the branch leading to a node 'nd_id'.
       for(arma::uword j = 0; j < p; j++) {
 	// Note the stop condition for the loop. We can use the number of regimes here because the loop will stop when j=1 < p=2 !! And NOT when j=2 !!
+	// For the single regime case, only the slice(0) will be present in the model.
 	// Multiply each R matrix for the correspondent branch length.
 	Rs1.slice(j) = R.slice(j) * mapped_edge(tip_id,j);
 	Rs2.slice(j) = R.slice(j) * mapped_edge(nd_id,j);
       }
-      // Rf_PrintValue( wrap( row2 ) );
-      // Join all slices together, sum everything into a single matrix.
-      // Without copying it all again! Awesome!
-      for(arma::uword z = 1; z < p; z++) {
-	Rs1.slice(0) += Rs1.slice(z);
-	Rs2.slice(0) += Rs2.slice(z);
+
+      if(p > 1){
+	// Rf_PrintValue( wrap( row2 ) );
+	// Join all slices together, sum everything into a single matrix.
+	// Without copying it all again! Awesome!
+	for(arma::uword z = 1; z < p; z++) {
+	  Rs1.slice(0) += Rs1.slice(z);
+	  Rs2.slice(0) += Rs2.slice(z);
+	}
       }
+      
       // Here need to add some addicional variance that carries over from the pruning.
       // Doing this just for the node. No additional variance associated with the tip.
       Rs2.slice(0) += V0.slice(key_id);
@@ -2269,12 +2287,16 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat X0, int k, int p, a
 	Rs1.slice(j) = R.slice(j) * mapped_edge(node_id[0],j);
 	Rs2.slice(j) = R.slice(j) * mapped_edge(node_id[1],j);
       }
-      // Join all slices together, sum everything into a single matrix.
-      // Without copying it all again! Awesome!
-      for(arma::uword z = 1; z < p; z++) {
-	Rs1.slice(0) += Rs1.slice(z);
-	Rs2.slice(0) += Rs2.slice(z);
+
+      if( p > 1 ){
+	// Join all slices together, sum everything into a single matrix.
+	// Without copying it all again! Awesome!
+	for(arma::uword z = 1; z < p; z++) {
+	  Rs1.slice(0) += Rs1.slice(z);
+	  Rs2.slice(0) += Rs2.slice(z);
+	}
       }
+      
       // Here need to add some addicional variance that carries over from the pruning.
       Rs1.slice(0) += V0.slice(key_id0);
       Rs2.slice(0) += V0.slice(key_id1);
@@ -2311,25 +2333,43 @@ void writeToMultFileNoRoot(std::ostream& mcmc_stream, int p, int k, arma::cube R
   // Same as the 'writeToMultFile_C' function but without the root value.
   // Note the 'std::ostream&' argument here is the use of a reference.
 
-  // Will need a work-around to be able to close the line.
-  for( int i=0; i < p-1; i++ ){
+  // In the case of a single regime we need to make a fix to the workaround below.
+  if( p == 1 ){
+
     for( int j=0; j < k; j++ ){
       for( int z=0; z < k; z++ ){
-	mcmc_stream << R.slice(i)(j,z);
-	mcmc_stream << "; ";
+	mcmc_stream << R.slice(0)(j,z);
+	if( j == k-1 && z == k-1 ) {
+	  // Finish the line on the last element.
+	  mcmc_stream << "\n";
+	} else{
+	  // Not the last, add a separator.
+	  mcmc_stream << "; ";
+	}
       }
     }
-  }
+    
+  } else{ // Normal case with multiple regimes fitted to the tree.
+    // Will need a work-around to be able to close the line.
+    for( int i=0; i < p-1; i++ ){
+      for( int j=0; j < k; j++ ){
+	for( int z=0; z < k; z++ ){
+	  mcmc_stream << R.slice(i)(j,z);
+	  mcmc_stream << "; ";
+	}
+      }
+    }
 
-  for( int j=0; j < k; j++ ){
-    for( int z=0; z < k; z++ ){
-      mcmc_stream << R.slice(p-1)(j,z);
-      if( j == k-1 && z == k-1 ) {
-	// Finish the line on the last element.
-	mcmc_stream << "\n";
-      } else{
-	// Not the last, add a separator.
-	mcmc_stream << "; ";
+    for( int j=0; j < k; j++ ){
+      for( int z=0; z < k; z++ ){
+	mcmc_stream << R.slice(p-1)(j,z);
+	if( j == k-1 && z == k-1 ) {
+	  // Finish the line on the last element.
+	  mcmc_stream << "\n";
+	} else{
+	  // Not the last, add a separator.
+	  mcmc_stream << "; ";
+	}
       }
     }
   }
@@ -2373,7 +2413,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   // n_input_move: Sets the number of values to be sampled from the prior at each MCMC generation. These are sampled from a common pool including all the tip and internal node values. 
   // mu_poly: same as 'mu' (vector of root states), but here is a vector with the min and max for each of the dimensions of the ancestral polytope.
   // poly_file: name of the file to write the samples for the tips and ancestral nodes.
-  
+
+  // The "mapped_edge" matrix is necessary for the function. Need to create a strategy to infer the model with a single rate.
   // Other parameters are the same as 'runRatematrixMultiMCMC_C'.
 
   // Open the files to write:
@@ -2491,18 +2532,21 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   sample_poly_nodes = samplePolytope(anc_poly); // This might include the root node, which will not be used.
   
   // Get starting priors, likelihood, and jacobian.
+  // Need to make sure the likelihood function will work if p == 1.
   lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R);
-  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd);
+  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd, p);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
   Rcout << "Starting point Log-likelihood: " << lik << "\n";
 
+  // In the case of a single regime this will have a single column.
   arma::mat var_vec = square(sd);
-  // Jacobian for both the regimes:
+  // Jacobian for the regimes:
+  // Need to check is this code is visiting all the variances.
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec.col(j)[j] ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec.col(j)[i] ) * log( (k-1.0)/2.0 ) );
     }
   }
 
@@ -2519,7 +2563,12 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     // If the matrix is updated, do we update the vector of variances?
     sample_sd = R::rbinom(1, prob_sample_sd);
     // If matrix or variance is updated, which regime?
-    Rp = Rcpp::as<int >(Rcpp::sample(p, 1)) - 1; // Need to subtract 1 from the result here.
+    if(p > 1){
+      Rp = Rcpp::as<int >(Rcpp::sample(p, 1)) - 1; // Need to subtract 1 from the result here.
+    } else{
+      // Single rate regime.
+      Rp = 0;
+    }
     // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
 
     // Take sample for the tips and for the internal nodes.
@@ -2556,7 +2605,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       // prop_sd.col(Rp) = slideWindowPositive_C(prop_sd.col(Rp), w_sd.col(Rp));
       multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
       prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
-      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
+      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd, p);
       pp = prop_sd_prior - curr_sd_prior;
   
       // Need to rebuild the R matrix to compute the likelihood:

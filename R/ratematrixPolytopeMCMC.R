@@ -110,6 +110,7 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
 
     ## Check the prior options for the ancestral nodes:
     ancestral_priors <- match.arg(ancestral_priors, choices=c("descendants", "global"), several.ok=FALSE)
+    cat(paste0("Using ", ancestral_priors, " option for prior at internal nodes. \n"))
     
     ## Inform that default options are being used:
     if( inherits(prior, what="character") && prior == "uniform_scaled" ) cat("Using new default prior. \n")
@@ -134,7 +135,7 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
 
     ## Check the 'w_sd' parameter.
     ## Get the number of regimes and check the prior, if provided.
-    if( is.null( phy$mapped.edge ) ){
+    if( no_phymap ){
         n_regimes <- 1
         if( inherits(prior, what="ratematrix_prior_function") ){
             if( !prior$pars$p == n_regimes ) stop("Number of regimes specified on prior does not match the phylogeny.")
@@ -207,335 +208,308 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     } else{
         trait.names <- colnames( data[[1]] )
     }
+    
     ## First check if analysis will use regimes.
     if( !no_phymap ){
         if( is.null( colnames(phy$mapped.edge) ) ){
             regime.names <- paste("regime_", 1:ncol(phy$mapped.edge), sep="")
         } else{
+            ## In the case we do not have names.
             regime.names <- colnames(phy$mapped.edge)
+        }
+    } else{
+        ## In the case of a single regime analysis:
+        regime.names <- NA
+    }
+
+    ## #######################
+    ## Run the analyses with multiple regimes.
+    ## This block is also making the estimates for the case of a single rate model.
+    ## So pay attention to the differences between these cases.
+    ## #######################
+
+    ## Number of regimes.
+    if( no_phymap ){
+        p <- 1
+    } else{
+        p <- ncol( phy$mapped.edge ) ## Multiple regimes.
+    }
+    k <- ncol( data[[1]] ) ## Number of traits.
+
+    ## #######################
+    ## Block to generate priors.
+    prior_run <- prior
+    if( inherits(prior, what="character") ){
+        if(prior == "uniform"){
+            data.range <- t( apply(data[[1]], 2, range) )
+            rep.sd.regime <- rep(c(0,sqrt(10)), times=p)
+            par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
+            prior_run <- makePrior(r=k, p=p, den.mu = "unif", par.mu=data.range, par.sd=par.sd )
+        }
+        if(prior == "uniform_scaled"){
+            data.range <- t( apply(data[[1]], 2, range) )
+            cat("Guessing magnitude of rates from the data. \n")
+            ## Using a single random observation for each of the species.
+            simple.data <- matrix(ncol = ncol(data[[1]]), nrow = Ntip(phy) )
+            for( i in 1:Ntip(phy) ){
+                get.mat <- data[[i]]
+                get.mat.row <- sample(1:nrow(get.mat), size = 1)
+                simple.data[i,] <- get.mat[get.mat.row,]
+            }
+            rownames( simple.data ) <- names( ordered.list )
+            fit <- lapply(1:ncol(simple.data), function(x) fitContinuous(phy = phy, dat=simple.data[,x], model = "BM", ncores = 1) )
+            guess.rates <- sapply(fit, function(x) coef(x)[1])
+            top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
+            rep.sd.regime <- rep(c(0,top.sd), times=p)
+            par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
+            prior_run <- makePrior(r=k, p=p, den.mu="unif", par.mu=data.range, par.sd=par.sd)
+        }
+    }
+    
+    ## #######################
+    ## Block to generate start point.
+    ## #######################
+    
+    start_run <- start
+    if( inherits(start, what="character") ){
+        if(start == "prior_sample"){
+            cat( "Taking sample from prior as starting point. \n" )
+            start_run <- samplePrior(n=1, prior=prior_run)
+        } else{
+            stop("Only prior sample type allowed is 'prior_sample'.")
         }
     }
 
     ## #######################
-    ## Block to set the analysis. First division is whether one or more regimes are fitted to the tree.
-    if( no_phymap ){
+    ## Block to make the estimate of the model.
+    ## #######################
 
-        ## #######################
-        ## Run the analyses with a single rate.
-        ## #######################
+    ## The steps below are similar to the steps of the function 'multRegimeMCMC'.
+    ## Decided not to call yet another function to do this.
 
-        ## NEED TO FINISH THIS BRANCH OF THE FUNCTION.
-        
-        ## Get the number of traits in the data.
-        r <- ncol( data[[1]] )
-
-        ## #######################
-        ## Block to generate priors.
-        prior_run <- prior
-        if( inherits(prior, what="character") ){
-            if(prior == "uniform"){
-                ## Set the priors for the analyses. No need for the prior for the root value.
-                ## Here we are using the same 'makePrior' function, so need a 'dummy' value for the root prior.
-                data.range <- t( apply(data[[1]], 2, range) )
-                par.sd <- c(0, sqrt(10)) ## Prior for the standard deviation.
-                prior_run <- makePrior(r=r, p=1, den.mu = "unif", par.mu=data.range, par.sd=par.sd )
-            }
-            if(prior == "uniform_scaled"){
-                data.range <- t( apply(data[[1]], 2, range) )
-                cat("Guessing magnitude of rates from the data. \n")
-                ## Using a single core to compute BM model.
-                ## Using a single random observation for each of the species.
-                simple.data <- matrix(ncol = ncol(data[[1]]), nrow = Ntip(phy) )
-                for( i in 1:Ntip(phy) ){
-                    get.mat <- data[[i]]
-                    get.mat.row <- sample(1:nrow(get.mat), size = 1)
-                    simple.data[i,] <- get.mat[get.mat.row,]
-                }
-                rownames( simple.data ) <- names( ordered.list )
-                fit <- lapply(1:ncol(simple.data), function(x) fitContinuous(phy = phy, dat=simple.data[,x], model = "BM", ncores = 1) )
-                guess.rates <- sapply(fit, function(x) coef(x)[1])
-                top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
-                bottom.sd <- 0
-                par.sd <- cbind(bottom.sd, top.sd)
-                prior_run <- makePrior(r=r, p=1, den.mu="unif", par.mu=data.range, par.sd=par.sd)
-            }
-        }
-        
-        ## #######################
-        ## Block to generate start point.
-        ## #######################
-        
-        start_run <- start
-        if( inherits(start, what="character") ){
-            ## If start argument is not a character, then we assume that the start is good enough for the analyses and don't make additional tests. (Although these could be done).
-            if(start == "prior_sample"){
-                cat( "Taking sample from prior as starting point. \n" )
-                start_run <- samplePrior(n=1, prior=prior_run)
-            } else{
-                stop("Only prior sample type allowed is 'prior_sample'.")
-            }
-        }
-
-        ## #######################
-        ## Make estimate for the model with a single regime fitted to the data.
-        ## #######################
-
-        ## In this case we need another function that will ignore the regimes. This is not hard to do.
-        
-        ## out_single <- singleRegimeMCMC(X=data, phy=phy, start=start_run, prior=prior_run, gen=gen, v=v, w_sd=w_sd, w_mu=w_mu
-        ##                              , prop=prop, dir=dir, outname=outname, IDlen=IDlen, traits=trait.names
-        ##                               , save.handle=save.handle)
-        return( out_single )
-        
-    } else{
-
-        ## #######################
-        ## Run the analyses with multiple regimes.
-        ## #######################
-
-        ## Number of regimes.
-        p <- ncol( phy$mapped.edge ) ## Multiple regimes.
-        k <- ncol( data[[1]] ) ## Number of traits.
-
-        ## #######################
-        ## Block to generate priors.
-        prior_run <- prior
-        if( inherits(prior, what="character") ){
-            if(prior == "uniform"){
-                data.range <- t( apply(data[[1]], 2, range) )
-                rep.sd.regime <- rep(c(0,sqrt(10)), times=p)
-                par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
-                prior_run <- makePrior(r=k, p=p, den.mu = "unif", par.mu=data.range, par.sd=par.sd )
-            }
-            if(prior == "uniform_scaled"){
-                data.range <- t( apply(data[[1]], 2, range) )
-                cat("Guessing magnitude of rates from the data. \n")
-                ## Using a single random observation for each of the species.
-                simple.data <- matrix(ncol = ncol(data[[1]]), nrow = Ntip(phy) )
-                for( i in 1:Ntip(phy) ){
-                    get.mat <- data[[i]]
-                    get.mat.row <- sample(1:nrow(get.mat), size = 1)
-                    simple.data[i,] <- get.mat[get.mat.row,]
-                }
-                rownames( simple.data ) <- names( ordered.list )
-                fit <- lapply(1:ncol(simple.data), function(x) fitContinuous(phy = phy, dat=simple.data[,x], model = "BM", ncores = 1) )
-                guess.rates <- sapply(fit, function(x) coef(x)[1])
-                top.sd <- sqrt( ceiling( max(guess.rates) ) * 10 )
-                rep.sd.regime <- rep(c(0,top.sd), times=p)
-                par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
-                prior_run <- makePrior(r=k, p=p, den.mu="unif", par.mu=data.range, par.sd=par.sd)
-            }
-        }
-        
-        ## #######################
-        ## Block to generate start point.
-        ## #######################
-        
-        start_run <- start
-        if( inherits(start, what="character") ){
-            if(start == "prior_sample"){
-                cat( "Taking sample from prior as starting point. \n" )
-                start_run <- samplePrior(n=1, prior=prior_run)
-            } else{
-                stop("Only prior sample type allowed is 'prior_sample'.")
-            }
-        }
-
-        ## #######################
-        ## Block to make the estimate of the model.
-        ## #######################
-
-        ## The steps below are similar to the steps of the function 'multRegimeMCMC'.
-        ## Decided not to call yet another function to do this.
-
-        ## Check the value of v.
+    ## Check the value of v.
+    if( p > 1 ){
         if( length( v ) > 1 ){
             if( !length( v ) == p ) stop( "Length of v need to be 1 or equal to the number of regimes." )
         }
         if( length( v ) == 1 ){
             v <- rep(v, times=p)
         }
-
-        ## Take care about the format of the data matrix.
-        ## Need to transpose the data matrix.
-        ## X <- t(X)
-
-        ## The proposal for the standard deviation.
-        prob_sample_sd <- prop[1]
-
-        ## Save the list with the MCMC parameters.
-        mcmc.par <- list()
-        mcmc.par$v <- v
-        mcmc.par$w_sd <- w_sd
-        mcmc.par$w_mu <- NA ## Not using this parameter here.
-        mcmc.par$prob_sample_root <- NA
-        mcmc.par$prob_sample_sd <- prob_sample_sd
-        mcmc.par$prop <- prop
-
-        ## I dropped the option to continue the MCMC. So here we always start a new one.
-        ## if( !is.null(continue) ){
-        ##     ## Use the provided ID number for the run.
-        ##     mcmc_file_name <- file.path(dir, paste(outname,".", ID, ".mcmc",sep=""))
-        ##     log_file_name <- file.path(dir, paste(outname,".", ID, ".log",sep=""))
-        ##     poly_file_name <- file.path(dir, paste(outname,".", ID, ".traitspace",sep=""))
-        ##     write_header <- 0
-        ##     gen <- add.gen
-        ## } else{
-            ## Generate identifier and name for the files:
-            new.ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
-            mcmc_file_name <- file.path(dir, paste(outname, ".", new.ID, ".mcmc", sep=""))
-            log_file_name <- file.path(dir, paste(outname, ".", new.ID, ".log", sep=""))
-            poly_file_name <- file.path(dir, paste(outname, ".", new.ID, ".traitspace", sep=""))
-            write_header <- 1
-        ## }
-
-        ## Compute important info from the phylogeny:
-        ## Order for traversal.
-        ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE)
-        mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
-        ## Need to take care how to match the regimes and the R matrices.
-        anc <- phy$edge[ord.id,1] ## Ancestral edges.
-        des <- phy$edge[ord.id,2] ## Descendent edges.
-        nodes <- unique(anc) ## The internal nodes we will traverse.
-
-        ## Set the types for each of the nodes that are going to be visited.
-        node.to.tip <- which( tabulate( anc[which(des <= length(phy$tip.label))] ) == 2 )
-        node.to.node <- which( tabulate( anc[which(des > length(phy$tip.label))] ) == 2 )
-        node.to.tip.node <- unique( anc )[!unique( anc ) %in% c(node.to.node, node.to.tip)]
-        ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
-        names(anc) <- rep(1, times=length(anc))
-        names(anc)[which(anc %in% node.to.node)] <- 2
-        names(anc)[which(anc %in% node.to.tip.node)] <- 3
-        names_anc <- as.numeric( names(anc) )
-
-        ## Before running need to exclude the generations already done if continuing.
-        ## Also add the option to do additional generations.
-        ## We dropped the option to continue the MCMC.
-        ## if( is.null(continue) ){
-            cat( paste("Start MCMC run ", outname, ".", new.ID, " with ", gen, " generations.\n", sep="") )
-        ## } else{
-        ##     if( continue == "continue" ){
-        ##         cat( paste("Continue previous MCMC run ", outname, ".", ID, " for ", add.gen, " generations for a total of ", gen, " generations.\n", sep="") )
-        ##         gen <- add.gen
-        ##         new.ID <- ID
-        ##     }
-        ##     if( continue == "add.gen" ){
-        ##         cat( paste("Adding ", add.gen, " generations to previous MCMC run ", outname, ".", ID, "\n", sep="") )
-        ##         gen <- add.gen
-        ##         new.ID <- ID
-        ##     }
-        ## }
-
-        ## Save the handle object:
-        if( save.handle ){
-            out <- list(k = k, p = p, ID = new.ID, dir = dir, outname = outname
-                      , trait.names = trait.names, regime.names = regime.names
-                      , data = data, phy = phy, prior = prior_run, start = start_run
-                      , gen = gen, mcmc.par = mcmc.par)
-            class( out ) <- "ratematrix_poly_mcmc"
-            saveRDS(out, file = file.path(dir, paste(outname,".",new.ID,".mcmc.handle.rds",sep="")) )
+    } else{
+        ## Using a single regime. Keep only the first element of the vector.
+        if( length( v ) > 1 ){
+            v <- v[1]
         }
+    }    
 
-        ## Set the objects holding the initial state for the chain.
-        ## These are array and matrix classes. 'start_run' here is produced by the 'samplePrior' function.
+    ## Take care about the format of the data matrix.
+    ## Need to transpose the data matrix.
+    ## X <- t(X)
+
+    ## The proposal for the standard deviation.
+    prob_sample_sd <- prop[1]
+
+    ## Save the list with the MCMC parameters.
+    mcmc.par <- list()
+    mcmc.par$v <- v
+    mcmc.par$w_sd <- w_sd
+    mcmc.par$w_mu <- NA ## Not using this parameter here.
+    mcmc.par$prob_sample_root <- NA
+    mcmc.par$prob_sample_sd <- prob_sample_sd
+    mcmc.par$prop <- prop
+
+    ## I dropped the option to continue the MCMC. So here we always start a new one.
+    ## if( !is.null(continue) ){
+    ##     ## Use the provided ID number for the run.
+    ##     mcmc_file_name <- file.path(dir, paste(outname,".", ID, ".mcmc",sep=""))
+    ##     log_file_name <- file.path(dir, paste(outname,".", ID, ".log",sep=""))
+    ##     poly_file_name <- file.path(dir, paste(outname,".", ID, ".traitspace",sep=""))
+    ##     write_header <- 0
+    ##     gen <- add.gen
+    ## } else{
+    ## Generate identifier and name for the files:
+    new.ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
+    mcmc_file_name <- file.path(dir, paste(outname, ".", new.ID, ".mcmc", sep=""))
+    log_file_name <- file.path(dir, paste(outname, ".", new.ID, ".log", sep=""))
+    poly_file_name <- file.path(dir, paste(outname, ".", new.ID, ".traitspace", sep=""))
+    write_header <- 1
+    ## }
+
+    ## Compute important info from the phylogeny:
+    ## Order for traversal.
+    ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE)
+    if( no_phymap ){
+        ## If the model is a single rate model, then we need to pass the branch lengths of the phylogeny as the mapped.edge.
+        ## We are doing this because I merged the functions that deal with multiple regimes or a single regime.
+        ## Note that, although this is a matrix, we will only use a single regime (first column) of it.
+        mapped.edge <- cbind( phy$edge.length, phy$edge.length )
+        mapped.edge <- mapped.edge[ord.id,] ## Need to reorganize the edges.
+    } else{
+        mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
+    }
+    ## Need to take care how to match the regimes and the R matrices.
+    anc <- phy$edge[ord.id,1] ## Ancestral edges.
+    des <- phy$edge[ord.id,2] ## Descendent edges.
+    nodes <- unique(anc) ## The internal nodes we will traverse.
+
+    ## Set the types for each of the nodes that are going to be visited.
+    node.to.tip <- which( tabulate( anc[which(des <= length(phy$tip.label))] ) == 2 )
+    node.to.node <- which( tabulate( anc[which(des > length(phy$tip.label))] ) == 2 )
+    node.to.tip.node <- unique( anc )[!unique( anc ) %in% c(node.to.node, node.to.tip)]
+    ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
+    names(anc) <- rep(1, times=length(anc))
+    names(anc)[which(anc %in% node.to.node)] <- 2
+    names(anc)[which(anc %in% node.to.tip.node)] <- 3
+    names_anc <- as.numeric( names(anc) )
+
+    ## Before running need to exclude the generations already done if continuing.
+    ## Also add the option to do additional generations.
+    ## We dropped the option to continue the MCMC.
+    ## if( is.null(continue) ){
+    cat( paste("Start MCMC run ", outname, ".", new.ID, " with ", gen, " generations.\n", sep="") )
+    ## } else{
+    ##     if( continue == "continue" ){
+    ##         cat( paste("Continue previous MCMC run ", outname, ".", ID, " for ", add.gen, " generations for a total of ", gen, " generations.\n", sep="") )
+    ##         gen <- add.gen
+    ##         new.ID <- ID
+    ##     }
+    ##     if( continue == "add.gen" ){
+    ##         cat( paste("Adding ", add.gen, " generations to previous MCMC run ", outname, ".", ID, "\n", sep="") )
+    ##         gen <- add.gen
+    ##         new.ID <- ID
+    ##     }
+    ## }
+
+    ## Save the handle object:
+    if( save.handle ){
+        out <- list(k = k, p = p, ID = new.ID, dir = dir, outname = outname
+                  , trait.names = trait.names, regime.names = regime.names
+                  , data = data, phy = phy, prior = prior_run, start = start_run
+                  , gen = gen, mcmc.par = mcmc.par)
+        class( out ) <- "ratematrix_poly_mcmc"
+        saveRDS(out, file = file.path(dir, paste(outname,".",new.ID,".mcmc.handle.rds",sep="")) )
+    }
+
+    ## Set the objects holding the initial state for the chain.
+    ## These are array and matrix classes. 'start_run' here is produced by the 'samplePrior' function.
+    startR <- array(dim=c(k, k, p))
+    startCorr <- array(dim=c(k, k, p))
+    startvar <- matrix(nrow=k, ncol=p)
+    if( no_phymap ){
+        ## In the case of a single regime model the sample from the prior distribution will be different.
+        startR.list <- rebuild.cov(r = cov2cor(start_run$matrix), v = start_run$sd^2)
+        startR[,,1] <- startR.list
+        startCorr[,,1] <- start_run$matrix
+        startvar[,1] <- start_run$sd^2
+    } else{
         startR.list <- lapply(1:p, function(x) rebuild.cov(r=cov2cor(start_run$matrix[[x]]), v=start_run$sd[[x]]^2) )
-        startR <- array(dim=c(k, k, p))
-        startCorr <- array(dim=c(k, k, p))
-        startvar <- matrix(nrow=k, ncol=p)
         for( i in 1:p ){
             startR[,,i] <- startR.list[[i]]
             startCorr[,,i] <- start_run$matrix[[i]]
             startvar[,i] <- start_run$sd[[i]]^2
         }
+    }
 
-        ## Get info from the prior object.
-        den_sd <- prior_run$pars$den.sd
-        par_sd <- prior_run$pars$par.sd
+    ## Get info from the prior object.
+    den_sd <- prior_run$pars$den.sd
+    par_sd <- prior_run$pars$par.sd
 
-        if( prior_run$pars$unif.corr ){
-            sigma.mat <- diag(nrow=k)
-            sigma_array <- array(dim=c(k, k, p))
-            for( i in 1:p){
-                sigma_array[,,i] <- sigma.mat
-            }
-            nu <- rep(k+1, times=p)
-        } else{
-            if( length(prior_run$pars$Sigma) != p ) stop( "Length of Sigma need to be equal to number of regimes." )
-            sigma_array <- sapply(prior_run$pars$Sigma, identity, simplify="array")
-            nu <- prior_run$pars$nu
-            if( length(nu) != p ) stop( "Length of nu need to be equal to number of regimes." )
+    if( prior_run$pars$unif.corr ){
+        sigma.mat <- diag(nrow=k)
+        sigma_array <- array(dim=c(k, k, p))
+        for( i in 1:p){
+            sigma_array[,,i] <- sigma.mat
         }
+        nu <- rep(k+1, times=p)
+    } else{
+        if( length(prior_run$pars$Sigma) != p ) stop( "Length of Sigma need to be equal to number of regimes." )
+        sigma_array <- sapply(prior_run$pars$Sigma, identity, simplify="array")
+        nu <- prior_run$pars$nu
+        if( length(nu) != p ) stop( "Length of nu need to be equal to number of regimes." )
+    }
 
-        ## Prepare the specific objects for the Polytope version of the MCMC:
-        ## For the data at the tips we will use the min and maximum.
-        X_poly <- matrix(nrow = Ntip(phy), ncol = k * 2)
-        for( i in 1:Ntip(phy) ){
-            range_poly <- vector( mode = "numeric" )
-            for( j in 1:k ){
-                range_poly <- c(range_poly, range( data[[i]][,j] ) )
-            }
-            X_poly[i,] <- range_poly
+    ## Prepare the specific objects for the Polytope version of the MCMC:
+    ## For the data at the tips we will use the min and maximum.
+    X_poly <- matrix(nrow = Ntip(phy), ncol = k * 2)
+    for( i in 1:Ntip(phy) ){
+        range_poly <- vector( mode = "numeric" )
+        for( j in 1:k ){
+            range_poly <- c(range_poly, range( data[[i]][,j] ) )
         }
-        rownames( X_poly ) <- names( data )
+        X_poly[i,] <- range_poly
+    }
+    rownames( X_poly ) <- names( data )
 
-        ## Set up the boundaries for the internal nodes.
-        ## This case will depend on the type of prior used.
-        if( ancestral_priors == "descendats" ){
-            ## Range of the descendant lineages
-            ## This will depend on visiting each node, selecting the descendant tips and computing the range.
-            ## The anc_poly matrix is in the same order as the nodes.
-            anc_poly <- matrix(nrow = length(nodes)-1, ncol = k*2)
-            for( i in 1:nrow(anc_poly) ){
-                tmp_des_mat <- X_poly[tips(phy = phy, node = nodes[i]), ]
-                tmp_vec <- vector()
-                for( j in 1:(k*2) ){
-                    if((j %% 2) < 1){ ## Test for zero can create problems.
-                        ## Take the max
-                        tmp_vec <- c(tmp_vec, max(tmp_des_mat[,j]))
-                    }else{
-                        ## Take the min
-                        tmp_vec <- c(tmp_vec, min(tmp_des_mat[,j]))
-                    }
-                }
-                anc_poly[i,] <- tmp_vec
-            }
-
-        } else{
-            ## Range of all the tips pooled.
-            anc_global <- vector()
-            for( i in 1:(k*2) ){
-                if((i %% 2) < 1){ ## Test for zero can create problems.
+    ## Set up the boundaries for the internal nodes.
+    ## This case will depend on the type of prior used.
+    if( ancestral_priors == "descendants" ){
+        ## Range of the descendant lineages
+        ## This will depend on visiting each node, selecting the descendant tips and computing the range.
+        ## The anc_poly matrix is in the same order as the nodes.
+        anc_poly <- matrix(nrow = length(nodes)-1, ncol = k*2)
+        for( i in 1:nrow(anc_poly) ){
+            tmp_des_mat <- X_poly[tips(phy = phy, node = nodes[i]), ]
+            tmp_vec <- vector()
+            for( j in 1:(k*2) ){
+                if((j %% 2) < 1){ ## Test for zero can create problems.
                     ## Take the max
-                    anc_global <- c(anc_global, max(X_poly[,i]))
+                    tmp_vec <- c(tmp_vec, max(tmp_des_mat[,j]))
                 }else{
                     ## Take the min
-                    anc_global <- c(anc_global, min(X_poly[,i]))
+                    tmp_vec <- c(tmp_vec, min(tmp_des_mat[,j]))
                 }
             }
-            ## All internal nodes share the same bounds.
-            ## The matrix has nrows equal to the number of nodes-1.
-            anc_poly <- matrix(anc_global, nrow = length(nodes)-1, ncol = k*2, byrow = TRUE)
+            anc_poly[i,] <- tmp_vec
         }
-        
-        ## Pass the parameters and run the C++ MCMC function:
-        runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=anc_poly, n_input_move=n_nodes_prop
-                                , k=k, p=p, nodes=nodes, des=des, anc=anc
-                                , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
-                                , sd=sqrt(startvar), Rcorr=startCorr, w_sd=w_sd
-                                , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
-                                , sigma=sigma_array, v=v, log_file=log_file_name
-                                , mcmc_file=mcmc_file_name, poly_file=poly_file_name
-                                , prob_sample_sd=prob_sample_sd, gen=gen
-                                , write_header=write_header)
 
-        cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
-
-        out <- list(k = k, p = p, ID = new.ID, dir = dir, outname = outname
-                  , trait.names = trait.names, regime.names = regime.names, data = data
-                  , phy = phy, prior = prior_run, start = start_run, gen = gen
-                  , mcmc.par=mcmc.par)
-        class( out ) <- "ratematrix_poly_mcmc"
-        return( out )
+    } else{
+        ## Range of all the tips pooled.
+        anc_global <- vector()
+        for( i in 1:(k*2) ){
+            if((i %% 2) < 1){ ## Test for zero can create problems.
+                ## Take the max
+                anc_global <- c(anc_global, max(X_poly[,i]))
+            }else{
+                ## Take the min
+                anc_global <- c(anc_global, min(X_poly[,i]))
+            }
+        }
+        ## All internal nodes share the same bounds.
+        ## The matrix has nrows equal to the number of nodes-1.
+        anc_poly <- matrix(anc_global, nrow = length(nodes)-1, ncol = k*2, byrow = TRUE)
     }
+
+    ## In the case of single regime analyses, some of the objects might be passed as a vector and need to be a matrix:
+    ## sd need to be a matrix
+    ## W_sd need to be a matrix
+    ## par_prior_sd need to be a matrix
+    ## Most simple way out is to duplicate the vectors to create a matrix and ignore one of the element insite the MCMC function.
+    sd_mat_par <- sqrt(startvar)
+    if( p == 1 ){
+        ## Create a matrix out of some of the parameters to be able to run the model.
+        sd_mat_par <- cbind( sd_mat_par, sd_mat_par)
+        w_sd <- cbind(w_sd, w_sd)
+        par_sd <- rbind(par_sd, par_sd)
+    }    
+    
+    ## Pass the parameters and run the C++ MCMC function:
+    runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=anc_poly, n_input_move=n_nodes_prop
+                            , k=k, p=p, nodes=nodes, des=des, anc=anc
+                            , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
+                            , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
+                            , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
+                            , sigma=sigma_array, v=v, log_file=log_file_name
+                            , mcmc_file=mcmc_file_name, poly_file=poly_file_name
+                            , prob_sample_sd=prob_sample_sd, gen=gen
+                            , write_header=write_header)
+
+    cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
+
+    out <- list(k = k, p = p, ID = new.ID, dir = dir, outname = outname
+              , trait.names = trait.names, regime.names = regime.names, data = data
+              , phy = phy, prior = prior_run, start = start_run, gen = gen
+              , mcmc.par=mcmc.par)
+    class( out ) <- "ratematrix_poly_mcmc"
+    return( out )
     
 }
