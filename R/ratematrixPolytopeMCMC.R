@@ -17,7 +17,8 @@
 ##' @param thin number of generations to be skipped as thinning. Set 'thin' to 0 to write every generation to the file.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
-##' @param prop a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.
+##' @param prop_par a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.
+##' @param prop_trait a numeric value between 0 and 1 with the proportion of times the traits, either internal or tip nodes, are updated.
 ##' @param n_nodes_prop the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.
 ##' @param dir path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
@@ -43,7 +44,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, prop=c(0.5, 0.5), n_nodes_prop=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, prop_par=c(0.5, 0.5), prop_trait=0.5, n_nodes_prop=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -111,9 +112,11 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     
     cat("\n")
 
-    ## Check the characteristics of the prop vector:
-    if( length( prop ) != 2 ) stop("prop vector needs length of 2.")
-    prop <- prop / sum( prop ) ## Make sure it sums to 1.
+    ## Check the characteristics of the prop_par vector:
+    if( length( prop_par ) != 2 ) stop("prop_par vector needs length of 2.")
+    prop_par <- prop_par / sum( prop_par ) ## Make sure it sums to 1.
+    if( length( prop_trait ) != 1 ) stop("prop_trait needs length of 1.")
+    if( prop_trait > 1 | prop_trait < 0 ) stop("prop_trait is a value between 0 and 1.")
 
     ## Check the prior options for the ancestral nodes:
     ancestral_priors <- match.arg(ancestral_priors, choices=c("descendants", "global"), several.ok=FALSE)
@@ -122,7 +125,7 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     ## Inform that default options are being used:
     if( inherits(prior, what="character") && prior == "uniform_scaled" ) cat("Using new default prior. \n")
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
-    if( v == 50 && w_sd == 0.2 && prop[1] == 0.5 && prop[2] == 0.5 ) cat("Using default proposal settings. \n")
+    if( v == 50 && w_sd == 0.2 && prop_par[1] == 0.5 && prop_par[2] == 0.5 ) cat("Using default proposal settings. \n")
 
     ## Check if provided prior has the correct dimension:
     if( inherits(prior, what="ratematrix_prior_function") ){
@@ -314,7 +317,7 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     ## X <- t(X)
 
     ## The proposal for the standard deviation.
-    prob_sample_sd <- prop[1]
+    prob_sample_sd <- prop_par[1]
 
     ## Save the list with the MCMC parameters.
     mcmc.par <- list()
@@ -323,7 +326,8 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     mcmc.par$w_mu <- NA ## Not using this parameter here.
     mcmc.par$prob_sample_root <- NA
     mcmc.par$prob_sample_sd <- prob_sample_sd
-    mcmc.par$prop <- prop
+    mcmc.par$prop_par <- prop_par
+    mcmc.par$prop_trait <- prop_trait
 
     ## I dropped the option to continue the MCMC. So here we always start a new one.
     ## if( !is.null(continue) ){
@@ -507,8 +511,8 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
                             , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
                             , sigma=sigma_array, v=v, log_file=log_file_name
                             , mcmc_file=mcmc_file_name, poly_file=poly_file_name
-                            , prob_sample_sd=prob_sample_sd, gen=gen, post_seq=post_seq
-                            , write_header=write_header)
+                            , prob_sample_sd=prob_sample_sd, prob_sample_trait=prop_trait
+                            , gen=gen, post_seq=post_seq, write_header=write_header)
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
 

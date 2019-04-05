@@ -2403,7 +2403,7 @@ void writePolySample(std::ostream& poly_stream, arma::mat poly_tips, arma::mat p
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, double prob_sample_sd, int gen, arma::vec post_seq, int write_header){
+std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, double prob_sample_sd, double prob_sample_trait, int gen, arma::vec post_seq, int write_header){
   // This function differs from 'runRatematrixMultiMCMC_C' because it uses data augmentation to sample points from a polytope at the tips of the phylogeny and at the internal nodes.
   // Also, here we are using the REML for the mvBM model instead of the full ML, so the root value is not estimated.
   // The input data is the max and min bounds for the polytopes for the species.
@@ -2528,11 +2528,17 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 
   // A counter to help control when to write the sample to file.
   arma::uword post_seq_id = 0; // Keep track of the id for the gen seq to write.
+
+  // Whether to sample traits at the tip or internal nodes.
+  int update_traits;
   
   // Make starting sample from polytopes.
   // Here it is a random sample for all the tip and internal nodes.
   sample_poly_tips = samplePolytope(X_poly);
   sample_poly_nodes = samplePolytope(anc_poly); // This might include the root node, which will not be used.
+  // Initate the proposal for the polytope:
+  sample_poly_tips_prop = sample_poly_tips;
+  sample_poly_nodes_prop = sample_poly_nodes;
   
   // Get starting priors, likelihood, and jacobian.
   // Need to make sure the likelihood function will work if p == 1.
@@ -2579,29 +2585,34 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     }
     // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
 
-    // Take sample for the tips and for the internal nodes.
-    // Here we will sample 'n_input_move' nodes from a pool with the tip and internal nodes together.
-    sample_poly_tips_tmp = samplePolytope(X_poly);
-    sample_poly_nodes_tmp = samplePolytope(anc_poly);
-    // Set the prop value equal to the current value, will update on the next step.
-    sample_poly_tips_prop = sample_poly_tips;
-    sample_poly_nodes_prop = sample_poly_nodes;
+    // Check if we update the traits on this generation.
+    // Do note that this will perform update for both the parameters of the model and the traits.
+    update_traits = R::rbinom(1, prob_sample_trait);
+    if(update_traits == 1){
+      // Take sample for the tips and for the internal nodes.
+      // Here we will sample 'n_input_move' nodes from a pool with the tip and internal nodes together.
+      sample_poly_tips_tmp = samplePolytope(X_poly);
+      sample_poly_nodes_tmp = samplePolytope(anc_poly);
+      // Set the prop value equal to the current value, will update on the next step.
+      sample_poly_tips_prop = sample_poly_tips;
+      sample_poly_nodes_prop = sample_poly_nodes;
 
-    // Note that the loop below is not protected against proposing the same index.
-    // With a lower change we can be proposing less elements than we expect.
-    // So the n samples here should be defined as up to.
-    // Generate proposal value for the traits:
-    for( int samp_it=0; samp_it < n_input_move; samp_it++ ){
-      // Take care here because we will sample the indexes, starting from 0.
-      // The sample below goes from 0 to ( max_sample_id - 1 ). This is used for the indexes.
-      which_sample = std::ceil( ( as_scalar(randu(1)) * max_sample_id ) - 1 );
-      if(which_sample < limit_tip_sample){
-	// Sample belongs to the tip matrix. Update with the same index.
-	sample_poly_tips_prop.col(which_sample) = sample_poly_tips_tmp.col(which_sample);
-      } else{
-	// Need to adjust the id to fit the nodes matrix.
-	which_sample = which_sample - limit_tip_sample; // The adjusted index.
-	sample_poly_nodes_prop.col(which_sample) = sample_poly_nodes_tmp.col(which_sample);
+      // Note that the loop below is not protected against proposing the same index.
+      // With a lower change we can be proposing less elements than we expect.
+      // So the n samples here should be defined as up to.
+      // Generate proposal value for the traits:
+      for( int samp_it=0; samp_it < n_input_move; samp_it++ ){
+	// Take care here because we will sample the indexes, starting from 0.
+	// The sample below goes from 0 to ( max_sample_id - 1 ). This is used for the indexes.
+	which_sample = std::ceil( ( as_scalar(randu(1)) * max_sample_id ) - 1 );
+	if(which_sample < limit_tip_sample){
+	  // Sample belongs to the tip matrix. Update with the same index.
+	  sample_poly_tips_prop.col(which_sample) = sample_poly_tips_tmp.col(which_sample);
+	} else{
+	  // Need to adjust the id to fit the nodes matrix.
+	  which_sample = which_sample - limit_tip_sample; // The adjusted index.
+	  sample_poly_nodes_prop.col(which_sample) = sample_poly_nodes_tmp.col(which_sample);
+	}
       }
     }
     

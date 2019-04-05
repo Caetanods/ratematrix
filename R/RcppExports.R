@@ -45,7 +45,7 @@ logLikPrunningFixedAnc <- function(tips_poly, X0, k, p, nodes, des, anc, names_a
     .Call('_ratematrix_logLikPrunningFixedAnc', PACKAGE = 'ratematrix', tips_poly, X0, k, p, nodes, des, anc, names_anc, mapped_edge, R)
 }
 
-runRatematrixPolytopeMCMC <- function(X_poly, anc_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_sample_sd, gen, post_seq, write_header) {
-    .Call('_ratematrix_runRatematrixPolytopeMCMC', PACKAGE = 'ratematrix', X_poly, anc_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_sample_sd, gen, post_seq, write_header)
+runRatematrixPolytopeMCMC <- function(X_poly, anc_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_sample_sd, prob_sample_trait, gen, post_seq, write_header) {
+    .Call('_ratematrix_runRatematrixPolytopeMCMC', PACKAGE = 'ratematrix', X_poly, anc_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_sample_sd, prob_sample_trait, gen, post_seq, write_header)
 }
 

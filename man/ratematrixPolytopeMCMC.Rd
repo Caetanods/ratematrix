@@ -6,9 +6,9 @@
 \usage{
 ratematrixPolytopeMCMC(data, phy, ancestral_priors = "descendants",
   prior = "uniform_scaled", start = "prior_sample", gen, burn = 0.25,
-  thin = 100, v = 50, w_sd = 0.2, prop = c(0.5, 0.5),
-  n_nodes_prop = 1, dir = NULL, outname = "ratematrixPolyMCMC",
-  IDlen = 5, save.handle = TRUE)
+  thin = 100, v = 50, w_sd = 0.2, prop_par = c(0.5, 0.5),
+  prop_trait = 0.5, n_nodes_prop = 1, dir = NULL,
+  outname = "ratematrixPolyMCMC", IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.}
@@ -31,7 +31,9 @@ ratematrixPolytopeMCMC(data, phy, ancestral_priors = "descendants",
 
 \item{w_sd}{the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.}
 
-\item{prop}{a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.}
+\item{prop_par}{a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.}
+
+\item{prop_trait}{a numeric value between 0 and 1 with the proportion of times the traits, either internal or tip nodes, are updated.}
 
 \item{n_nodes_prop}{the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.}
 
