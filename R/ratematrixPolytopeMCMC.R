@@ -9,7 +9,6 @@
 ##' @title Joint estimate the multidimentional phenotypic space for ancestrals and the evolutionary rate matrix
 ##' @param data a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.
 ##' @param phy a single phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.
-##' @param ancestral_priors the prior for the ancestral nodes. This can be "descendants" or "global". If "descendants" then the prior at each internal node comprise the morphospace occupied by all descendants of that node. If "global" then all internal nodes share the same prior distribution with a morphospace spanning the phenotypic space observed by the pool of all species in the tree.
 ##' @param prior the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.
 ##' @param start the starting state for the MCMC chain. Must be one of "prior_sample" (the default) or a sample from the prior generated with the "samplePrior" functions.
 ##' @param gen number of generations for the chain.
@@ -17,9 +16,9 @@
 ##' @param thin number of generations to be skipped as thinning. Set 'thin' to 0 to write every generation to the file.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
-##' @param prop_par a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.
-##' @param prop_trait a numeric value between 0 and 1 with the proportion of times the traits, either internal or tip nodes, are updated.
-##' @param n_nodes_prop the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.
+##' @param w_mu value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.
+##' @param prop_par a numeric vector of length 4 with the proposal frequencies for the parameters in this order: tip states, root values, variance, and correlation. Default value is 'c(0.1, 0.1, 0.4, 0.4)'.
+##' @param n_tips_move the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.
 ##' @param dir path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
@@ -44,7 +43,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, prop_par=c(0.5, 0.5), prop_trait=0.5, n_nodes_prop=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, w_mu=0.5, prop_par=c(0.1, 0.1, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -113,19 +112,19 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     cat("\n")
 
     ## Check the characteristics of the prop_par vector:
-    if( length( prop_par ) != 2 ) stop("prop_par vector needs length of 2.")
+    if( length( prop_par ) != 4 ) stop("prop_par vector needs length of 4.")
     prop_par <- prop_par / sum( prop_par ) ## Make sure it sums to 1.
-    if( length( prop_trait ) != 1 ) stop("prop_trait needs length of 1.")
-    if( prop_trait > 1 | prop_trait < 0 ) stop("prop_trait is a value between 0 and 1.")
 
-    ## Check the prior options for the ancestral nodes:
-    ancestral_priors <- match.arg(ancestral_priors, choices=c("descendants", "global"), several.ok=FALSE)
-    cat(paste0("Using ", ancestral_priors, " option for prior at internal nodes. \n"))
+    ## Check formats for 'w_mu'. Need to delay check for 'w_sd' until we get the number of regimes.
+    if( length( w_mu ) > 1 ){
+        if( !length(w_mu) == ncol(data[[1]]) ) stop("Length of 'w_mu' need to be 1 or equal to number of traits.")
+    } else{
+        w_mu <- rep(w_mu, times = ncol(data[[1]]) )
+    }
     
     ## Inform that default options are being used:
     if( inherits(prior, what="character") && prior == "uniform_scaled" ) cat("Using new default prior. \n")
     if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
-    if( v == 50 && w_sd == 0.2 && prop_par[1] == 0.5 && prop_par[2] == 0.5 ) cat("Using default proposal settings. \n")
 
     ## Check if provided prior has the correct dimension:
     if( inherits(prior, what="ratematrix_prior_function") ){
@@ -248,16 +247,24 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
 
     ## #######################
     ## Block to generate priors.
+    ## NOTE: Here the data is a list of matrices and the range of the data need to consider the multiple observations.
     prior_run <- prior
     if( inherits(prior, what="character") ){
         if(prior == "uniform"){
-            data.range <- t( apply(data[[1]], 2, range) )
+            data.mat <- sapply(data, is.matrix)
+            data.range <- lapply(data[data.mat], function(x) apply(x, 2, range) )
+            data.range.mat <- do.call(rbind, c(data.range, data[!data.mat]))
+            data.range <- t( apply(data, 2, range) )
+            ## If this prior is used, then the max on the standard deviation is hard-coded. (Not a bad value though).
             rep.sd.regime <- rep(c(0,sqrt(10)), times=p)
             par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
             prior_run <- makePrior(r=k, p=p, den.mu = "unif", par.mu=data.range, par.sd=par.sd )
         }
         if(prior == "uniform_scaled"){
-            data.range <- t( apply(data[[1]], 2, range) )
+            data.mat <- sapply(data, is.matrix)
+            data.range <- lapply(data[data.mat], function(x) apply(x, 2, range) )
+            data.range.mat <- do.call(rbind, c(data.range, data[!data.mat]))
+            data.range <- t( apply(data, 2, range) )
             cat("Guessing magnitude of rates from the data. \n")
             ## Using a single random observation for each of the species.
             simple.data <- matrix(ncol = ncol(data[[1]]), nrow = Ntip(phy) )
@@ -316,18 +323,13 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     ## Need to transpose the data matrix.
     ## X <- t(X)
 
-    ## The proposal for the standard deviation.
-    prob_sample_sd <- prop_par[1]
-
     ## Save the list with the MCMC parameters.
     mcmc.par <- list()
     mcmc.par$v <- v
     mcmc.par$w_sd <- w_sd
-    mcmc.par$w_mu <- NA ## Not using this parameter here.
-    mcmc.par$prob_sample_root <- NA
-    mcmc.par$prob_sample_sd <- prob_sample_sd
+    mcmc.par$w_mu <- w_mu
     mcmc.par$prop_par <- prop_par
-    mcmc.par$prop_trait <- prop_trait
+    
 
     ## I dropped the option to continue the MCMC. So here we always start a new one.
     ## if( !is.null(continue) ){
@@ -424,7 +426,9 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     ## Get info from the prior object.
     den_sd <- prior_run$pars$den.sd
     par_sd <- prior_run$pars$par.sd
-
+    den_mu <- prior_run$pars$den.mu
+    par_mu <- prior_run$pars$par.mu
+    
     if( prior_run$pars$unif.corr ){
         sigma.mat <- diag(nrow=k)
         sigma_array <- array(dim=c(k, k, p))
@@ -451,68 +455,55 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     }
     rownames( X_poly ) <- names( data )
 
-    ## Set up the boundaries for the internal nodes.
-    ## This case will depend on the type of prior used.
-    if( ancestral_priors == "descendants" ){
-        ## Range of the descendant lineages
-        ## This will depend on visiting each node, selecting the descendant tips and computing the range.
-        ## The anc_poly matrix is in the same order as the nodes.
-        anc_poly <- matrix(nrow = length(nodes)-1, ncol = k*2)
-        for( i in 1:nrow(anc_poly) ){
-            tmp_des_mat <- X_poly[tips(phy = phy, node = nodes[i]), ]
-            tmp_vec <- vector()
-            for( j in 1:(k*2) ){
-                if((j %% 2) < 1){ ## Test for zero can create problems.
-                    ## Take the max
-                    tmp_vec <- c(tmp_vec, max(tmp_des_mat[,j]))
-                }else{
-                    ## Take the min
-                    tmp_vec <- c(tmp_vec, min(tmp_des_mat[,j]))
-                }
-            }
-            anc_poly[i,] <- tmp_vec
-        }
-
-    } else{
-        ## Range of all the tips pooled.
-        anc_global <- vector()
-        for( i in 1:(k*2) ){
-            if((i %% 2) < 1){ ## Test for zero can create problems.
-                ## Take the max
-                anc_global <- c(anc_global, max(X_poly[,i]))
-            }else{
-                ## Take the min
-                anc_global <- c(anc_global, min(X_poly[,i]))
-            }
-        }
-        ## All internal nodes share the same bounds.
-        ## The matrix has nrows equal to the number of nodes-1.
-        anc_poly <- matrix(anc_global, nrow = length(nodes)-1, ncol = k*2, byrow = TRUE)
-    }
-
-    ## In the case of single regime analyses, some of the objects might be passed as a vector and need to be a matrix:
-    ## sd need to be a matrix
-    ## W_sd need to be a matrix
-    ## par_prior_sd need to be a matrix
-    ## Most simple way out is to duplicate the vectors to create a matrix and ignore one of the element insite the MCMC function.
-    sd_mat_par <- sqrt(startvar)
+    ## Adjust the format for the parameter in case of a single regime for the matrix.
     if( p == 1 ){
         ## Create a matrix out of some of the parameters to be able to run the model.
+        sd_mat_par <- sqrt(startvar)
         sd_mat_par <- cbind( sd_mat_par, sd_mat_par)
         w_sd <- cbind(w_sd, w_sd)
         par_sd <- rbind(par_sd, par_sd)
+    } else{
+        sd_mat_par <- sqrt(startvar)
     }    
     
+    ## Need to create the 'anc_poly' matrix. This is a matrix of starting values for the internal nodes of the tree.
+    ## Here the starting state for the ancestral values will be estimated using a MLE search conditioned on the starting value for the rates.
+    ## Otherwise, one can set a starting value for the ancestral states together with the starting state object.
+    if( is.null( start_run$anc ) ){
+        ## No starting state for the ancestrals provided.
+        if( p == 1 ){
+            ## Get a (so so) estimate for the ancestral nodes given a rate:
+            ## This is just for the univariate case:
+            mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
+            sigma_vec <- diag( startR[,,1] )
+            anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
+        } else{
+            ## Multiple regimes, repeat the same but use the median rate.
+            ## Get a (so so) estimate for the ancestral nodes given a rate:
+            ## This is just for the univariate case:
+            mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
+            R_mean_value <- apply( array.mat, 1:2, mean )
+            sigma_vec <- diag( R_mean_value )
+            anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
+        }
+    } else{
+        ## Use the starting state provided for the ancestrals:
+        if( !is.matrix(start_run$anc) ) stop("start$anc needs to be a matrix with the value for the ancestrals.")
+        if( !ncol( start_run$anc ) == k ) stop("start$anc needs to have the same number of columns as traits in the data.")
+        anc_start <- start_run$anc
+    }
+    
     ## Pass the parameters and run the C++ MCMC function:
-    runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=anc_poly, n_input_move=n_nodes_prop
+    runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=t(anc_start), n_input_move=n_tips_move
                             , k=k, p=p, nodes=nodes, des=des, anc=anc
                             , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
-                            , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
+                            , root=start_run$root, w_mu=w_mu, par_prior_mu=par_mu
+                            , den_mu=den_mu, sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
                             , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
                             , sigma=sigma_array, v=v, log_file=log_file_name
                             , mcmc_file=mcmc_file_name, poly_file=poly_file_name
-                            , prob_sample_sd=prob_sample_sd, prob_sample_trait=prop_trait
-                            , gen=gen, post_seq=post_seq, write_header=write_header)
+                            , prob_proposals=prop_par, gen=gen
+                            , post_seq=post_seq, write_header=write_header)
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
 
@@ -524,3 +515,43 @@ ratematrixPolytopeMCMC <- function(data, phy, ancestral_priors="descendants", pr
     return( out )
     
 }
+
+## Supporting functions.
+## These are to get the starting state for the internal nodes by performing ancestral reconstruction.
+get.ML.anc <- function(tree, x, rate){
+
+    ## Define the likelihood function conditioned on the rate.
+    ## Note that his is the simple likelihood for the BM model.
+    ## This approach is not trying to do do any re-rooting of the phylogeny!
+    simple_bm_likelihood <- function(par, rate, C, invC, detC, xvals){
+        ## Here we want to use the full likelihood, without pruning, because it is easier to condition on values for the internal nodes.
+        ## par[1] = mean; par[2:tree$Nnode] are internal node values.
+        ## Note that this likelihood function is conditioned on the value for the rate.
+        ## We can write this likelihood on C++ to make it faster.
+        a <- par[1]
+        y <- par[2:tree$Nnode]
+        z <- c(xvals, y) - a ## Center all values with respect to the mean.
+        logLik <- (-z %*% invC %*% z/(2 * rate) - nrow(C)
+            * log(2 * pi)/2 - nrow(C)
+            * log(rate)/2 - detC/2)[1, 1]
+        return( -1 * logLik )
+    }
+
+    tol <- 10 * .Machine$double.eps
+    C <- phytools:::vcvPhylo(tree)
+    invC <- solve(C)
+    detC <- determinant(C, logarithm = TRUE)$modulus[1]
+    ## Get some starting states close to the optima.
+    init.pars <- phytools::fastAnc(tree, x) ## Root value and the internal nodes.
+    fit <- optim(init.pars, fn = simple_bm_likelihood, rate = rate,
+                 C = C, invC = invC, detC = detC, xvals = x, method = "L-BFGS-B",
+                 lower = c(tol, rep(-Inf, tree$Nnode)),
+                 control = list(maxit = 2000) )
+    states <- fit$par
+    
+    ## The number of the nodes, from the root node to the last internal node.
+    names(states) <- c( length(tree$tip) + 1, rownames(C)[(length(tree$tip) + 1):nrow(C)] )
+    return( states )
+    
+}
+

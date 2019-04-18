@@ -4,18 +4,16 @@
 \alias{ratematrixPolytopeMCMC}
 \title{Joint estimate the multidimentional phenotypic space for ancestrals and the evolutionary rate matrix}
 \usage{
-ratematrixPolytopeMCMC(data, phy, ancestral_priors = "descendants",
-  prior = "uniform_scaled", start = "prior_sample", gen, burn = 0.25,
-  thin = 100, v = 50, w_sd = 0.2, prop_par = c(0.5, 0.5),
-  prop_trait = 0.5, n_nodes_prop = 1, dir = NULL,
-  outname = "ratematrixPolyMCMC", IDlen = 5, save.handle = TRUE)
+ratematrixPolytopeMCMC(data, phy, prior = "uniform_scaled",
+  start = "prior_sample", gen, burn = 0.25, thin = 100, v = 50,
+  w_sd = 0.2, w_mu = 0.5, prop_par = c(0.1, 0.1, 0.4, 0.4),
+  n_tips_move = 1, dir = NULL, outname = "ratematrixPolyMCMC",
+  IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.}
 
 \item{phy}{a single phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.}
-
-\item{ancestral_priors}{the prior for the ancestral nodes. This can be "descendants" or "global". If "descendants" then the prior at each internal node comprise the morphospace occupied by all descendants of that node. If "global" then all internal nodes share the same prior distribution with a morphospace spanning the phenotypic space observed by the pool of all species in the tree.}
 
 \item{prior}{the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.}
 
@@ -31,11 +29,11 @@ ratematrixPolytopeMCMC(data, phy, ancestral_priors = "descendants",
 
 \item{w_sd}{the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.}
 
-\item{prop_par}{a numeric vector of length 2 with the proposal frequencies for the vector of standard deviations (prop[1]) and the correlation matrix (prop[2]). Default value is 'c(0.5, 0.5)'.}
+\item{w_mu}{value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.}
 
-\item{prop_trait}{a numeric value between 0 and 1 with the proportion of times the traits, either internal or tip nodes, are updated.}
+\item{prop_par}{a numeric vector of length 4 with the proposal frequencies for the parameters in this order: tip states, root values, variance, and correlation. Default value is 'c(0.1, 0.1, 0.4, 0.4)'.}
 
-\item{n_nodes_prop}{the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.}
+\item{n_tips_move}{the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.}
 
 \item{dir}{path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.}
 
