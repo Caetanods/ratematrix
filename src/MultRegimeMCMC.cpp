@@ -2110,7 +2110,7 @@ arma::mat samplePolytope(arma::mat edge) {
 }
 
 // [[Rcpp::export]]
-double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec root) {
+double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R) {
   // Function to compute the likelihood of the model conditioned on know values for the ancestral nodes.
   // Note that this is computing the Restricted likelihood (REML) and not the full likelihood. This happens because we cannot compute the contrast at the root node if we assumed all ancestral nodes as fixed.
   // tips_poly: Data for the tips of the phylogeny, same as X.
@@ -2327,8 +2327,8 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, int k, 
   // Make the calculation for the root log-likelihood.
   // The index 'n_nodes' is correspondent to the position 'n_nodes + 1'. Remember the indexation starts from 0.
   // NOTE: The constrast at the ROOT depend on the provided root value (mu) and the estimated node value computed with the weighted average given the values of the last two tips of the pruning algorithm. Because here we are setting a priori values for each of the nodes of the tree, there is no likelihood to be computed at the root. The difference between the root value and the fixed root value is, trivially, 0 because these are the same quantities.
-  ss = X0.col(n_nodes-1) - root;
-  ll = ll + logLikNode_C(ss, V0.slice(n_nodes-1), inv_sympd(V0.slice(n_nodes-1)), k);
+  // ss = X0.col(n_nodes-1) - root;
+  // ll = ll + logLikNode_C(ss, V0.slice(n_nodes-1), inv_sympd(V0.slice(n_nodes-1)), k);
 
   return(ll);
 }
@@ -2568,7 +2568,7 @@ arma::mat Gibbs_sample_nodes(arma::mat poly_tips, arma::mat poly_nodes, int p, a
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec root, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, int gen, arma::vec post_seq, int write_header){
+std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, int gen, arma::vec post_seq, int write_header){
   // This function differs from 'runRatematrixMultiMCMC_C' because it uses data augmentation to sample points from a polytope at the tips of the phylogeny and at the internal nodes.
   // Also, here we are using the REML for the mvBM model instead of the full ML, so the root value is not estimated.
   // The input data is the max and min bounds for the polytopes for the species.
@@ -2598,23 +2598,27 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	  mcmc_stream << ".";
 	  mcmc_stream << ii;
 	  mcmc_stream << jj;
-	  mcmc_stream << "; ";
+	  if(kk == p && ii == k && jj == k){
+	    // mcmc_stream << "; ";
+	  } else{
+	    mcmc_stream << "; ";
+	  }
 	}
       }
     }
   
-    for( int kk=1; kk < k; kk++ ){
-      mcmc_stream << "trait.";
-      mcmc_stream << kk;
-      mcmc_stream << "; ";
-    }
-    mcmc_stream << "trait.";
-    mcmc_stream << k;
-    mcmc_stream << "\n";
+    // for( int kk=1; kk < k; kk++ ){
+    //   mcmc_stream << "trait.";
+    //   mcmc_stream << kk;
+    //   mcmc_stream << "; ";
+    // }
+    // mcmc_stream << "trait.";
+    // mcmc_stream << k;
+    // mcmc_stream << "\n";
 
     // Write the header for the log file.
     // This is very different from the other version of the MCMC.
-    log_stream << "accepted; tip_trait; root; sd; corr; log_lik \n";
+    log_stream << "accepted; tip_trait; sd; corr; log_lik \n";
 
     // Write the header for the poly file.
     int n_tips = X_poly.n_rows; // Number of species.
@@ -2667,10 +2671,10 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   double r;
   double unif_draw;
   int Rp;
-  arma::vec prop_root;
-  double prop_root_prior;
-  double curr_root_prior;
-  double prop_root_lik;
+  // arma::vec prop_root;
+  // double prop_root_prior;
+  // double curr_root_prior;
+  // double prop_root_lik;
   arma::mat prop_sd;
   double prop_sd_prior;
   arma::mat prop_diag_sd;
@@ -2719,7 +2723,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   
   // Get starting priors, likelihood, and jacobian.
   // Need to make sure the likelihood function will work if p == 1.
-  lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R, root);
+  lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R);
   curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd, p);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
@@ -2739,10 +2743,12 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   if( post_seq[post_seq_id] == 1 ){
     // Print starting point to files:
     // order: accept, tip, root, sd, corr, lik.
-    log_stream << "1; 0; 0; 0; 0; ";
+    // log_stream << "1; 0; 0; 0; 0; ";
+    log_stream << "1; 0; 0; 0; ";
     log_stream << lik;
     log_stream << "\n";
-    writeToMultFile_C(mcmc_stream, p, k, R, root);
+    // writeToMultFile_C(mcmc_stream, p, k, R, root);
+    writeToMultFileNoRoot(mcmc_stream, p, k, R);
     writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
     // Update the id to write to file. Because this is just the starting state.
     post_seq_id++;
@@ -2756,13 +2762,17 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 
     // Choose which par to sample.
     it_prob = as_scalar(randu(1));
+    // Without the root values, prob_proposals will only have 3 elements.
     if(it_prob < prob_proposals[0]){
       update = 0; // Update the tip traits.
     } else if(it_prob < (prob_proposals[0] + prob_proposals[1]) ){
-      update = 1; // Update the root.
+      // update = 1; // Update the root.
+      update = 2; // Update standard deviation.
     } else if(it_prob < (prob_proposals[0] + prob_proposals[1] + prob_proposals[2]) ){
-      update = 2; // Update the standard deviation.
+      // update = 2; // Update the standard deviation.
+      update = 3; // Update correlation
     } else {
+      // This will not be visited if root values are not included.
       update = 3; // Update the correlation.
     }
     
@@ -2779,7 +2789,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     sample_poly_nodes = Gibbs_sample_nodes(sample_poly_tips, sample_poly_nodes, p, nodes, des, anc, names_anc, mapped_edge, R);
     // But, because the parameters of the model have been updated, we need to update the likelihood.
     // This is using all current parameters, but the new sample of the nodes.
-    lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R, root);
+    lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R);
     
     if(update == 0){
       // Take sample for the tips.
@@ -2793,7 +2803,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	sample_poly_tips_prop.col(which_sample) = sample_poly_tips_tmp.col(which_sample);
       }
 
-      prop_trait_lik = logLikPrunningFixedAnc(sample_poly_tips_prop, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R, root);
+      prop_trait_lik = logLikPrunningFixedAnc(sample_poly_tips_prop, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R);
       ll = prop_trait_lik - lik;
       // Flat prior here.
       r = ll;
@@ -2804,7 +2814,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "1; 1; 0; 0; 0; ";
+	  // log_stream << "1; 1; 0; 0; 0; ";
+	  log_stream << "1; 1; 0; 0; ";
 	  log_stream << prop_trait_lik;
 	  log_stream << "\n";
 	}
@@ -2815,7 +2826,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "0; 1; 0; 0; 0; ";
+	  // log_stream << "0; 1; 0; 0; 0; ";
+	  log_stream << "0; 1; 0; 0; ";
 	  log_stream << lik;
 	  log_stream << "\n";
 	}
@@ -2824,40 +2836,40 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       
     }
 
-    if(update == 1){
-      // Update the root vector.
-      prop_root = slideWindow_C(root, w_mu);
-      prop_root_prior = priorRoot_C(prop_root, par_prior_mu, den_mu);
-      pp = prop_root_prior - curr_root_prior;
-      prop_root_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R, prop_root);
-      ll = prop_root_lik - lik;
-      r = ll + pp;
+    // if(update == 1){
+    //   // Update the root vector.
+    //   prop_root = slideWindow_C(root, w_mu);
+    //   prop_root_prior = priorRoot_C(prop_root, par_prior_mu, den_mu);
+    //   pp = prop_root_prior - curr_root_prior;
+    //   prop_root_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R);
+    //   ll = prop_root_lik - lik;
+    //   r = ll + pp;
 
-      // Advance to the acceptance step.
-      unif_draw = as_scalar(randu(1));
-      if( exp(r) > unif_draw ){ // Accept.
-	if( post_seq[post_seq_id] == (i+1) ){
-	  // Write gen to file.
-	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "1; 0; 1; 0; 0; ";
-	  log_stream << prop_root_lik;
-	  log_stream << "\n";
-	}
-	// Make the updates
-	root = prop_root;
-	curr_root_prior = prop_root_prior;
-	lik = prop_root_lik;
-      } else{ // Reject. Keep the values the same.
-	if( post_seq[post_seq_id] == (i+1) ){
-	  // Write gen to file.
-	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "0; 0; 1; 0; 0; ";
-	  log_stream << lik;
-	  log_stream << "\n";
-	}
-	// No updates to be made.
-      }
-    }
+    //   // Advance to the acceptance step.
+    //   unif_draw = as_scalar(randu(1));
+    //   if( exp(r) > unif_draw ){ // Accept.
+    // 	if( post_seq[post_seq_id] == (i+1) ){
+    // 	  // Write gen to file.
+    // 	  // order: accept, tip, root, sd, corr, lik.
+    // 	  log_stream << "1; 0; 1; 0; 0; ";
+    // 	  log_stream << prop_root_lik;
+    // 	  log_stream << "\n";
+    // 	}
+    // 	// Make the updates
+    // 	root = prop_root;
+    // 	curr_root_prior = prop_root_prior;
+    // 	lik = prop_root_lik;
+    //   } else{ // Reject. Keep the values the same.
+    // 	if( post_seq[post_seq_id] == (i+1) ){
+    // 	  // Write gen to file.
+    // 	  // order: accept, tip, root, sd, corr, lik.
+    // 	  log_stream << "0; 0; 1; 0; 0; ";
+    // 	  log_stream << lik;
+    // 	  log_stream << "\n";
+    // 	}
+    // 	// No updates to be made.
+    //   }
+    // }
     
     if(update == 2){
       // Update the variance vector.
@@ -2873,7 +2885,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       R_prop = R; // R is the current R matrix.
       R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
       // Compute the likelihood using current values for all other parameters.
-      prop_sd_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, root);
+      prop_sd_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
       ll = prop_sd_lik - lik;
 
       // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
@@ -2885,7 +2897,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "1; 0; 0; ";
+	  // log_stream << "1; 0; 0; ";
+	  log_stream << "1; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; 0; ";
 	  log_stream << prop_sd_lik;
@@ -2900,7 +2913,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "0; 0; 0; ";
+	  // log_stream << "0; 0; 0; ";
+	  log_stream << "0; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; 0; ";
 	  log_stream << lik;
@@ -2931,7 +2945,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       R_prop = R;
       // 'cor' is not the correct function to use here!
       R_prop.slice(Rp) = diag_sd * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_sd;
-      prop_corr_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop, root);
+      prop_corr_lik = logLikPrunningFixedAnc(sample_poly_tips, sample_poly_nodes, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
       ll = prop_corr_lik - lik;
       // This is the sdiance of the proposed vcv matrix.
       decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
@@ -2952,7 +2966,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "1; 0; 0; 0; ";
+	  // log_stream << "1; 0; 0; 0; ";
+	  log_stream << "1; 0; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; ";
 	  log_stream << prop_corr_lik;
@@ -2968,7 +2983,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, root, sd, corr, lik.
-	  log_stream << "0; 0; 0; 0; ";
+	  // log_stream << "0; 0; 0; 0; ";
+	  log_stream << "0; 0; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; ";
 	  log_stream << lik;
@@ -2982,7 +2998,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     // Write the current state to the MCMC file and update the counter for the posterior samples to keep.
     // Note that the counter will not be updated until the sample is reached and written to file.
     if( post_seq[post_seq_id] == (i+1) ){
-      writeToMultFile_C(mcmc_stream, p, k, R, root);
+      // writeToMultFile_C(mcmc_stream, p, k, R, root);
+      writeToMultFileNoRoot(mcmc_stream, p, k, R);
       writePolySample(poly_stream, sample_poly_tips, sample_poly_nodes);
       post_seq_id++;
     }

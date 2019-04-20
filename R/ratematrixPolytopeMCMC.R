@@ -494,11 +494,22 @@ ratematrixPolytopeMCMC <- function(data, phy, prior="uniform_scaled", start="pri
     }
     
     ## Pass the parameters and run the C++ MCMC function:
+    ## runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=t(anc_start), n_input_move=n_tips_move
+    ##                         , k=k, p=p, nodes=nodes, des=des, anc=anc
+    ##                         , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
+    ##                         , root=start_run$root, w_mu=w_mu, par_prior_mu=par_mu
+    ##                         , den_mu=den_mu, sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
+    ##                         , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
+    ##                         , sigma=sigma_array, v=v, log_file=log_file_name
+    ##                         , mcmc_file=mcmc_file_name, poly_file=poly_file_name
+    ##                         , prob_proposals=prop_par, gen=gen
+    ##                         , post_seq=post_seq, write_header=write_header)
+
+    ## Call for the Polytope sampler in C++ without the root.
     runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=t(anc_start), n_input_move=n_tips_move
                             , k=k, p=p, nodes=nodes, des=des, anc=anc
                             , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
-                            , root=start_run$root, w_mu=w_mu, par_prior_mu=par_mu
-                            , den_mu=den_mu, sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
+                            , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
                             , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
                             , sigma=sigma_array, v=v, log_file=log_file_name
                             , mcmc_file=mcmc_file_name, poly_file=poly_file_name
