@@ -9,6 +9,7 @@
 ##' @title Joint estimate the multidimentional phenotypic space for ancestrals and the evolutionary rate matrix
 ##' @param data a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.
 ##' @param phy a single phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.
+##' @param sample_internal whether to sample the internal nodes of the tree (i.e., ancestral states) using Gibbs sampler together with the estimates of the other parameter of the model. NOTE: Preliminary results showed that including this parameter can decrease the mixing of the MCMC chain.
 ##' @param prior the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.
 ##' @param start the starting state for the MCMC chain. Must be one of "prior_sample" (the default) or a sample from the prior generated with the "samplePrior" functions.
 ##' @param gen number of generations for the chain.
@@ -17,7 +18,7 @@
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param w_mu value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.
-##' @param prop_par a numeric vector of length 4 with the proposal frequencies for the parameters in this order: tip states, root values, variance, and correlation. Default value is 'c(0.1, 0.1, 0.4, 0.4)'.
+##' @param prop_par a numeric vector of length 3 with the proposal frequencies for the parameters in this order: tip states, variance, and correlation. Default value is 'c(0.2, 0.4, 0.4)'.
 ##' @param n_tips_move the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.
 ##' @param dir path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
@@ -43,7 +44,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, w_mu=0.5, prop_par=c(0.1, 0.1, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, w_mu=0.5, prop_par=c(0.2, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -112,7 +113,7 @@ ratematrixPolytopeMCMC <- function(data, phy, prior="uniform_scaled", start="pri
     cat("\n")
 
     ## Check the characteristics of the prop_par vector:
-    if( length( prop_par ) != 4 ) stop("prop_par vector needs length of 4.")
+    if( length( prop_par ) != 3 ) stop("prop_par vector needs length of 3.")
     prop_par <- prop_par / sum( prop_par ) ## Make sure it sums to 1.
 
     ## Check formats for 'w_mu'. Need to delay check for 'w_sd' until we get the number of regimes.
@@ -329,7 +330,7 @@ ratematrixPolytopeMCMC <- function(data, phy, prior="uniform_scaled", start="pri
     mcmc.par$w_sd <- w_sd
     mcmc.par$w_mu <- w_mu
     mcmc.par$prop_par <- prop_par
-    
+    mcmc.par$sample_internal <- sample_internal    
 
     ## I dropped the option to continue the MCMC. So here we always start a new one.
     ## if( !is.null(continue) ){
@@ -465,56 +466,68 @@ ratematrixPolytopeMCMC <- function(data, phy, prior="uniform_scaled", start="pri
     } else{
         sd_mat_par <- sqrt(startvar)
     }    
-    
-    ## Need to create the 'anc_poly' matrix. This is a matrix of starting values for the internal nodes of the tree.
-    ## Here the starting state for the ancestral values will be estimated using a MLE search conditioned on the starting value for the rates.
-    ## Otherwise, one can set a starting value for the ancestral states together with the starting state object.
-    if( is.null( start_run$anc ) ){
-        ## No starting state for the ancestrals provided.
+
+    if( sample_internal ){        
+        ## Need to create the 'anc_poly' matrix. This is a matrix of starting values for the internal nodes of the tree.
+        ## Here the starting state for the ancestral values will be estimated using a MLE search conditioned on the starting value for the rates.
+        ## Otherwise, one can set a starting value for the ancestral states together with the starting state object.
+        if( is.null( start_run$anc ) ){
+            ## No starting state for the ancestrals provided.
+            if( p == 1 ){
+                ## Get a (so so) estimate for the ancestral nodes given a rate:
+                ## This is just for the univariate case:
+                mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
+                sigma_vec <- diag( startR[,,1] )
+                anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
+            } else{
+                ## Multiple regimes, repeat the same but use the median rate.
+                ## Get a (so so) estimate for the ancestral nodes given a rate:
+                ## This is just for the univariate case:
+                mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
+                R_mean_value <- apply( array.mat, 1:2, mean )
+                sigma_vec <- diag( R_mean_value )
+                anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
+            }
+        } else{
+            ## Use the starting state provided for the ancestrals:
+            if( !is.matrix(start_run$anc) ) stop("start$anc needs to be a matrix with the value for the ancestrals.")
+            if( !ncol( start_run$anc ) == k ) stop("start$anc needs to have the same number of columns as traits in the data.")
+            anc_start <- start_run$anc
+        }        
+    } else{
+        ## Just need to prepare the vectors for the normal model. No need for the matrix of internal states for the nodes.
         if( p == 1 ){
-            ## Get a (so so) estimate for the ancestral nodes given a rate:
-            ## This is just for the univariate case:
             mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
             sigma_vec <- diag( startR[,,1] )
-            anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
         } else{
-            ## Multiple regimes, repeat the same but use the median rate.
-            ## Get a (so so) estimate for the ancestral nodes given a rate:
-            ## This is just for the univariate case:
             mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
             R_mean_value <- apply( array.mat, 1:2, mean )
             sigma_vec <- diag( R_mean_value )
-            anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
         }
-    } else{
-        ## Use the starting state provided for the ancestrals:
-        if( !is.matrix(start_run$anc) ) stop("start$anc needs to be a matrix with the value for the ancestrals.")
-        if( !ncol( start_run$anc ) == k ) stop("start$anc needs to have the same number of columns as traits in the data.")
-        anc_start <- start_run$anc
     }
-    
-    ## Pass the parameters and run the C++ MCMC function:
-    ## runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=t(anc_start), n_input_move=n_tips_move
-    ##                         , k=k, p=p, nodes=nodes, des=des, anc=anc
-    ##                         , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
-    ##                         , root=start_run$root, w_mu=w_mu, par_prior_mu=par_mu
-    ##                         , den_mu=den_mu, sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
-    ##                         , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
-    ##                         , sigma=sigma_array, v=v, log_file=log_file_name
-    ##                         , mcmc_file=mcmc_file_name, poly_file=poly_file_name
-    ##                         , prob_proposals=prop_par, gen=gen
-    ##                         , post_seq=post_seq, write_header=write_header)
 
-    ## Call for the Polytope sampler in C++ without the root.
-    runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=t(anc_start), n_input_move=n_tips_move
-                            , k=k, p=p, nodes=nodes, des=des, anc=anc
-                            , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
-                            , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
-                            , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
-                            , sigma=sigma_array, v=v, log_file=log_file_name
-                            , mcmc_file=mcmc_file_name, poly_file=poly_file_name
-                            , prob_proposals=prop_par, gen=gen
-                            , post_seq=post_seq, write_header=write_header)
+    if( sample_internal ){
+        ## Call for the Polytope sampler in C++ without the root.
+        runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=t(anc_start), n_input_move=n_tips_move
+                                , k=k, p=p, nodes=nodes, des=des, anc=anc
+                                , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
+                                , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
+                                , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
+                                , sigma=sigma_array, v=v, log_file=log_file_name
+                                , mcmc_file=mcmc_file_name, poly_file=poly_file_name
+                                , prob_proposals=prop_par, gen=gen
+                                , post_seq=post_seq, write_header=write_header)
+    } else{
+        runRatematrixPolytopeTipsOnlyMCMC(X_poly=X_poly, n_input_move=n_tips_move
+                                , k=k, p=p, nodes=nodes, des=des, anc=anc
+                                , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
+                                , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
+                                , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
+                                , sigma=sigma_array, v=v, log_file=log_file_name
+                                , mcmc_file=mcmc_file_name, poly_file=poly_file_name
+                                , prob_proposals=prop_par, gen=gen
+                                , post_seq=post_seq, write_header=write_header)
+    }
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
 

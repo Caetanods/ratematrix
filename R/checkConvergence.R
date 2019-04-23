@@ -148,15 +148,23 @@ checkConvergence <- function(...){
                 tip.samples.mcmc <- coda::mcmc( chains[[1]]$tip_samples )
                 hei.tip.samples <- checkHeidelTest(tip.samples.mcmc)
                 ess.tip.samples <- effectiveSize(tip.samples.mcmc)
-                anc.samples.mcmc <- coda::mcmc( chains[[1]]$anc_samples )
-                hei.anc.samples <- checkHeidelTest(anc.samples.mcmc)
-                ess.anc.samples <- effectiveSize(anc.samples.mcmc)
-                ess <- c(ess.matrix, ess.tip.samples, ess.anc.samples)
-                names(ess) <- c( paste("matrix_cel_",1:length(ess.matrix),sep="")
-                              , colnames( chains[[1]]$tip_samples )
-                              , colnames( chains[[1]]$anc_samples ) )
-                diag <- data.frame(hei.matrix, hei.tip.samples, hei.anc.samples)
-                colnames(diag) <- c("matrix", "tip_samples", "anc_samples")
+                if( !is.na( chains[[1]]$anc_samples ) ){
+                    anc.samples.mcmc <- coda::mcmc( chains[[1]]$anc_samples )
+                    hei.anc.samples <- checkHeidelTest(anc.samples.mcmc)
+                    ess.anc.samples <- effectiveSize(anc.samples.mcmc)
+                    ess <- c(ess.matrix, ess.tip.samples, ess.anc.samples)
+                    names(ess) <- c( paste("matrix_cel_",1:length(ess.matrix),sep="")
+                                  , colnames( chains[[1]]$tip_samples )
+                                  , colnames( chains[[1]]$anc_samples ) )
+                    diag <- data.frame(hei.matrix, hei.tip.samples, hei.anc.samples)
+                    colnames(diag) <- c("matrix", "tip_samples", "anc_samples")
+                } else{
+                    ess <- c(ess.matrix, ess.tip.samples)
+                    names(ess) <- c( paste("matrix_cel_",1:length(ess.matrix),sep="")
+                                  , colnames( chains[[1]]$tip_samples ) )
+                    diag <- data.frame(hei.matrix, hei.tip.samples)
+                    colnames(diag) <- c("matrix", "tip_samples")
+                }
             }
 
             return( list(heidel=diag, ess=ess) )
@@ -189,15 +197,23 @@ checkConvergence <- function(...){
                 diag.tip.samples <- gelman.diag(tip.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
                 ess.tip.samples <- effectiveSize(tip.samples.mcmc.list)
 
-                anc.samples.mcmc <- lapply(chains, function(x) coda::mcmc( x$anc_samples ) )
-                anc.samples.mcmc.list <- mcmc.list( anc.samples.mcmc )
-                diag.anc.samples <- gelman.diag(anc.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
-                ess.anc.samples <- effectiveSize(anc.samples.mcmc.list)
-                ess <- c(ess.matrix, ess.tip.samples, ess.anc.samples)
-                names(ess) <- c( paste("matrix_cel_",1:length(ess.matrix),sep="")
-                              , colnames( chains[[1]]$tip_samples )
-                              , colnames( chains[[1]]$anc_samples ) )
-                gelman.diag <- list(ratematrix=diag.matrix, tip_samples=diag.tip.samples, anc_samples=diag.anc.samples)
+                check_ancestral <- lapply(chains, function(x) is.na( x$anc_samples ) )
+                if( !any( check_ancestral ) ){
+                    anc.samples.mcmc <- lapply(chains, function(x) coda::mcmc( x$anc_samples ) )
+                    anc.samples.mcmc.list <- mcmc.list( anc.samples.mcmc )
+                    diag.anc.samples <- gelman.diag(anc.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
+                    ess.anc.samples <- effectiveSize(anc.samples.mcmc.list)
+                    ess <- c(ess.matrix, ess.tip.samples, ess.anc.samples)
+                    names(ess) <- c( paste("matrix_cel_",1:length(ess.matrix),sep="")
+                                  , colnames( chains[[1]]$tip_samples )
+                                  , colnames( chains[[1]]$anc_samples ) )
+                    gelman.diag <- list(ratematrix=diag.matrix, tip_samples=diag.tip.samples, anc_samples=diag.anc.samples)
+                } else{
+                    ess <- c(ess.matrix, ess.tip.samples)
+                    names(ess) <- c( paste("matrix_cel_",1:length(ess.matrix),sep="")
+                                  , colnames( chains[[1]]$tip_samples ) )
+                    gelman.diag <- list(ratematrix=diag.matrix, tip_samples=diag.tip.samples)
+                }
             }
             
             return( list(gelman=gelman.diag, ess=ess) )
@@ -238,11 +254,17 @@ checkConvergence <- function(...){
                 tip.samples.mcmc <- coda::mcmc( chains[[1]]$tip_samples )
                 hei.tip.samples <- data.frame( checkHeidelTest(tip.samples.mcmc) )
                 ess.tip.samples <- effectiveSize(tip.samples.mcmc)
-                anc.samples.mcmc <- coda::mcmc( chains[[1]]$anc_samples )
-                hei.anc.samples <- data.frame( checkHeidelTest(anc.samples.mcmc) )
-                ess.anc.samples <- effectiveSize(anc.samples.mcmc)
-                diag.res <- cbind(res.mat, hei.tip.samples, hei.anc.samples)
-                colnames(diag.res) <- c(paste0( "regime_", names( chains[[1]]$matrix ) ), "tip_samples", "anc_samples")
+                if( !is.na( chains[[1]]$anc_samples ) ){
+                    anc.samples.mcmc <- coda::mcmc( chains[[1]]$anc_samples )
+                    hei.anc.samples <- data.frame( checkHeidelTest(anc.samples.mcmc) )
+                    ess.anc.samples <- effectiveSize(anc.samples.mcmc)
+                    diag.res <- cbind(res.mat, hei.tip.samples, hei.anc.samples)
+                    colnames(diag.res) <- c(paste0( "regime_", names( chains[[1]]$matrix ) ), "tip_samples"
+                                          , "anc_samples")
+                } else{
+                    diag.res <- cbind(res.mat, hei.tip.samples)
+                    colnames(diag.res) <- c(paste0( "regime_", names( chains[[1]]$matrix ) ), "tip_samples")
+                }
                 ess.matrix.mat <- do.call(cbind, ess.matrix)
                 colnames(ess.matrix.mat) <- names( chains[[1]]$matrix )
                 return( list(heidel=diag.res, ess_rates=ess.matrix.mat) )
@@ -286,16 +308,21 @@ checkConvergence <- function(...){
                 tip.samples.mcmc.list <- mcmc.list( tip.samples.mcmc )
                 diag.tip.samples <- gelman.diag(tip.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
                 ess.tip.samples <- effectiveSize(tip.samples.mcmc.list)
-
-                anc.samples.mcmc <- lapply(chains, function(x) coda::mcmc( x$anc_samples ) )
-                anc.samples.mcmc.list <- mcmc.list( anc.samples.mcmc )
-                diag.anc.samples <- gelman.diag(anc.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
-                ess.anc.samples <- effectiveSize(anc.samples.mcmc.list)
-                ess <- ess.matrix.mat                
+                ess <- ess.matrix.mat
                 rownames(ess) <- paste("rate_", nm.comb, sep="")
                 colnames(ess) <- paste0("regime_", names( chains[[1]]$matrix ))
-                
-                gelman.diag <- list(ratematrix=diag.matrix, tip_samples=diag.tip.samples, anc_samples=diag.anc.samples)
+
+                check_ancestral <- lapply(chains, function(x) is.na( x$anc_samples ) )
+                if( !any( check_ancestral ) ){
+                    anc.samples.mcmc <- lapply(chains, function(x) coda::mcmc( x$anc_samples ) )
+                    anc.samples.mcmc.list <- mcmc.list( anc.samples.mcmc )
+                    diag.anc.samples <- gelman.diag(anc.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
+                    ess.anc.samples <- effectiveSize(anc.samples.mcmc.list)
+                    gelman.diag <- list(ratematrix=diag.matrix, tip_samples=diag.tip.samples
+                                      , anc_samples=diag.anc.samples)
+                } else{
+                    gelman.diag <- list(ratematrix=diag.matrix, tip_samples=diag.tip.samples)
+                }
                 return( list( gelman = gelman.diag, ess = ess ) )
             }
             

@@ -303,6 +303,41 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// runRatematrixPolytopeTipsOnlyMCMC
+std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, int gen, arma::vec post_seq, int write_header);
+RcppExport SEXP _ratematrix_runRatematrixPolytopeTipsOnlyMCMC(SEXP X_polySEXP, SEXP n_input_moveSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP poly_fileSEXP, SEXP prob_proposalsSEXP, SEXP genSEXP, SEXP post_seqSEXP, SEXP write_headerSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type X_poly(X_polySEXP);
+    Rcpp::traits::input_parameter< int >::type n_input_move(n_input_moveSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type nodes(nodesSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type des(desSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type anc(ancSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type names_anc(names_ancSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mapped_edge(mapped_edgeSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type R(RSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type sd(sdSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type Rcorr(RcorrSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type w_sd(w_sdSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type par_prior_sd(par_prior_sdSEXP);
+    Rcpp::traits::input_parameter< std::string >::type den_sd(den_sdSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type v(vSEXP);
+    Rcpp::traits::input_parameter< std::string >::type log_file(log_fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type mcmc_file(mcmc_fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type poly_file(poly_fileSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type prob_proposals(prob_proposalsSEXP);
+    Rcpp::traits::input_parameter< int >::type gen(genSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type post_seq(post_seqSEXP);
+    Rcpp::traits::input_parameter< int >::type write_header(write_headerSEXP);
+    rcpp_result_gen = Rcpp::wrap(runRatematrixPolytopeTipsOnlyMCMC(X_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_makeSimmapMappedEdge", (DL_FUNC) &_ratematrix_makeSimmapMappedEdge, 11},
@@ -317,6 +352,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_runRatematrixMCMC_jointMk_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_jointMk_C, 38},
     {"_ratematrix_logLikPrunningFixedAnc", (DL_FUNC) &_ratematrix_logLikPrunningFixedAnc, 10},
     {"_ratematrix_runRatematrixPolytopeMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeMCMC, 26},
+    {"_ratematrix_runRatematrixPolytopeTipsOnlyMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeTipsOnlyMCMC, 25},
     {NULL, NULL, 0}
 };
 

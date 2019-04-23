@@ -4,16 +4,18 @@
 \alias{ratematrixPolytopeMCMC}
 \title{Joint estimate the multidimentional phenotypic space for ancestrals and the evolutionary rate matrix}
 \usage{
-ratematrixPolytopeMCMC(data, phy, prior = "uniform_scaled",
-  start = "prior_sample", gen, burn = 0.25, thin = 100, v = 50,
-  w_sd = 0.2, w_mu = 0.5, prop_par = c(0.1, 0.1, 0.4, 0.4),
-  n_tips_move = 1, dir = NULL, outname = "ratematrixPolyMCMC",
-  IDlen = 5, save.handle = TRUE)
+ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
+  prior = "uniform_scaled", start = "prior_sample", gen, burn = 0.25,
+  thin = 100, v = 50, w_sd = 0.2, w_mu = 0.5, prop_par = c(0.2,
+  0.4, 0.4), n_tips_move = 1, dir = NULL,
+  outname = "ratematrixPolyMCMC", IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.}
 
 \item{phy}{a single phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.}
+
+\item{sample_internal}{whether to sample the internal nodes of the tree (i.e., ancestral states) using Gibbs sampler together with the estimates of the other parameter of the model. NOTE: Preliminary results showed that including this parameter can decrease the mixing of the MCMC chain.}
 
 \item{prior}{the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.}
 
@@ -31,7 +33,7 @@ ratematrixPolytopeMCMC(data, phy, prior = "uniform_scaled",
 
 \item{w_mu}{value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.}
 
-\item{prop_par}{a numeric vector of length 4 with the proposal frequencies for the parameters in this order: tip states, root values, variance, and correlation. Default value is 'c(0.1, 0.1, 0.4, 0.4)'.}
+\item{prop_par}{a numeric vector of length 3 with the proposal frequencies for the parameters in this order: tip states, variance, and correlation. Default value is 'c(0.2, 0.4, 0.4)'.}
 
 \item{n_tips_move}{the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.}
 

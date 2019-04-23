@@ -70,14 +70,24 @@ readPolyMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL, single_rate = FALS
     trait_space <- sapply( trait_space, function(x) as.numeric( strsplit(x=x, split="; ", fixed=TRUE)[[1]] )
                         , USE.NAMES=FALSE )
     rownames( trait_space ) <- trait_space_header
-    ## Separate into tip_samples and anc_samples.    
-    n_tips <- Ntip( out$phy )
-    tips_header <- trait_space_header[]
-    anc_header <- trait_space_header[]
-    tip_samples <- t( trait_space[1:(n_tips*out$k),] )
-    anc_samples <- t( trait_space[((n_tips*out$k)+1):length(trait_space_header),] )
-    out <- list(matrix = RR, tip_samples = tip_samples, anc_samples = anc_samples, trait.names = out$trait.names
-              , n_post_samples = nrow(tip_samples) )
+    
+    if( out$mcmc.par$sample_internal ){
+        ## Separate into tip_samples and anc_samples.    
+        n_tips <- Ntip( out$phy )
+        tips_header <- trait_space_header[]
+        anc_header <- trait_space_header[]
+        tip_samples <- t( trait_space[1:(n_tips*out$k),] )
+        anc_samples <- t( trait_space[((n_tips*out$k)+1):length(trait_space_header),] )
+        out <- list(matrix = RR, tip_samples = tip_samples, anc_samples = anc_samples, trait.names = out$trait.names
+                  , n_post_samples = nrow(tip_samples) )
+    } else{
+        ## We only have the tip traits.
+        n_tips <- Ntip( out$phy )
+        tips_header <- trait_space_header[]
+        tip_samples <- t( trait_space[1:(n_tips*out$k),] )
+        out <- list(matrix = RR, tip_samples = tip_samples, anc_samples = NA, trait.names = out$trait.names
+                  , n_post_samples = nrow(tip_samples) )
+    }
     class(out) <- "ratematrix_poly_chain"
     
     return( out )
