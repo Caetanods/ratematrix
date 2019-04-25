@@ -45,6 +45,10 @@ logLikPrunningFixedAnc <- function(tips_poly, nodes_poly, k, p, nodes, des, anc,
     .Call('_ratematrix_logLikPrunningFixedAnc', PACKAGE = 'ratematrix', tips_poly, nodes_poly, k, p, nodes, des, anc, names_anc, mapped_edge, R)
 }
 
+Gibbs_sample_nodes <- function(poly_tips, poly_nodes, p, nodes, des, anc, names_anc, mapped_edge, R) {
+    .Call('_ratematrix_Gibbs_sample_nodes', PACKAGE = 'ratematrix', poly_tips, poly_nodes, p, nodes, des, anc, names_anc, mapped_edge, R)
+}
+
 runRatematrixPolytopeMCMC <- function(X_poly, anc_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header) {
     .Call('_ratematrix_runRatematrixPolytopeMCMC', PACKAGE = 'ratematrix', X_poly, anc_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header)
 }

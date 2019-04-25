@@ -2451,6 +2451,7 @@ arma::vec Gibbs_get_trio(arma::vec a, arma::vec d1, arma::vec d2, arma::vec s, a
   }
 }
 
+// [[Rcpp::export]]
 arma::mat Gibbs_sample_nodes(arma::mat poly_tips, arma::mat poly_nodes, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R){
   // Function to make a single pass of Gibbs sampling to update internal nodes (in random order).
   // Returns a matrix with the same configuration as 'sample_poly_nodes'.

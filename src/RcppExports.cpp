@@ -267,6 +267,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Gibbs_sample_nodes
+arma::mat Gibbs_sample_nodes(arma::mat poly_tips, arma::mat poly_nodes, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R);
+RcppExport SEXP _ratematrix_Gibbs_sample_nodes(SEXP poly_tipsSEXP, SEXP poly_nodesSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type poly_tips(poly_tipsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type poly_nodes(poly_nodesSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type nodes(nodesSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type des(desSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type anc(ancSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type names_anc(names_ancSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mapped_edge(mapped_edgeSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type R(RSEXP);
+    rcpp_result_gen = Rcpp::wrap(Gibbs_sample_nodes(poly_tips, poly_nodes, p, nodes, des, anc, names_anc, mapped_edge, R));
+    return rcpp_result_gen;
+END_RCPP
+}
 // runRatematrixPolytopeMCMC
 std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, int gen, arma::vec post_seq, int write_header);
 RcppExport SEXP _ratematrix_runRatematrixPolytopeMCMC(SEXP X_polySEXP, SEXP anc_polySEXP, SEXP n_input_moveSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP poly_fileSEXP, SEXP prob_proposalsSEXP, SEXP genSEXP, SEXP post_seqSEXP, SEXP write_headerSEXP) {
@@ -351,6 +370,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_runRatematrixMultiMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMultiMCMC_C, 27},
     {"_ratematrix_runRatematrixMCMC_jointMk_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_jointMk_C, 38},
     {"_ratematrix_logLikPrunningFixedAnc", (DL_FUNC) &_ratematrix_logLikPrunningFixedAnc, 10},
+    {"_ratematrix_Gibbs_sample_nodes", (DL_FUNC) &_ratematrix_Gibbs_sample_nodes, 9},
     {"_ratematrix_runRatematrixPolytopeMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeMCMC, 26},
     {"_ratematrix_runRatematrixPolytopeTipsOnlyMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeTipsOnlyMCMC, 25},
     {NULL, NULL, 0}
