@@ -157,6 +157,7 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
 
         ## #########################################
         ## Update and accept reject steps:
+        ## NOTE: The update function here needs to work on log space.
         cache.chain <- update.function[[up]](cache.data, cache.chain, prior, w_sd, w_mu, v, files, phy)
         ## #########################################
 

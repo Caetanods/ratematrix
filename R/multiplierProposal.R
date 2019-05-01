@@ -15,8 +15,12 @@ multiplierProposal <- function(x, a){
     ## Note this proposal will never change the sign of the parameter.
     ## x = the current value.
     ## a = the scale of the multiplier.
-    lambda <- 2 * log(a)
-    m <- exp( lambda * runif(1, min=-0.5, max=0.5) )
+    ## lambda <- 2 * log(a)
+    ## m <- exp( lambda * runif(1, min=-0.5, max=0.5) )
+
+    ## The previous multiplier proposal was assuming the parameter for the model was in log space.
+    ## This is the correct implementation for the multiplier proposal.
+    m <- exp( a * (runif(1) - 0.5) )
     ## Note that 'm' here is the proposal ratio. So need to spit this out.
     return( setNames(c(m * x, m), c("prop","prop.ratio") ) )
 }

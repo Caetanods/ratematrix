@@ -26,6 +26,7 @@ makePropSingleSigma <- function(cache.data, cache.chain, prior, w_sd, w_mu, v, f
         to.update.sd <- cache.chain$chain[[3]]
         ## multi.prop[1,] is the proposed vector.
         ## multi.prop[2,] is the prop ratio vector.
+        ## NOTE: multiplierProposal function will receive parameter value in natural space and should transform it into log for the multiplier proposal step.
         multi.prop <- sapply(1:length(to.update.sd), function(x) multiplierProposal(x = to.update.sd[x], a = w_sd[x]) )
         prop.sd <- multi.prop[1,]
         prop.sd.prior <- prior[[3]]( prop.sd ) ## The third prior function. New prior works on list format.
