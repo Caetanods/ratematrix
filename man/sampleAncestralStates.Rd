@@ -4,12 +4,14 @@
 \alias{sampleAncestralStates}
 \title{Sample ancestral states using Gibbs sampling}
 \usage{
-sampleAncestralStates(phy, mcmc, n = 1)
+sampleAncestralStates(phy, mcmc, trait = NULL, n = 1)
 }
 \arguments{
 \item{phy}{a phylogeny in 'phylo' format. Same used to estimate the posterior distribution for the ratematrix model.}
 
 \item{mcmc}{a posterior distribution as estimated with the 'ratematrixPolytopeMCMC' function.}
+
+\item{trait}{a data matrix with the traits for the tips. Same format as for the 'ratematrixMCMC' function. If `trait=NULL`, then the argument `mcmc` needs to be of type `ratematrixPolytopeMCMC`.}
 
 \item{n}{number of Gibbs samples to be taken for each of the posterior samples.}
 }

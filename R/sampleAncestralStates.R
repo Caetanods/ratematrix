@@ -4,12 +4,13 @@
 ##' @title Sample ancestral states using Gibbs sampling
 ##' @param phy a phylogeny in 'phylo' format. Same used to estimate the posterior distribution for the ratematrix model.
 ##' @param mcmc a posterior distribution as estimated with the 'ratematrixPolytopeMCMC' function.
+##' @param trait a data matrix with the traits for the tips. Same format as for the 'ratematrixMCMC' function. If `trait=NULL`, then the argument `mcmc` needs to be of type `ratematrixPolytopeMCMC`.
 ##' @param n number of Gibbs samples to be taken for each of the posterior samples.
 ##' @return an array with the samples at the nodes.
 ##' @author Daniel Caetano
 ##' @export
 ##' @importFrom ape reorder.phylo Ntip
-sampleAncestralStates <- function(phy, mcmc, n = 1){
+sampleAncestralStates <- function(phy, mcmc, trait = NULL, n = 1){
     ## Function to perform Gibbs sampling conditioned on the samples from the posterior distribution.
     ## At the moment we are assuming a single regime model. But this can be extended to work with more regimes.
 
@@ -44,13 +45,24 @@ sampleAncestralStates <- function(phy, mcmc, n = 1){
 
     ## Get the posterior samples from the mcmc object.
     ## k is the number of traits.
-    k <- ncol(mcmc$tip_samples) / Ntip(phy)
+    if( is.null(trait) ){
+        k <- ncol(mcmc$tip_samples) / Ntip(phy)
+    } else{
+        k <- ncol(trait)
+    }
+    
     ## R is a sample for the R matrix. This code is assuming a single regime for the moment.
     ## R needs to be a cube type object.
     R <- array( dim = c(nrow(mcmc$matrix[[1]]), ncol(mcmc$matrix[[1]]), 1) )
     R[,,1] <- mcmc$matrix[[1]]
+    
     ## poly_tips is a matrix with nrow equal to the number of traits and ncols equal to the number of species.
-    poly_tips <- matrix(mcmc$tip_samples[1,], nrow = 3, ncol = Ntip(phy), byrow = FALSE)
+    if( is.null(trait) ){
+        poly_tips <- matrix(mcmc$tip_samples[1,], nrow = k, ncol = Ntip(phy), byrow = FALSE)
+    } else{
+        ## This is the matrix based on the provided data.
+        poly_tips <- t( trait ) ## Need to transpose the matrix here.
+    }
     sigma_vec <- diag( R[,,1] )
     ## Here we will use maximum likelihood to find create an starting state for the ancestral values.
     ## The starting state will refer to the MLE for the model with 0 covariance.
@@ -60,9 +72,9 @@ sampleAncestralStates <- function(phy, mcmc, n = 1){
     ## Start to take the samples:
     n_samples <- length( mcmc$matrix )
     poly_nodes_sample <- array( dim = c(nrow(anc_start), ncol(anc_start), n_samples * n )
-                             , dimnames = list(NULL, colnames( anc_start ), NULL))
+                             , dimnames = list(NULL, colnames( anc_start ), NULL) )
     
-    ## Make the first sample:
+    ## Make the first sample (conditioned on the starting state):
     poly_nodes_sample[,,1] <- Gibbs_sample_nodes(poly_tips = poly_tips, poly_nodes = anc_start, p = 1
                                                , nodes = nodes, des = des, anc = anc, names_anc = names_anc
                                                , mapped_edge = mapped.edge, R = R)
@@ -76,11 +88,18 @@ sampleAncestralStates <- function(phy, mcmc, n = 1){
 
     count <- 2
     for( i in rates_to_visit ){
+        ## For each sample need to get the rate and the tip states.
         R[,,1] <- mcmc$matrix[[i]]
+        ## Update the tip traits.
+        if( is.null(trait) ){
+            ## Need to update the sample for the tips if we have them.
+            poly_tips <- matrix(mcmc$tip_samples[i,], nrow = k, ncol = Ntip(phy), byrow = FALSE)
+        }
         poly_nodes_sample[,,count] <- Gibbs_sample_nodes(poly_tips = poly_tips
                                                        , poly_nodes = poly_nodes_sample[,,count-1]
                                                        , p = 1, nodes = nodes, des = des, anc = anc
-                                                       , names_anc = names_anc, mapped_edge = mapped.edge, R = R)
+                                                       , names_anc = names_anc, mapped_edge = mapped.edge
+                                                       , R = R)
         count <- count + 1
     }
 
