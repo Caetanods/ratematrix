@@ -259,6 +259,19 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
         
         r <- ncol( data )
 
+        ## Check if 'w_sd' is a matrix, then make it a vector:
+        if( is.matrix( w_sd ) ){
+            if( ncol(w_sd) == 1 & nrow == r ){
+                w_sd <- as.numeric( w_sd[,1] )
+            } else{
+                stop( "Parameter w_sd needs to be a single value or a matrix with number of columns equal to the number of regimes (i.e., 1) and number of rows equal to the number of traits. See help page." )
+            }
+        } else{
+            if( length( w_sd > 1 ) ){
+                if( !length( w_sd == r ) ) stop( "Length of w_sd vector needs to be equal to the number of traits.")
+            }
+        }
+
         ## #######################
         ## Block to generate priors.
         prior_run <- prior

@@ -801,13 +801,10 @@ double priorCorr_C(arma::cube corr, arma::vec nu, arma::cube sigma){
 
 arma::vec multiplierProposal_C(int size, arma::vec w_sd){
   // A proposal that scales with the absolute value of the parameter. (Always positive.)
-  // w_sd can be any vector of positive values.
-  // in R this is doing:
-  // exp( 2 * log(w_sd) * runif(1, min=-0.5, max=0.5) )
   // Get this return factor and multiply by the current value for the proposal.
   // Return is a vector of length 'size', so it will work for multiple parameters.
   // The proposal ratio is the sum of the output vector.
-  return exp( (randu(size) - 0.5) % (2.0 * log(w_sd)) );
+  return exp( (randu(size) - 0.5) % w_sd );
 }
 
 arma::vec slideWindowLogSpace_C(arma::vec mu, arma::vec w_mu){
