@@ -29,15 +29,15 @@ makePropIWish_C <- function(vcv, k, v) {
     .Call('_ratematrix_makePropIWish_C', PACKAGE = 'ratematrix', vcv, k, v)
 }
 
-runRatematrixMCMC_C <- function(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, write_header) {
-    .Call('_ratematrix_runRatematrixMCMC_C', PACKAGE = 'ratematrix', X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, write_header)
+runRatematrixMCMC_C <- function(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, post_seq, write_header) {
+    .Call('_ratematrix_runRatematrixMCMC_C', PACKAGE = 'ratematrix', X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, post_seq, write_header)
 }
 
-runRatematrixMultiMCMC_C <- function(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, write_header) {
-    .Call('_ratematrix_runRatematrixMultiMCMC_C', PACKAGE = 'ratematrix', X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, write_header)
+runRatematrixMultiMCMC_C <- function(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, post_seq, write_header) {
+    .Call('_ratematrix_runRatematrixMultiMCMC_C', PACKAGE = 'ratematrix', X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, post_seq, write_header)
 }
 
-runRatematrixMCMC_jointMk_C <- function(X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, write_header, sims_limit) {
-    .Call('_ratematrix_runRatematrixMCMC_jointMk_C', PACKAGE = 'ratematrix', X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, write_header, sims_limit)
+runRatematrixMCMC_jointMk_C <- function(X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, post_seq, write_header, sims_limit) {
+    .Call('_ratematrix_runRatematrixMCMC_jointMk_C', PACKAGE = 'ratematrix', X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, post_seq, write_header, sims_limit)
 }
 

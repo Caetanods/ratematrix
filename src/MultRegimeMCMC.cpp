@@ -876,7 +876,7 @@ void writeToMultFile_C(std::ostream& mcmc_stream, int p, int k, arma::cube R, ar
 // A similar need will happen for the MCMC with a single regime. In this case a bunch of computations are not needed. I can just simplify a lot this MCMC function. Using my own likelihood function will also means I can drop both 'mvMORPH' and 'phytools' as dependencies for the package. This will also make installation in a server much more user-friendly. [The 'rgl' dependecy of 'phytools' makes installation in servers difficult.]
 
 // [[Rcpp::export]]
-std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
+std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, arma::vec post_seq, int write_header){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // The starting point parameters. These are the objects to carry on the MCMC.
@@ -892,6 +892,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
   // The parameters to control the MCMC:
   // prob_sample_root, prob_sample_var, gen
   // write_header, wheather to write the header to file or just to append.
+  // post_seq, a vector with the generations that will be written to file.
 
   // Open the files to write:
   // The log_file and mcmc_file arguments.
@@ -981,14 +982,22 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
     }
   }
 
-  // Print starting point to files:
-  log_stream << "1; 0; 0; 1; 1; ";
-  log_stream << lik;
-  log_stream << "\n"; 
-  writeToMultFile_C(mcmc_stream, p, k, R, mu);
+  // A counter to help control when to write the sample to file.
+  arma::uword post_seq_id = 0; // Keep track of the id for the gen seq to write.
 
+  if( post_seq[post_seq_id] == 1 ){
+    // Print starting point to files:
+    log_stream << "1; 0; 0; 1; 1; ";
+    log_stream << lik;
+    log_stream << "\n"; 
+    writeToMultFile_C(mcmc_stream, p, k, R, mu);
+    post_seq_id++; // Updates the counter for the gen to write.
+  }
+  
   Rcout << "Starting MCMC ... \n";
+  
   // Starting the MCMC.
+  
   for( int i=0; i < gen; i++ ){
     // Sample between root and matrix. Success here will be the update of the root.
     sample_root = R::rbinom(1, prob_sample_root);
@@ -1016,16 +1025,20 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 0; 1; 1; ";
-	log_stream << prop_root_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; 0; 1; 1; ";
+	  log_stream << prop_root_lik;
+	  log_stream << "\n";
+	}
 	mu = prop_root; // Update the value for the root. Need to carry over.
 	curr_root_prior = prop_root_prior; // Update the root prior. Need to carry over.
 	lik = prop_root_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 0; 1; 1; ";
-	log_stream << lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 0; 0; 1; 1; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
       }
     } else if(sample_sd == 1){
       // Update the variance vector.
@@ -1053,21 +1066,25 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 1; ";
-	log_stream << prop_sd_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 1; ";
+	  log_stream << prop_sd_lik;
+	  log_stream << "\n";
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	sd = prop_sd; // Update the standard deviation.
 	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
 	lik = prop_sd_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 1; ";
-	log_stream << lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 1; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
       }
       
     } else{
@@ -1112,27 +1129,35 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
       if( exp(r) > unif_draw ){ // Accept.
 	// This line will write to the mcmc_file.
 	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
-	log_stream << "1; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 0; 1; ";
-	log_stream << prop_corr_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 0; 1; ";
+	  log_stream << prop_corr_lik;
+	  log_stream << "\n";
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	Rcorr = Rcorr_prop; // Update the correlation matrix.
 	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
 	lik = prop_corr_lik; // Update likelihood. Need to carry over.
 	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 0; 1; ";
-	log_stream << lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 0; 1; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
       }
     }
 
-    // Write the current state to the MCMC file.
-    writeToMultFile_C(mcmc_stream, p, k, R, mu);
+    if( post_seq[post_seq_id] == (i+1) ){
+      // Write the current state to the MCMC file.
+      writeToMultFile_C(mcmc_stream, p, k, R, mu);
+      // Finally, we also update the counter.
+      post_seq_id++;
+    }
     
   }
 
@@ -1147,7 +1172,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
 // The MCMC function for multiple regimes:
 
 // [[Rcpp::export]]
-std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, int write_header){
+std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes, arma::umat des, arma::umat anc, arma::umat names_anc, arma::cube mapped_edge, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, double prob_sample_root, double prob_sample_sd, int gen, arma::vec post_seq, int write_header){
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge.
   // These parameters changed from the 'runRatematrixMCMC_C' function:
@@ -1168,6 +1193,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   // The parameters to control the MCMC:
   // prob_sample_root, prob_sample_var, gen
   // write_header, wheather to write the header to file or just to append.
+  // post_seq, vector that controls which of the generations are going to be saved to file.
 
   // Open the files to write:
   // The log_file and mcmc_file arguments.
@@ -1263,11 +1289,17 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
     }
   }
 
-  // Print starting point to files:
-  log_stream << "1; 0; 0; 1; 1; ";
-  log_stream << lik;
-  log_stream << "\n"; 
-  writeToMultFile_C(mcmc_stream, p, k, R, mu);
+  // A counter to help control when to write the sample to file.
+  arma::uword post_seq_id = 0; // Keep track of the id for the gen seq to write.
+  
+  if( post_seq[post_seq_id] == 1 ){
+    // Print starting point to files:
+    log_stream << "1; 0; 0; 1; 1; ";
+    log_stream << lik;
+    log_stream << "\n"; 
+    writeToMultFile_C(mcmc_stream, p, k, R, mu);
+    post_seq_id++;
+  }
 
   Rcout << "Starting MCMC ... \n";
   // Starting the MCMC.
@@ -1301,21 +1333,25 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 0; 1; ";
-	log_stream << prop_phy+1; // Sum back to the number of the tree.
-	log_stream << "; ";
-	log_stream << prop_root_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; 0; 1; ";
+	  log_stream << prop_phy+1; // Sum back to the number of the tree.
+	  log_stream << "; ";
+	  log_stream << prop_root_lik;
+	  log_stream << "\n";
+	}
 	mu = prop_root; // Update the value for the root. Need to carry over.
 	curr_root_prior = prop_root_prior; // Update the root prior. Need to carry over.
 	lik = prop_root_lik; // Update likelihood. Need to carry over.
 	curr_phy = prop_phy; // Update the current tree in the pool.
       } else{ // Reject. Keep the values the same.
-	log_stream << "1; 0; 0; 1; ";
-	log_stream << curr_phy+1; // Sum back to the number of the tree.
-	log_stream << "; ";
-	log_stream << lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; 0; 1; ";
+	  log_stream << curr_phy+1; // Sum back to the number of the tree.
+	  log_stream << "; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
       }
     } else if(sample_sd == 1){
       // Update the variance vector.
@@ -1343,26 +1379,30 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; ";
-	log_stream << prop_phy+1; // Add 1 to get number of phy.
-	log_stream << "; ";
-	log_stream << prop_sd_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; ";
+	  log_stream << prop_phy+1; // Add 1 to get number of phy.
+	  log_stream << "; ";
+	  log_stream << prop_sd_lik;
+	  log_stream << "\n";
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	sd = prop_sd; // Update the standard deviation.
 	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
 	lik = prop_sd_lik; // Update likelihood. Need to carry over.
 	curr_phy = prop_phy; // Update the phylogeny from the pool.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; ";
-	log_stream << curr_phy+1; // Add 1 to get number of phy.
-	log_stream << "; ";
-	log_stream << lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; ";
+	  log_stream << curr_phy+1; // Add 1 to get number of phy.
+	  log_stream << "; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
       }
       
     } else{
@@ -1405,15 +1445,17 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	// This line will write to the mcmc_file.
-	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
-	log_stream << "1; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 0; ";
-	log_stream << prop_phy+1; // Add 1 to get the number of the phylo.
-	log_stream << "; ";
-	log_stream << prop_corr_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // This line will write to the mcmc_file.
+	  // Instead of 'paste' I am using a line for each piece. Should have the same effect.
+	  log_stream << "1; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 0; ";
+	  log_stream << prop_phy+1; // Add 1 to get the number of the phylo.
+	  log_stream << "; ";
+	  log_stream << prop_corr_lik;
+	  log_stream << "\n";
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	Rcorr = Rcorr_prop; // Update the correlation matrix.
 	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
@@ -1421,18 +1463,24 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
 	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
 	curr_phy = prop_phy; // Updates the current phy from the pool.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 0; ";
-	log_stream << curr_phy+1; // Add 1 to get the number of the phylo.
-	log_stream << "; ";
-	log_stream << lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 0; ";
+	  log_stream << curr_phy+1; // Add 1 to get the number of the phylo.
+	  log_stream << "; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
       }
     }
 
-    // Write the current state to the MCMC file.
-    writeToMultFile_C(mcmc_stream, p, k, R, mu);
+    if( post_seq[post_seq_id] == (i+1) ){
+      // Write the current state to the MCMC file.
+      writeToMultFile_C(mcmc_stream, p, k, R, mu);
+      // Update the index:
+      post_seq_id++;
+    }
     
   }
 
@@ -1570,7 +1618,7 @@ void writeQToFile(std::ostream& Q_mcmc_stream, arma::vec vec_Q, int k, std::stri
 
 
 // [[Rcpp::export]]
-std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header, int sims_limit){
+std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, arma::vec post_seq, int write_header, int sims_limit){
 
   // NOTE: 'sims_limit' is a parameter to reject the stochastic maps if it pass this limit.
   
@@ -1743,16 +1791,22 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
     }
   }
 
-  // Print starting point to files:
-  log_stream << "1; 0; 0; 0; 0; 0; 0; ";
-  log_stream << lik_mvBM;
-  log_stream << ";";
-  log_stream << lik_Mk;
-  log_stream << "\n"; 
-  writeToMultFile_C(mcmc_stream, p, k, R, mu);
-  // Need to make a function to write the Q matrix to file.
-  // Note that the length of the vector will change depending on k and model_Q
-  writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);
+  // A counter to help control when to write the sample to file.
+  arma::uword post_seq_id = 0; // Keep track of the id for the gen seq to write.
+
+  if( post_seq[post_seq_id] == 1 ){
+    // Print starting point to files:
+    log_stream << "1; 0; 0; 0; 0; 0; 0; ";
+    log_stream << lik_mvBM;
+    log_stream << ";";
+    log_stream << lik_Mk;
+    log_stream << "\n"; 
+    writeToMultFile_C(mcmc_stream, p, k, R, mu);
+    // Need to make a function to write the Q matrix to file.
+    // Note that the length of the vector will change depending on k and model_Q
+    writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);
+    post_seq_id++;
+  }
 
   Rcout << "Starting MCMC ... \n";
   
@@ -1786,20 +1840,24 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 0; 0; 0; 0; 1; ";
-	log_stream << prop_root_lik;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; 0; 0; 0; 0; 1; ";
+	  log_stream << prop_root_lik;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
 	mu = prop_root; // Update the value for the root. Need to carry over.
 	curr_root_prior = prop_root_prior; // Update the root prior. Need to carry over.
 	lik_mvBM = prop_root_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 0; 0; 0; 0; 1; ";
-	log_stream << lik_mvBM;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 0; 0; 0; 0; 0; 1; ";
+	  log_stream << lik_mvBM;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
       }
     } else if(sample_par == 1){
       // Update the variance vector.
@@ -1827,25 +1885,29 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 0; 0; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; ";
-	log_stream << prop_sd_lik;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; 0; 0; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; ";
+	  log_stream << prop_sd_lik;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	sd = prop_sd; // Update the standard deviation.
 	curr_sd_prior = prop_sd_prior;  // Update the prior. Need to carry over.
 	lik_mvBM = prop_sd_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 0; 0; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; ";
-	log_stream << lik_mvBM;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 0; 0; 0; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; ";
+	  log_stream << lik_mvBM;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
       }
       
     } else if(sample_par == 2){
@@ -1888,28 +1950,32 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	// This line will write to the mcmc_file.
-	// Instead of 'paste' I am using a line for each piece. Should have the same effect.
-	log_stream << "1; 0; 0; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 0; ";
-	log_stream << prop_corr_lik;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // This line will write to the mcmc_file.
+	  // Instead of 'paste' I am using a line for each piece. Should have the same effect.
+	  log_stream << "1; 0; 0; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 0; ";
+	  log_stream << prop_corr_lik;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
 	R = R_prop; // Update the evolutionary rate matrices. Need to carry over.
 	Rcorr = Rcorr_prop; // Update the correlation matrix.
 	Rcorr_curr_prior = Rcorr_prop_prior; // Update the prior. Need to carry over.
 	lik_mvBM = prop_corr_lik; // Update likelihood. Need to carry over.
 	curr_jacobian[Rp] = prop_jacobian; // Updates jacobian.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 0; 0; ";
-	log_stream << Rp+1; // Here is the regime.
-	log_stream << "; 0; 0; ";
-	log_stream << lik_mvBM;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 0; 0; 0; ";
+	  log_stream << Rp+1; // Here is the regime.
+	  log_stream << "; 0; 0; ";
+	  log_stream << lik_mvBM;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
       }
     } else if(sample_par == 3){
       // Update the Q matrix, then make a new stochastic map.
@@ -1932,16 +1998,18 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // If the returned mapped matrix has accu of 0, then reject this move.
       prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type, sims_limit);
       if( accu( prop_mapped_edge ) < max(edge_len) ){
-	// The mapped_edge returned an invalid matrix.
-	// Reject, mark the 'smaps.limit' column.
-	log_stream << "0; 1; 1; 1; 0; 0; 0; ";
-	log_stream << lik_mvBM;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
-	// Write the current generation to files (note the continue flag after).
-	writeToMultFile_C(mcmc_stream, p, k, R, mu);
-	writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);     
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // The mapped_edge returned an invalid matrix.
+	  // Reject, mark the 'smaps.limit' column.
+	  log_stream << "0; 1; 1; 1; 0; 0; 0; ";
+	  log_stream << lik_mvBM;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	  // Write the current generation to files (note the continue flag after).
+	  writeToMultFile_C(mcmc_stream, p, k, R, mu);
+	  writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);
+	}
 	// Break generation.
 	continue;
       }
@@ -1962,11 +2030,13 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 1; 1; 0; 0; 0; 0; ";
-	log_stream << prop_mapped_edge_lik;
-	log_stream << ";";
-	log_stream << prop_Q_lik;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 1; 1; 0; 0; 0; 0; ";
+	  log_stream << prop_mapped_edge_lik;
+	  log_stream << ";";
+	  log_stream << prop_Q_lik;
+	  log_stream << "\n";
+	}
 	curr_Q_prior = prop_Q_prior;  // Update the prior. Need to carry over.
 	vec_Q = prop_vec_Q; // Passing the vectorized Q matrix.
 	Q = prop_Q; // Passing the Q matrix.
@@ -1974,11 +2044,13 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
 	lik_Mk = prop_Q_lik;
 	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 1; 1; 0; 0; 0; 0; ";
-	log_stream << lik_mvBM;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 1; 1; 0; 0; 0; 0; ";
+	  log_stream << lik_mvBM;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
       }
       
     } else{
@@ -1989,16 +2061,18 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // If the returned mapped matrix has accu of 0, then reject this move.
       prop_mapped_edge = makeSimmapMappedEdge(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type, sims_limit);
       if( accu( prop_mapped_edge ) < max(edge_len) ){
-	// The mapped_edge returned an invalid matrix.
-	// Reject, mark the 'smaps.limit' column.
-	log_stream << "0; 1; 1; 1; 0; 0; 0; ";
-	log_stream << lik_mvBM;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
-	// Write the current generation to files (note the continue flag after).
-	writeToMultFile_C(mcmc_stream, p, k, R, mu);
-	writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);     
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // The mapped_edge returned an invalid matrix.
+	  // Reject, mark the 'smaps.limit' column.
+	  log_stream << "0; 1; 1; 1; 0; 0; 0; ";
+	  log_stream << lik_mvBM;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	  // Write the current generation to files (note the continue flag after).
+	  writeToMultFile_C(mcmc_stream, p, k, R, mu);
+	  writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);
+	}
 	// Break generation.
 	continue;
       }
@@ -2015,27 +2089,36 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
       // Here we are only updating the root, so all other parameters are the same.
       unif_draw = as_scalar(randu(1)); // The draw from a uniform distribution.
       if( exp(r) > unif_draw ){ // Accept.
-	log_stream << "1; 0; 1; 0; 0; 0; 0; ";
-	log_stream << prop_mapped_edge_lik;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "1; 0; 1; 0; 0; 0; 0; ";
+	  log_stream << prop_mapped_edge_lik;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
 	mapped_edge = prop_mapped_edge; // Update the stochastic map.
 	lik_mvBM = prop_mapped_edge_lik; // Update likelihood. Need to carry over.
       } else{ // Reject. Keep the values the same.
-	log_stream << "0; 0; 1; 0; 0; 0; 0; ";
-	log_stream << lik_mvBM;
-	log_stream << ";";
-	log_stream << lik_Mk;
-	log_stream << "\n";
+	if( post_seq[post_seq_id] == (i+1) ){
+	  log_stream << "0; 0; 1; 0; 0; 0; 0; ";
+	  log_stream << lik_mvBM;
+	  log_stream << ";";
+	  log_stream << lik_Mk;
+	  log_stream << "\n";
+	}
       }
     }
 
-    // Write the current state to the MCMC file.
-    // Need to use a different output file to write the Q matrix.
-    writeToMultFile_C(mcmc_stream, p, k, R, mu);
-    // Q here is in vector format, so we need the size of the matrix and the model to write the correct quantity.
-    writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);     
+    if( post_seq[post_seq_id] == (i+1) ){
+      // Write the current state to the MCMC file.
+      // Need to use a different output file to write the Q matrix.
+      writeToMultFile_C(mcmc_stream, p, k, R, mu);
+      // Q here is a vector, so we need size of matrix and model to write the correct quantity.
+      writeQToFile(Q_mcmc_stream, vec_Q, p, model_Q);
+      // Update the counter for writting to file.
+      post_seq_id++;
+    }
+    
   }
 
   Rcout << "Closing files... \n";
