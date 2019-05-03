@@ -552,7 +552,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
 	Rs2.slice(0) += Rs2.slice(z);
       }
 
-      Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
+      Rinv = inv( Rs1.slice(0) + Rs2.slice(0) );
 
       ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
 
@@ -560,7 +560,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
       // Take care with the indexes starting from 0, need to reduce a unit from the length here.
       X0.col(i) = ((Rs1.slice(0) * Rinv) * X.col(des_node1)) + ((Rs2.slice(0) * Rinv)  * X.col(des_node0));
 
-      V0.slice(i) = inv_sympd( inv_sympd(Rs1.slice(0)) + inv_sympd(Rs2.slice(0)) );
+      V0.slice(i) = inv( inv(Rs1.slice(0)) + inv(Rs2.slice(0)) );
   
     } else if(type == 3) {
       // Executes for node to tip & node contrast.
@@ -601,7 +601,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
       // Doing this just for the node. No additional variance associated with the tip.
       Rs2.slice(0) += V0.slice(key_id);
 
-      Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
+      Rinv = inv( Rs1.slice(0) + Rs2.slice(0) );
 
       ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
 
@@ -610,7 +610,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
       // Take care with the indexes starting from 0, need to reduce a unit from the length here.
       // Now we need to multiply the tip with the node and the node with the tip. That is why the relationship here is inverted. It is correct!
       X0.col(i) = ((Rs1.slice(0) * Rinv) * X0.col(key_id)) + ((Rs2.slice(0) * Rinv) * X.col(tip));
-      V0.slice(i) = inv_sympd( inv_sympd(Rs1.slice(0)) + inv_sympd(Rs2.slice(0)) );
+      V0.slice(i) = inv( inv(Rs1.slice(0)) + inv(Rs2.slice(0)) );
   
     } else {
       // Executes for node to nodes contrast.
@@ -645,7 +645,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
       Rs1.slice(0) += V0.slice(key_id0);
       Rs2.slice(0) += V0.slice(key_id1);
   
-      Rinv = inv_sympd( Rs1.slice(0) + Rs2.slice(0) );
+      Rinv = inv( Rs1.slice(0) + Rs2.slice(0) );
 
       ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
       
@@ -655,7 +655,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
   
       // Take care with the indexes starting from 0, need to reduce a unit from the length here.
       X0.col(i) = ((Rs1.slice(0) * Rinv) * X0.col(key_id1)) + ((Rs2.slice(0) * Rinv) * X0.col(key_id0));
-      V0.slice(i) = inv_sympd( inv_sympd(Rs1.slice(0)) + inv_sympd(Rs2.slice(0)) );
+      V0.slice(i) = inv( inv(Rs1.slice(0)) + inv(Rs2.slice(0)) );
     }
 
   }
@@ -664,7 +664,7 @@ double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uv
   // Make the calculation for the root log-likelihood.
   // The index 'n_nodes' is correspondent to the position 'n_nodes + 1'. Remember the indexation starts from 0.
   ss = X0.col(n_nodes-1) - mu;
-  ll = ll + logLikNode_C(ss, V0.slice(n_nodes-1), inv_sympd(V0.slice(n_nodes-1)), k);
+  ll = ll + logLikNode_C(ss, V0.slice(n_nodes-1), inv(V0.slice(n_nodes-1)), k);
 
   return(ll);
 }
@@ -693,14 +693,14 @@ double logDensityIWish_C(arma::mat W, double v, arma::mat S){
   
   double ldenom = lgammapart + ( ( (v*k)/2.0 ) * log( 2.0 ) ) + ( ( (k*(k-1.0))/4.0 ) * log( arma::datum::pi ) );
   // Need to make sure that we are doing 'double' operations here!
-  double lnum = ( ( v/2.0 ) * valS ) + ( ( -(v + k + 1.0)/2.0 ) * valW ) + ( -0.5 * trace( S * inv_sympd(W) ) );
+  double lnum = ( ( v/2.0 ) * valS ) + ( ( -(v + k + 1.0)/2.0 ) * valW ) + ( -0.5 * trace( S * inv(W) ) );
   return lnum - ldenom;
 }
 
 arma::mat riwish_C(int v, arma::mat S){
   // Generates a random draw from a inverse-Wishart distribution.
-  // arma::mat CC = chol( inv_sympd(S) );
-  arma::mat CC = chol( inv_sympd(S) );
+  // arma::mat CC = chol( inv(S) );
+  arma::mat CC = chol( inv(S) );
   int p = S.n_cols;
   // Make a diagonal matrix with the elements:
   // R::rchisq( df ) // with df in a sequence v:(v - p + 1)
@@ -717,7 +717,7 @@ arma::mat riwish_C(int v, arma::mat S){
     Z(i,span((i+1), (p-1))) = trans(randn(p-(i+1)));
   }
   arma::mat out = Z * CC;
-  return inv_sympd( trans(out) * out );
+  return inv( trans(out) * out );
 }
 
 double hastingsDensity_C(arma::cube R, arma::cube R_prop, int k, arma::vec v, int Rp){
