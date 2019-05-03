@@ -45,7 +45,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, w_mu=0.5, prop_par=c(0.2, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.5, w_mu=0.5, prop_par=c(0.2, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.

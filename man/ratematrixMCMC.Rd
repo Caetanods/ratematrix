@@ -5,7 +5,7 @@
 \title{Estimate the evolutionary rate matrix using Markov-chain Monte Carlo}
 \usage{
 ratematrixMCMC(data, phy, prior = "uniform_scaled",
-  start = "prior_sample", gen, v = 50, w_sd = 0.2, w_mu = 0.5,
+  start = "prior_sample", gen, v = 50, w_sd = 2, w_mu = 0.5,
   prop = c(0.05, 0.475, 0.475), dir = NULL,
   outname = "ratematrixMCMC", IDlen = 5, save.handle = TRUE)
 }

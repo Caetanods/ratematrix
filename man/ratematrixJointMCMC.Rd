@@ -7,7 +7,7 @@
 ratematrixJointMCMC(data_BM, data_Mk, phy, prior_BM = "uniform_scaled",
   prior_Mk = "uniform", par_prior_Mk = c(0, 100), Mk_model = "SYM",
   root_Mk = "madfitz", smap_limit = 1e+06, start = "prior_sample",
-  start_Q = NULL, gen, v = 50, w_sd = 0.2, w_q = 0.2, w_mu = 0.5,
+  start_Q = NULL, gen, v = 50, w_sd = 0.5, w_q = 0.5, w_mu = 0.5,
   prop = c(0.05, 0.3, 0.3, 0.175, 0.175), dir = NULL,
   outname = "ratematrixJointMCMC", IDlen = 5, save.handle = TRUE)
 }
