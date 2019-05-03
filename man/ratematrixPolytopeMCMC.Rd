@@ -5,10 +5,11 @@
 \title{Joint estimate the multidimentional phenotypic space for ancestrals and the evolutionary rate matrix}
 \usage{
 ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
-  prior = "uniform_scaled", start = "prior_sample", gen, burn = 0.25,
-  thin = 100, v = 50, w_sd = 0.2, w_mu = 0.5, prop_par = c(0.2,
-  0.4, 0.4), n_tips_move = 1, dir = NULL,
-  outname = "ratematrixPolyMCMC", IDlen = 5, save.handle = TRUE)
+  save_start_anc = TRUE, prior = "uniform_scaled",
+  start = "prior_sample", gen, burn = 0.25, thin = 100, v = 50,
+  w_sd = 0.2, w_mu = 0.5, prop_par = c(0.2, 0.4, 0.4),
+  n_tips_move = 1, dir = NULL, outname = "ratematrixPolyMCMC",
+  IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.}
@@ -17,9 +18,11 @@ ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
 
 \item{sample_internal}{whether to sample the internal nodes of the tree (i.e., ancestral states) using Gibbs sampler together with the estimates of the other parameter of the model. NOTE: Preliminary results showed that including this parameter can decrease the mixing of the MCMC chain.}
 
+\item{save_start_anc}{whether to save the starting state for the internal nodes. This can be used as the starting state for search replicates using the same data. See 'start' argument for more information. This is ignored if 'sample_internal = FALSE'.}
+
 \item{prior}{the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.}
 
-\item{start}{the starting state for the MCMC chain. Must be one of "prior_sample" (the default) or a sample from the prior generated with the "samplePrior" functions.}
+\item{start}{the starting state for the MCMC chain. Must be "prior_sample" (the default) or a list in the same format as the prior sample generated from the "samplePrior" function. The function will also search for a "$anc" element on the list to use as the starting state for the internal nodes (if 'sample_internal = TRUE' ).}
 
 \item{gen}{number of generations for the chain.}
 

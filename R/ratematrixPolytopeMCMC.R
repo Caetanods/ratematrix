@@ -10,8 +10,9 @@
 ##' @param data a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.
 ##' @param phy a single phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.
 ##' @param sample_internal whether to sample the internal nodes of the tree (i.e., ancestral states) using Gibbs sampler together with the estimates of the other parameter of the model. NOTE: Preliminary results showed that including this parameter can decrease the mixing of the MCMC chain.
+##' @param save_start_anc whether to save the starting state for the internal nodes. This can be used as the starting state for search replicates using the same data. See 'start' argument for more information. This is ignored if 'sample_internal = FALSE'.
 ##' @param prior the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.
-##' @param start the starting state for the MCMC chain. Must be one of "prior_sample" (the default) or a sample from the prior generated with the "samplePrior" functions.
+##' @param start the starting state for the MCMC chain. Must be "prior_sample" (the default) or a list in the same format as the prior sample generated from the "samplePrior" function. The function will also search for a "$anc" element on the list to use as the starting state for the internal nodes (if 'sample_internal = TRUE' ).
 ##' @param gen number of generations for the chain.
 ##' @param burn percentage to discard as burn in. Set 'burn' in to 0.0 to start writing from the first generation.
 ##' @param thin number of generations to be skipped as thinning. Set 'thin' to 0 to write every generation to the file.
@@ -44,7 +45,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, w_mu=0.5, prop_par=c(0.2, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.2, w_mu=0.5, prop_par=c(0.2, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -478,7 +479,10 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, prior="un
                 ## This is just for the univariate case:
                 mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
                 sigma_vec <- diag( startR[,,1] )
-                anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
+                anc_start <- sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) )
+                if( save_start_anc ){
+                    saveRDS( anc_start, file = file.path(dir, paste(outname,".",new.ID,".start.anc.rds",sep="")) )
+                }
             } else{
                 ## Multiple regimes, repeat the same but use the median rate.
                 ## Get a (so so) estimate for the ancestral nodes given a rate:
@@ -486,7 +490,10 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, prior="un
                 mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
                 R_mean_value <- apply( array.mat, 1:2, mean )
                 sigma_vec <- diag( R_mean_value )
-                anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) ) )
+                anc_start <- sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) )
+                if( save_start_anc ){
+                    saveRDS( anc_start, file = file.path(dir, paste(outname,".",new.ID,".start.anc.rds",sep="")) )
+                }
             }
         } else{
             ## Use the starting state provided for the ancestrals:
