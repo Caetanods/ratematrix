@@ -15,6 +15,11 @@
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
+##' @param traits 
+##' @param save.handle 
+##' @param continue 
+##' @param add.gen 
+##' @param ID 
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.matrix': the evolutionary rate matrix, one per line, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 indicates that the evolutionary rate matrix was updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree. This value will always be 1 for this function, by see 'multi.R.iwish.mcmc'; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
@@ -22,8 +27,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom corpcor rebuild.cov
 ##' @noRd
-singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.1,0.45,0.45), dir=NULL, outname="single_R_fast", IDlen=5
-                           , traits, save.handle, continue=NULL, add.gen, ID=NULL){
+singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.1,0.45,0.45), dir=NULL, outname="single_R_fast", IDlen=5, traits, save.handle, continue=NULL, add.gen, ID=NULL){
 
     ## Save the 'mcmc.par' list for the mcmc.handle:
     mcmc.par <- list()

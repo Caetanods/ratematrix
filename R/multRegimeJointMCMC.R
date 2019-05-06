@@ -7,23 +7,34 @@
 ##'    package 'mvMORPH'. Future versions should offer different log likelihood methods for the user.
 ##' This version is using the pruning algoritm to c
 ##' @title MCMC for two or more evolutionary rate matrices.
-##' @param X matrix. A matrix with the data. 'rownames(X) == phy$tip.label'.
+##' @param X_BM parameter
+##' @param X_Mk parameter
 ##' @param phy simmap phylo. A phylogeny of the class "simmap" from the package 'phytools'. Function uses the location information for a number of traits equal to the number of fitted matrices.
 ##' @param start list. Element [[1]] is the starting value for the phylogenetic mean and element [[2]] is the starting value for the R matrices. Element [[2]] is also a list with length equal to the number of matrices to be fitted to the data.
 ##' @param prior list. Produced by the output of the function 'make.prior.barnard' or 'make.prior.diwish'. First element of the list [[1]] is a prior function for the log density of the phylogenetic mean and the second element [[2]] is a prior function for the evolutionary rate matrix (R). The prior can be shared among the rate matrices or be set a different prior for each matrix. At the moment the function only produces a shared prior among the fitted matrices. Future versions will implement independent priors for each of the fitted matrices.
+##' @param start_Q parameter
+##' @param start_mapped.edge parameter 
+##' @param prior_Mk parameter
+##' @param par_prior_Mk parameter
+##' @param Mk_model parameter
+##' @param root_Mk parameter
+##' @param smap_limit parameter
 ##' @param gen numeric. Number of generations of the MCMC.
 ##' @param v numeric. Degrees of freedom parameter for the inverse-Wishart proposal distribution for the evolutionary rate matrix.
 ##' @param w_sd numeric. Width of the uniform sliding window proposal for the vector of standard deviations.
 ##' @param w_mu numeric. Width of the uniform sliding window proposal for the vector of phylogenetic means.
+##' @param w_q parameter
 ##' @param prop vector. The proposal frequencies. Vector with two elements (each between 0 and 1). First is the probability that the phylogenetic mean will be sampled for a proposal step at each genetarion, second is the probability that the evolutionary rate matrix will be updated instead. First the function sample whether the root value or the matrix should be updated. If the matrix is selected for an update, then one of the matrices fitted to the phylogeny is selected to be updated at random with the same probability.
 ##' @param dir string. Directory to write the files, absolute or relative path. If 'NULL' then output is written to the directory where R is running (see 'getwd()'). If a directory path is given, then function will test if the directory exists and use it. If directiory does not exists the function will try to create one.
 ##' @param outname string. Name pasted to the files. Name of the output files will start with 'outname'.
 ##' @param IDlen numeric. Set the length of the unique numeric identifier pasted to the names of all output files. This is set to prevent that multiple runs with the same 'outname' running in the same directory will be lost.Default value of 5 numbers, something between 5 and 10 numbers should be good enough. IDs are generated randomly using the function 'sample'.
-##' @param regimes 
-##' @param traits 
-##' @param save.handle 
-##' @param continue 
-##' @param add.gen 
+##' @param regimes parameter
+##' @param traits parameter
+##' @param save.handle parameter
+##' @param continue parameter
+##' @param add.gen parameter
+##' @param ID parameter
+##' @param post_seq parameter
 ##' @return Fuction creates files with the MCMC chain. Each run of the MCMC will be identified by a unique identifier to facilitate identification and prevent the function to overwrite results when running more than one MCMC chain in the same directory. See argument 'IDlen'. The files in the directory are: 'outname.ID.loglik': the log likelihood for each generation, 'outname.ID.n.matrix': the evolutionary rate matrix n, one per line. Function will create one file for each R matrix fitted to the tree, 'outname.ID.root': the root value, one per line. \cr
 ##' \cr
 ##' Additionally it returns a list object with information from the analysis to be used by other functions. This list is refered as the 'out' parameter in those functions. The list is composed by: 'acc_ratio' numeric vector with 0 when proposal is rejected and non-zero when proposals are accepted. 1 indicates that root value was accepted, 2 and higher indicates that the first or subsequent matrices were updated; 'run_time' in seconds; 'k' the number of matrices fitted to the tree; 'p' the number of traits in the analysis; 'ID' the identifier of the run; 'dir' directory were output files were saved; 'outname' the name of the chain, appended to the names of the files; 'trait.names' A vector of names of the traits in the same order as the rows of the R matrix, can be used as the argument 'leg' for the plotting function 'make.grid.plot'; 'data' the original data for the tips; 'phy' the phylogeny; 'prior' the list of prior functions; 'start' the list of starting parameters for the MCMC run; 'gen' the number of generations of the MCMC.
@@ -32,7 +43,7 @@
 ##' @importFrom corpcor rebuild.cov
 ##' @importFrom stats cov2cor
 ##' @noRd
-multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_mapped.edge, prior_Mk, par_prior_Mk, Mk_model, root_Mk, smap_limit, gen, v, w_sd, w_mu, w_q, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL, ID=NULL){
+multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_mapped.edge, prior_Mk, par_prior_Mk, Mk_model, root_Mk, smap_limit, gen, v, w_sd, w_mu, w_q, prop, dir, outname, IDlen, regimes, traits, save.handle, continue=NULL, add.gen=NULL, ID=NULL, post_seq){
 
     ## This is the call for the C++ function:
     ## std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::vec datMk, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, int write_header){
@@ -173,8 +184,8 @@ multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_ma
                               , par_prior_sd=par_sd, den_sd=den_sd
                               , nu=nu, sigma=sigma_array, v=v, log_file=log_file_name
                               , mcmc_file=mcmc_file_name, Q_mcmc_file=Q_mcmc_file_name
-                              , par_prob = prop, gen = gen, write_header = write_header
-                              , sims_limit = smap_limit)
+                              , par_prob = prop, gen = gen, post_seq = post_seq
+                              , write_header = write_header, sims_limit = smap_limit)
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
 

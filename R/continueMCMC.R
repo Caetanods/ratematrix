@@ -100,10 +100,17 @@ continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
         } else{
             continue <- "add.gen"
             handle$gen <- handle$gen + add.gen ## Update the total gen in the handle.
+            ## Need to add the generations to the sequence of post_seq:
+            by_seq <- handle$post_seq[2] - handle$post_seq[1]
+            from_seq <- handle$post_seq[length(handle$post_seq)] + by_seq ## The next one.
+            to_seq <- from_seq + add.gen ## The rest, no problem if it is more than the total gen.
+            append_seq <- seq(from = from_seq, to = to_seq, by = by_seq)
+            ## Update the sequence.
+            handle$post_seq <- c( handle$post_seq, append_seq )
         }
 
         multRegimeMCMC(X=handle$data, phy=handle$phy, start=start, prior=handle$prior,
-                       gen=handle$gen, v=handle$mcmc.par$v
+                       gen=handle$gen, post_seq=handle$post_seq, v=handle$mcmc.par$v
                      , w_sd=handle$mcmc.par$w_sd, w_mu=handle$mcmc.par$w_mu,
                        prop=handle$mcmc.par$prop, dir=handle$dir
                      , outname=handle$outname, regimes=handle$regime.names,

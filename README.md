@@ -46,6 +46,8 @@ options(download.file.method = "wget")
 
 ## News and updates
 
+**May-2019 (v 1.2): SUBMITTED TO RCran** Implements burnin and thinning during MCMC sampler. Implements function to compute the correlation among traits from the posterior samples. New version on RCran.
+
 **Mar-2019 (v 1.2):** Updated citations for functions. Corrected BUG when merging a list of single regime MCMC chains. Corrected a potential conflict when using default priors under a 'mclapply' call to run multiple MCMC chains.
 
 **Oct-2018 (v 1.1):** Major updates on the package. Adds new functions to perform the joint estimate of the evolutionary rate matrix and the stochastic mapping regimes together. Implements stochastic mapping algorithm on C++ (another major improvement on speed!).

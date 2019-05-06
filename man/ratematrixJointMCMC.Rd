@@ -7,9 +7,10 @@
 ratematrixJointMCMC(data_BM, data_Mk, phy, prior_BM = "uniform_scaled",
   prior_Mk = "uniform", par_prior_Mk = c(0, 100), Mk_model = "SYM",
   root_Mk = "madfitz", smap_limit = 1e+06, start = "prior_sample",
-  start_Q = NULL, gen, v = 50, w_sd = 0.5, w_q = 0.5, w_mu = 0.5,
-  prop = c(0.05, 0.3, 0.3, 0.175, 0.175), dir = NULL,
-  outname = "ratematrixJointMCMC", IDlen = 5, save.handle = TRUE)
+  start_Q = NULL, gen = 1e+06, burn = 0.25, thin = 100, v = 50,
+  w_sd = 0.5, w_q = 0.5, w_mu = 0.5, prop = c(0.05, 0.3, 0.3,
+  0.175, 0.175), dir = NULL, outname = "ratematrixJointMCMC",
+  IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data_BM}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait. Names for the columns are used as trait labels. If labels are not provided, the function will use default labels.}
@@ -35,6 +36,10 @@ ratematrixJointMCMC(data_BM, data_Mk, phy, prior_BM = "uniform_scaled",
 \item{start_Q}{A matrix with the starting state for the Q matrix. Default is 'NULL' and the Q matrix is sampled from its prior distribution.}
 
 \item{gen}{number of generations for the chain.}
+
+\item{burn}{the fraction of the chain for the burnin (not written to file). A numeric value between 0 and 1 (i.e., 0 means no burnin). The final number of posterior samples is equal to "(gen*burn)/thin".}
+
+\item{thin}{the number of generations to be skipped between each sample of the posterior. The final number of posterior samples is equal to "(gen*burn)/thin".}
 
 \item{v}{value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.}
 

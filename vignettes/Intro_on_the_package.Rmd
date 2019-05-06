@@ -6,7 +6,7 @@ output:
     fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{Introdution to ratematrix}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{knitr::knitr}
   %\VignetteEncoding{UTF-8}
 ---
 
