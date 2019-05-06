@@ -28,6 +28,8 @@
 ##' @param start the starting state for the MCMC chain. Must be one of "prior_sample" (the default), "mle", or a sample from the prior generated with the "samplePrior" functions.
 ##' @param start_Q A matrix with the starting state for the Q matrix. Default is 'NULL' and the Q matrix is sampled from its prior distribution.
 ##' @param gen number of generations for the chain.
+##' @param burn the fraction of the chain for the burnin (not written to file). A numeric value between 0 and 1 (i.e., 0 means no burnin). The final number of posterior samples is equal to "(gen*burn)/thin".
+##' @param thin the number of generations to be skipped between each sample of the posterior. The final number of posterior samples is equal to "(gen*burn)/thin".
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param w_q the multiplying factor for the multiplier proposal on the transition matrix for the Markov model fitted to the predictor traits. Need to be a single value.
@@ -80,11 +82,16 @@
 ##' plotRatematrix(merged.posterior)
 ##' plotRootValue(merged.posterior)
 ##' }
-ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled", prior_Mk="uniform", par_prior_Mk=c(0, 100), Mk_model = "SYM", root_Mk = "madfitz", smap_limit=1e6, start="prior_sample", start_Q = NULL, gen, v=50, w_sd=0.2, w_q=0.2, w_mu=0.5, prop=c(0.05, 0.3, 0.3, 0.175, 0.175), dir=NULL, outname="ratematrixJointMCMC", IDlen=5, save.handle=TRUE){
+ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled", prior_Mk="uniform", par_prior_Mk=c(0, 100), Mk_model = "SYM", root_Mk = "madfitz", smap_limit=1e6, start="prior_sample", start_Q = NULL, gen=1000000, burn=0.25, thin=100, v=50, w_sd=0.2, w_q=0.2, w_mu=0.5, prop=c(0.05, 0.3, 0.3, 0.175, 0.175), dir=NULL, outname="ratematrixJointMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
 
+    ## Check burn and thin and create the vector of generations.
+    ## Note here that the first generation is gen 0.
+    post_seq <- seq(from = gen * burn, to = (gen-1), by = thin)
+    post_seq <- post_seq + 1 ## Bounce the generation vector forward to start from 1.
+    
     ## Quickly check if a directory was provide. If not return an error.
     if( is.null(dir) ) stop('Need to provide a path to write MCMC samples. Use dir="." to write files to current directory.')
     if( !inherits(dir, what="character") ) stop("Value for argument 'dir' need to be a character. See help page.")
@@ -405,6 +412,6 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
                                   , gen=gen, v=v, w_sd=w_sd, w_mu=w_mu, w_q=w_q
                                   , prop=prop, dir=dir, outname=outname, IDlen=IDlen
                                   , regimes=regime.names, traits=trait.names
-                                  , save.handle=save.handle, add.gen=NULL)
+                                  , save.handle=save.handle, add.gen=NULL, post_seq=post_seq)
     return( out_mult )
 }

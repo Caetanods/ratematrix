@@ -1285,7 +1285,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(j,i) ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
   }
 
@@ -1787,7 +1787,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(j,i) ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
   }
 
