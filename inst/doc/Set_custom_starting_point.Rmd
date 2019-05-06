@@ -6,7 +6,7 @@ output:
     fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{Set custom starting point}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{knitr::knitr}
   %\VignetteEncoding{UTF-8}
 ---
 
