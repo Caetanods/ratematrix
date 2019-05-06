@@ -62,6 +62,16 @@
 ##' }
 plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NULL, l.cex=0.7, ell.wd=0.5, alphaOff=1, alphaDiag=1, alphaEll=1, hpd=100, show.zero=FALSE, n.lines=50, n.points=200, point.matrix=NULL, point.color=NULL, point.wd=0.5){
 
+    ## Quickly check the correct format for chain.
+    ll_class <- length( class( chain ) ) ## Usually a single class.
+    if( ll_class == 1 ){
+        correct_class <- grepl(pattern = "ratematrix", x = class( chain ) )
+    } else{
+        ## In this case one class might be "list" and the other a "ratematrix" type.
+        correct_class <- any( sapply(class( chain ), function(x) grepl(pattern = "ratematrix", x = x ) ) )
+    }
+    if( ! correct_class ) stop("chain argument need to be a single MCMC chain. See 'mergePosterior' function to merge multiple MCMC chains together.")
+   
     ## Check if the sample is larger than 'n.lines'. Otherwise, it needs to be equal to.
     ## Here using a new element added to the mcmc object type.
     ## But also protecting in case of legacy usage.
