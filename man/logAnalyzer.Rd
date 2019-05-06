@@ -4,7 +4,7 @@
 \alias{logAnalyzer}
 \title{Make analysis of the log file of the MCMC chain}
 \usage{
-logAnalyzer(handle, burn = 0.25, thin = 100, show.plots = TRUE,
+logAnalyzer(handle, burn = 0, thin = 1, show.plots = TRUE,
   print.result = TRUE, dir = NULL)
 }
 \arguments{
