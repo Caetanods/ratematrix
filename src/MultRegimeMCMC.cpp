@@ -2149,8 +2149,8 @@ arma::mat samplePolytope(arma::mat edge) {
   // This assumes that the space is a n-dimensional cube, with straight lines making the limits of the space.
   // We sample from the volume delimited by the max and min values for each of the dimentions.
 
-  int dim_poly = edge.n_cols / 2; // number of dimensions.
-  int n_samples = edge.n_rows; // number of samples to be taken.
+  arma::uword dim_poly = edge.n_cols / 2; // number of dimensions.
+  arma::uword n_samples = edge.n_rows; // number of samples to be taken.
   // Retuning container need to have samples as rows and traits as columns (same format as other functions).
   arma::mat samples = mat(n_samples, dim_poly);
   arma::vec rand_sample = vec(dim_poly);
@@ -2188,7 +2188,7 @@ arma::mat samplePolytope(arma::mat edge) {
 }
 
 // [[Rcpp::export]]
-double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R) {
+double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R) {
   // Function to compute the likelihood of the model conditioned on know values for the ancestral nodes.
   // Note that this is computing the Restricted likelihood (REML) and not the full likelihood. This happens because we cannot compute the contrast at the root node if we assumed all ancestral nodes as fixed.
   // tips_poly: Data for the tips of the phylogeny, same as X.
@@ -2222,7 +2222,7 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, int k, 
   arma::uword tip_id;
   arma::uword key_id0;
   arma::uword key_id1;
-  int n_nodes = nodes.n_elem;
+  arma::uword n_nodes = nodes.n_elem;
 
   // In this case we don't need to compute the constrasts for the internal nodes.
   // The X0 matrix is already provided:
@@ -2246,7 +2246,7 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, int k, 
 
   // Loop to traverse the tree.
   // Will visit all the internal nodes including the ROOT.
-  for(int i=0; i < n_nodes; i++) {
+  for(arma::uword i=0; i < n_nodes; i++) {
     
     // The index for the 'des', 'anc', and 'mapped_edge (lines)'.
     node_id = find( anc == nodes[i] );
@@ -2411,15 +2411,15 @@ double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, int k, 
   return(ll);
 }
 
-void writeToMultFileNoRoot(std::ostream& mcmc_stream, int p, int k, arma::cube R){
+void writeToMultFileNoRoot(std::ostream& mcmc_stream, arma::uword p, arma::uword k, arma::cube R){
   // Same as the 'writeToMultFile_C' function but without the root value.
   // Note the 'std::ostream&' argument here is the use of a reference.
 
   // In the case of a single regime we need to make a fix to the workaround below.
   if( p == 1 ){
 
-    for( int j=0; j < k; j++ ){
-      for( int z=0; z < k; z++ ){
+    for( arma::uword j=0; j < k; j++ ){
+      for( arma::uword z=0; z < k; z++ ){
 	mcmc_stream << R.slice(0)(j,z);
 	if( j == k-1 && z == k-1 ) {
 	  // Finish the line on the last element.
@@ -2433,17 +2433,17 @@ void writeToMultFileNoRoot(std::ostream& mcmc_stream, int p, int k, arma::cube R
     
   } else{ // Normal case with multiple regimes fitted to the tree.
     // Will need a work-around to be able to close the line.
-    for( int i=0; i < p-1; i++ ){
-      for( int j=0; j < k; j++ ){
-	for( int z=0; z < k; z++ ){
+    for( arma::uword i=0; i < p-1; i++ ){
+      for( arma::uword j=0; j < k; j++ ){
+	for( arma::uword z=0; z < k; z++ ){
 	  mcmc_stream << R.slice(i)(j,z);
 	  mcmc_stream << "; ";
 	}
       }
     }
 
-    for( int j=0; j < k; j++ ){
-      for( int z=0; z < k; z++ ){
+    for( arma::uword j=0; j < k; j++ ){
+      for( arma::uword z=0; z < k; z++ ){
 	mcmc_stream << R.slice(p-1)(j,z);
 	if( j == k-1 && z == k-1 ) {
 	  // Finish the line on the last element.
@@ -2462,15 +2462,15 @@ void writePolySample(std::ostream& poly_stream, arma::mat poly_tips, arma::mat p
   // Write the sample for the tip states and for the internal nodes to file.
 
   // Need to write down by row.
-  for( int i=0; i < poly_tips.n_rows; i++ ) {
-    for( int j=0; j < poly_tips.n_cols; j++ ) {
+  for( arma::uword i=0; i < poly_tips.n_rows; i++ ) {
+    for( arma::uword j=0; j < poly_tips.n_cols; j++ ) {
       poly_stream << poly_tips(i,j);
       poly_stream << "; ";
     }
   }
 
-  for( int i=0; i < poly_nodes.n_rows; i++ ) {
-    for( int j=0; j < poly_nodes.n_cols; j++ ) {
+  for( arma::uword i=0; i < poly_nodes.n_rows; i++ ) {
+    for( arma::uword j=0; j < poly_nodes.n_cols; j++ ) {
       poly_stream << poly_nodes(i,j);
       if( i == (poly_nodes.n_rows-1) && j == (poly_nodes.n_cols-1) ) {
 	// Last element, add a line end.
@@ -2493,7 +2493,7 @@ arma::mat mvrnormArma(int n, arma::vec mu, arma::mat sigma) {
   return arma::repmat(mu, 1, n).t() + Y * arma::chol(sigma);
 }
 
-arma::vec Gibbs_get_trio(arma::vec a, arma::vec d1, arma::vec d2, arma::vec s, arma::vec t1, arma::vec t2, arma::cube R, int p, int is_root){
+arma::vec Gibbs_get_trio(arma::vec a, arma::vec d1, arma::vec d2, arma::vec s, arma::vec t1, arma::vec t2, arma::cube R, arma::uword p, int is_root){
   // Sample the value for a node given the descendant values and the ancestor value.
   // This follows algorithm described in Quintero et al. (2015).
   // The branch lengths s, t1, t2 are just (transposed) rows from the mapped.edge matrix.
@@ -2526,11 +2526,15 @@ arma::vec Gibbs_get_trio(arma::vec a, arma::vec d1, arma::vec d2, arma::vec s, a
     // Make a draw taking into account multiple regimes.
     // In this case we need to use similar steps to the pruning algorithm.
     // When computing the variance we need to scale each of the rate matrices by their respective regimes.
+    // DUMMY RETURN. THIS ELSE BRACHET DOES NOT WORK IN THE CURRENT VERSION.
+    // Using object of correct format and scope for the dummy return.
+    arma::vec dummy;
+    return dummy; // Return need to be a row vector.
   }
 }
 
 // [[Rcpp::export]]
-arma::mat Gibbs_sample_nodes(arma::mat poly_tips, arma::mat poly_nodes, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R){
+arma::mat Gibbs_sample_nodes(arma::mat poly_tips, arma::mat poly_nodes, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R){
   // Function to make a single pass of Gibbs sampling to update internal nodes (in random order).
   // Returns a matrix with the same configuration as 'sample_poly_nodes'.
   
@@ -2559,7 +2563,7 @@ arma::mat Gibbs_sample_nodes(arma::mat poly_tips, arma::mat poly_nodes, int p, a
   // The resulting vector will start at number 1.
   random_nodes = Rcpp::as<arma::uvec>(Rcpp::sample(nodes.n_elem, nodes.n_elem, false));
   
-  for( int i=0; i < random_nodes.n_elem; i++ ){
+  for( arma::uword i=0; i < random_nodes.n_elem; i++ ){
     
     node_id_sample = random_nodes[i] - 1; // The id for the node to sample.
     
@@ -2647,7 +2651,7 @@ arma::mat Gibbs_sample_nodes(arma::mat poly_tips, arma::mat poly_nodes, int p, a
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, int gen, arma::vec post_seq, int write_header){
+std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, arma::uword n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header){
   // This function differs from 'runRatematrixMultiMCMC_C' because it uses data augmentation to sample points from a polytope at the tips of the phylogeny and at the internal nodes.
   // Also, here we are using the REML for the mvBM model instead of the full ML, so the root value is not estimated.
   // The input data is the max and min bounds for the polytopes for the species.
@@ -2669,9 +2673,9 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 
   // Write the header for the mcmc file.
   if(write_header == 1){
-    for( int kk=1; kk < p+1; kk++ ){
-      for( int ii=1; ii < k+1; ii++ ){
-	for( int jj=1; jj < k+1; jj++ ){
+    for( arma::uword kk=1; kk < p+1; kk++ ){
+      for( arma::uword ii=1; ii < k+1; ii++ ){
+	for( arma::uword jj=1; jj < k+1; jj++ ){
 	  mcmc_stream << "regime.p";
 	  mcmc_stream << kk;
 	  mcmc_stream << ".";
@@ -2700,9 +2704,9 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     log_stream << "accepted; tip_trait; sd; corr; log_lik \n";
 
     // Write the header for the poly file.
-    int n_tips = X_poly.n_rows; // Number of species.
-    for( int ssp=1; ssp < n_tips+1; ssp++ ){
-      for( int kk=1; kk < k+1; kk++ ){
+    arma::uword n_tips = X_poly.n_rows; // Number of species.
+    for( arma::uword ssp=1; ssp < n_tips+1; ssp++ ){
+      for( arma::uword kk=1; kk < k+1; kk++ ){
 	poly_stream << "tip.";
 	poly_stream << ssp;
 	poly_stream << "_tr.";
@@ -2712,9 +2716,9 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
     }
 
     // The root node is the last element of the nodes vector. (Included here)
-    int n_nodes = (nodes.n_elem);
-    for( uword anc=0; anc < n_nodes; anc++ ){ // Index for nodes vector.
-      for( int kk=1; kk < k+1; kk++ ){
+    arma::uword n_nodes = (nodes.n_elem);
+    for( arma::uword anc=0; anc < n_nodes; anc++ ){ // Index for nodes vector.
+      for( arma::uword kk=1; kk < k+1; kk++ ){
 	poly_stream << "anc.";
 	poly_stream << nodes(anc);
 	poly_stream << "_tr.";
@@ -2744,7 +2748,6 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   // Because need to track the jump separatelly.
   arma::vec curr_jacobian = vec(k, fill::zeros);
 
-  int sample_sd;
   double pp;
   double ll;
   double r;
@@ -2781,7 +2784,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 
   // Define the bounds for the samples during the MCMC:
   // Total of elements, not the indexes. This is equal to the number of tips in the phylogeny.
-  int max_sample_id = X_poly.n_rows;
+  arma::uword max_sample_id = X_poly.n_rows;
   int which_sample; // The container for the id samples.
 
   // A counter to help control when to write the sample to file.
@@ -2812,8 +2815,8 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
   arma::mat var_vec = square(sd);
   // Jacobian for the regimes:
   // Need to check is this code is visiting all the variances.
-  for( int j=0; j < p; j++ ){
-    for( int i=0; i < k; i++ ){
+  for( arma::uword j=0; j < p; j++ ){
+    for( arma::uword i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
       curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
@@ -2837,7 +2840,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 
   // Starting the MCMC.
 
-  for( int i=0; i < gen; i++ ){
+  for( arma::uword i=0; i < gen; i++ ){
 
     // Choose which par to sample.
     it_prob = as_scalar(randu(1));
@@ -2876,7 +2879,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       // Set the prop value equal to the current value, will update on the next step.
       sample_poly_tips_prop = sample_poly_tips;
       // Note that the loop below can update the same index multiple times.
-      for( int samp_it=0; samp_it < n_input_move; samp_it++ ){
+      for( arma::uword samp_it=0; samp_it < n_input_move; samp_it++ ){
 	// Take care here because we will sample the indexes, starting from 0.
 	which_sample = std::ceil( ( as_scalar(randu(1)) * max_sample_id ) - 1 );
 	sample_poly_tips_prop.col(which_sample) = sample_poly_tips_tmp.col(which_sample);
@@ -3030,7 +3033,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
       decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
       prop_jacobian = 0.0; // Always need to reset.
       // The Jacobian of the transformation.
-      for( int i=0; i < k; i++ ){
+      for( arma::uword i=0; i < k; i++ ){
 	prop_jacobian = prop_jacobian + log(decomp_var[i]) * log( (k-1.0)/2.0 );
       }
       // The curr_jacobian is a vector. There are a jacobian for each regime.
@@ -3096,7 +3099,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, int 
 
 // Below is a function very similar to the one above. The difference is that we do not sample values for the internal nodes. We just added the step of sampling tip values from a distribution. The idea here is that we are evaluating the likelihood of the model by marginalizing (integrating over) the values for the ancestral values of each of the nodes.
 
-double logLikPrunningREML(arma::mat X, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R) {
+double logLikPrunningREML(arma::mat X, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R) {
 
   // X: need to have the traits at the rows and the species at the columns.
   
@@ -3115,7 +3118,7 @@ double logLikPrunningREML(arma::mat X, int k, int p, arma::vec nodes, arma::uvec
   arma::uword tip_id;
   arma::uword key_id0;
   arma::uword key_id1;
-  int n_nodes = nodes.n_elem;
+  arma::uword n_nodes = nodes.n_elem;
   arma::mat X0 = mat(k, n_nodes + 1);
   arma::cube V0 = cube(k, k, n_nodes + 1);
   arma::uvec key = uvec(n_nodes); // Not needed at the ROOT.
@@ -3132,7 +3135,7 @@ double logLikPrunningREML(arma::mat X, int k, int p, arma::vec nodes, arma::uvec
 
   // Loop to traverse the tree.
   // Will visit all the internal nodes including the ROOT.
-  for(int i=0; i < n_nodes; i++) {
+  for(arma::uword i=0; i < n_nodes; i++) {
     
     // The index for the 'des', 'anc', and 'mapped_edge (lines)'.
     node_id = find( anc == nodes[i] );
@@ -3280,8 +3283,8 @@ double logLikPrunningREML(arma::mat X, int k, int p, arma::vec nodes, arma::uvec
 void writePolySampleTipsOnly(std::ostream& poly_stream, arma::mat poly_tips){
   
   // Write the sample for the tips to the log file.
-  for( int i=0; i < poly_tips.n_rows; i++ ) {
-    for( int j=0; j < poly_tips.n_cols; j++ ) {
+  for( arma::uword i=0; i < poly_tips.n_rows; i++ ) {
+    for( arma::uword j=0; j < poly_tips.n_cols; j++ ) {
       poly_stream << poly_tips(i,j);
       if( i == (poly_tips.n_rows-1) && j == (poly_tips.n_cols-1) ){
 	// Last element, add a line end.
@@ -3295,7 +3298,7 @@ void writePolySampleTipsOnly(std::ostream& poly_stream, arma::mat poly_tips){
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, int gen, arma::vec post_seq, int write_header){
+std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header){
 
   // Function is vey similar to 'runRatematrixPolytopeMCMC'.
   // Note that here we are not sampling the internal nodes of the tree.
@@ -3308,9 +3311,9 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 
   // Write the header for the mcmc file.
   if(write_header == 1){
-    for( int kk=1; kk < p+1; kk++ ){
-      for( int ii=1; ii < k+1; ii++ ){
-	for( int jj=1; jj < k+1; jj++ ){
+    for( arma::uword kk=1; kk < p+1; kk++ ){
+      for( arma::uword ii=1; ii < k+1; ii++ ){
+	for( arma::uword jj=1; jj < k+1; jj++ ){
 	  mcmc_stream << "regime.p";
 	  mcmc_stream << kk;
 	  mcmc_stream << ".";
@@ -3332,9 +3335,9 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 
     // Write the header for the poly file.
     // In this version of the sampler, only the tip values are sampled.
-    int n_tips = X_poly.n_rows; // Number of species.
-    for( int ssp=1; ssp < n_tips+1; ssp++ ){
-      for( int kk=1; kk < k+1; kk++ ){
+    arma::uword n_tips = X_poly.n_rows; // Number of species.
+    for( arma::uword ssp=1; ssp < n_tips+1; ssp++ ){
+      for( arma::uword kk=1; kk < k+1; kk++ ){
 	poly_stream << "tip.";
 	poly_stream << ssp;
 	poly_stream << "_tr.";
@@ -3362,7 +3365,6 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   // Because need to track the jump separatelly.
   arma::vec curr_jacobian = vec(k, fill::zeros);
 
-  int sample_sd;
   double pp;
   double ll;
   double r;
@@ -3391,7 +3393,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 
   // Define the bounds for the samples during the MCMC:
   // Total of elements, not the indexes. This is equal to the number of tips in the phylogeny.
-  int max_sample_id = X_poly.n_rows;
+  arma::uword max_sample_id = X_poly.n_rows;
   int which_sample; // The container for the id samples.
 
   // A counter to help control when to write the sample to file.
@@ -3418,8 +3420,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   arma::mat var_vec = square(sd);
   // Jacobian for the regimes:
   // Need to check is this code is visiting all the variances.
-  for( int j=0; j < p; j++ ){
-    for( int i=0; i < k; i++ ){
+  for( arma::uword j=0; j < p; j++ ){
+    for( arma::uword i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
       curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
@@ -3442,7 +3444,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 
   // Starting the MCMC.
 
-  for( int i=0; i < gen; i++ ){
+  for( arma::uword i=0; i < gen; i++ ){
 
     // Choose which par to sample.
     it_prob = as_scalar(randu(1));
@@ -3585,7 +3587,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
       prop_jacobian = 0.0; // Always need to reset.
       // The Jacobian of the transformation.
-      for( int i=0; i < k; i++ ){
+      for( arma::uword i=0; i < k; i++ ){
 	prop_jacobian = prop_jacobian + log(decomp_var[i]) * log( (k-1.0)/2.0 );
       }
       // The curr_jacobian is a vector. There are a jacobian for each regime.
