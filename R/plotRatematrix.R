@@ -62,9 +62,29 @@
 ##' }
 plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NULL, l.cex=0.7, ell.wd=0.5, alphaOff=1, alphaDiag=1, alphaEll=1, hpd=100, show.zero=FALSE, n.lines=50, n.points=200, point.matrix=NULL, point.color=NULL, point.wd=0.5){
 
+    ## Quickly check the correct format for chain.
+    ll_class <- length( class( chain ) ) ## Usually a single class.
+    if( ll_class == 1 ){
+        correct_class <- grepl(pattern = "ratematrix", x = class( chain ) )
+    } else{
+        ## In this case one class might be "list" and the other a "ratematrix" type.
+        correct_class <- any( sapply(class( chain ), function(x) grepl(pattern = "ratematrix", x = x ) ) )
+    }
+    if( ! correct_class ) stop("chain argument need to be a single MCMC chain. See 'mergePosterior' function to merge multiple MCMC chains together.")
+   
     ## Check if the sample is larger than 'n.lines'. Otherwise, it needs to be equal to.
-    if( n.lines > nrow( chain[[1]] ) ){
-        n.lines <- nrow( chain[[1]] )
+    ## Here using a new element added to the mcmc object type.
+    ## But also protecting in case of legacy usage.
+    if( is.null(chain$n_post_samples) ){
+        ## Legacy mode:
+        if( n.lines > nrow( chain[[1]] ) ){
+            n.lines <- nrow( chain[[1]] )
+        }        
+    } else{
+        ## New mode:
+        if( n.lines > chain$n_post_samples ){
+            n.lines <- chain$n_post_samples
+        }
     }
     
     ## Set default values for p and colors if none is provided:
@@ -90,8 +110,15 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
     }
 
     ## If custom legend is not provided, then use the names of the traits.
-    if(is.null(set.leg)){
-        set.leg <- colnames( chain$root )
+    ## Here using a new method, but protecting for legacy usage:
+    if( is.null(set.leg) ){
+        if( is.null(chain$trait_names) ){
+            ## Legacy usage.
+            set.leg <- colnames( chain$root )
+        } else{
+            ## New method.
+            set.leg <- chain$trait_names
+        }
     }
             
     ## Check if there is only one regime to be plotted:
