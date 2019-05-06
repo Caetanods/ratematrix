@@ -139,7 +139,7 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     if( save.handle ){
         out <- list(k = cache.data$k, p = 1, ID = ID, dir = dir, outname = outname, trait.names = traits
                   , data = X, phy = phy, prior = prior, start = start, gen = gen
-                  , mcmc.par = mcmc.par, post_seq = post_seq)
+                  , mcmc.par = mcmc.par)
         class( out ) <- "ratematrix_single_mcmc"
         saveRDS(out, file = file.path(dir, paste(outname,".",ID,".mcmc.handle.rds",sep="")) )
     }
