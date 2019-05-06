@@ -197,8 +197,10 @@ checkConvergence <- function(...){
                 diag.tip.samples <- gelman.diag(tip.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
                 ess.tip.samples <- effectiveSize(tip.samples.mcmc.list)
 
-                check_ancestral <- lapply(chains, function(x) is.na( x$anc_samples ) )
-                if( !any( check_ancestral ) ){
+                ## Check if any of the mcmc chains has ancestral samples.
+                ## If TRUE, then those should be of matrix format.
+                check_ancestral <- sapply(chains, function(x) is.matrix( x$anc_samples ) )
+                if( all( check_ancestral ) ){
                     anc.samples.mcmc <- lapply(chains, function(x) coda::mcmc( x$anc_samples ) )
                     anc.samples.mcmc.list <- mcmc.list( anc.samples.mcmc )
                     diag.anc.samples <- gelman.diag(anc.samples.mcmc.list, autoburnin=FALSE, multivariate=FALSE)
