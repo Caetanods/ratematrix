@@ -7,14 +7,14 @@
 using namespace Rcpp;
 
 // makeSimmapMappedEdge
-arma::mat makeSimmapMappedEdge(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int sims_limit);
+arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int sims_limit);
 RcppExport SEXP _ratematrix_makeSimmapMappedEdge(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP, SEXP sims_limitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n_nodes(n_nodesSEXP);
-    Rcpp::traits::input_parameter< int >::type n_tips(n_tipsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_states(n_statesSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_nodes(n_nodesSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_tips(n_tipsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_states(n_statesSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type edge_len(edge_lenSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type edge_mat(edge_matSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type parents(parentsSEXP);
@@ -28,14 +28,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // makeSimmapMaps
-arma::mat makeSimmapMaps(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int max_nshifts);
+arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int max_nshifts);
 RcppExport SEXP _ratematrix_makeSimmapMaps(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP, SEXP max_nshiftsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n_nodes(n_nodesSEXP);
-    Rcpp::traits::input_parameter< int >::type n_tips(n_tipsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_states(n_statesSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_nodes(n_nodesSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_tips(n_tipsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_states(n_statesSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type edge_len(edge_lenSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type edge_mat(edge_matSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type parents(parentsSEXP);
@@ -49,14 +49,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // logLikMk_C
-double logLikMk_C(int n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type);
+double logLikMk_C(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type);
 RcppExport SEXP _ratematrix_logLikMk_C(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n_nodes(n_nodesSEXP);
-    Rcpp::traits::input_parameter< int >::type n_tips(n_tipsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_states(n_statesSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_nodes(n_nodesSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_tips(n_tipsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_states(n_statesSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type edge_len(edge_lenSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type edge_mat(edge_matSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type parents(parentsSEXP);
@@ -69,14 +69,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // logLikPrunningMCMC_C
-double logLikPrunningMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu);
+double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu);
 RcppExport SEXP _ratematrix_logLikPrunningMCMC_C(SEXP XSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP muSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type p(pSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type nodes(nodesSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type des(desSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type anc(ancSEXP);
@@ -202,23 +202,23 @@ BEGIN_RCPP
 END_RCPP
 }
 // runRatematrixMCMC_jointMk_C
-std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, int k, int p, arma::vec nodes, int n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, int n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, int gen, arma::vec post_seq, int write_header, int sims_limit);
+std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uword k, arma::uword p, arma::vec nodes, arma::uword n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, arma::uword n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, arma::uword gen, arma::vec post_seq, int write_header, arma::uword sims_limit);
 RcppExport SEXP _ratematrix_runRatematrixMCMC_jointMk_C(SEXP XSEXP, SEXP datMkSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP n_tipsSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP edge_matSEXP, SEXP n_nodesSEXP, SEXP QSEXP, SEXP w_QSEXP, SEXP model_QSEXP, SEXP root_typeSEXP, SEXP den_QSEXP, SEXP par_prior_QSEXP, SEXP RSEXP, SEXP muSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_muSEXP, SEXP par_prior_muSEXP, SEXP den_muSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP Q_mcmc_fileSEXP, SEXP par_probSEXP, SEXP genSEXP, SEXP post_seqSEXP, SEXP write_headerSEXP, SEXP sims_limitSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type datMk(datMkSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type p(pSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type nodes(nodesSEXP);
-    Rcpp::traits::input_parameter< int >::type n_tips(n_tipsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_tips(n_tipsSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type des(desSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type anc(ancSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type names_anc(names_ancSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type mapped_edge(mapped_edgeSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type edge_mat(edge_matSEXP);
-    Rcpp::traits::input_parameter< int >::type n_nodes(n_nodesSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_nodes(n_nodesSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
     Rcpp::traits::input_parameter< double >::type w_Q(w_QSEXP);
     Rcpp::traits::input_parameter< std::string >::type model_Q(model_QSEXP);
@@ -242,10 +242,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type mcmc_file(mcmc_fileSEXP);
     Rcpp::traits::input_parameter< std::string >::type Q_mcmc_file(Q_mcmc_fileSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type par_prob(par_probSEXP);
-    Rcpp::traits::input_parameter< int >::type gen(genSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type gen(genSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type post_seq(post_seqSEXP);
     Rcpp::traits::input_parameter< int >::type write_header(write_headerSEXP);
-    Rcpp::traits::input_parameter< int >::type sims_limit(sims_limitSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type sims_limit(sims_limitSEXP);
     rcpp_result_gen = Rcpp::wrap(runRatematrixMCMC_jointMk_C(X, datMk, k, p, nodes, n_tips, des, anc, names_anc, mapped_edge, edge_mat, n_nodes, Q, w_Q, model_Q, root_type, den_Q, par_prior_Q, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, Q_mcmc_file, par_prob, gen, post_seq, write_header, sims_limit));
     return rcpp_result_gen;
 END_RCPP
