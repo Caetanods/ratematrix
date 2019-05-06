@@ -4,14 +4,14 @@
 \alias{readMCMC}
 \title{Read the MCMC output files}
 \usage{
-readMCMC(handle, burn = 0.25, thin = 100, dir = NULL)
+readMCMC(handle, burn = 0, thin = 1, dir = NULL)
 }
 \arguments{
 \item{handle}{the output object from the 'ratematrixMCMC' function.}
 
-\item{burn}{the proportion of the burnin to be pruned from the MCMC chain. A number between 0 and 1 (default is 0.25).}
+\item{burn}{the proportion of the burnin to be pruned from the MCMC chain. A number between 0 and 1 (default is 0).}
 
-\item{thin}{the thinning of the posterior distribution. A number with the interval between each MCMC step to be kept in the posterior distribution (default is 100).}
+\item{thin}{the thinning of the posterior distribution. A number with the interval between each MCMC step to be kept in the posterior distribution (default is 1).}
 
 \item{dir}{directory with the output files. If 'NULL' (default), then files are read from the directory chosen when running the MCMC chain using the argument 'dir' of the 'ratematrixMCMC' function (stored on handle). Otherwise function will read files from 'dir'.}
 }
