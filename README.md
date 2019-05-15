@@ -42,6 +42,8 @@ options(download.file.method = "wget")
 
 ## News and updates
 
+**May-2019 (v 1.2.1): SUBMITTED PATCH TO RCran** Corrects issue with function 'ratematrixMCMC'. Simple (but fatal) mistake when indexing one matrix during the MCMC was breaking the chain.
+
 **May-2019 (v 1.2): SUBMITTED TO RCran** Implements burnin and thinning during MCMC sampler. Implements function to compute the correlation among traits from the posterior samples. New version on RCran.
 
 **Mar-2019 (v 1.2):** Updated citations for functions. Corrected BUG when merging a list of single regime MCMC chains. Corrected a potential conflict when using default priors under a 'mclapply' call to run multiple MCMC chains.
