@@ -87,6 +87,9 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     ## #######################
     ## Block to check arguments, give warnings and etc.
 
+    ## Check if using the updated version of "RcppArmadillo":
+    if( packageVersion("RcppArmadillo") < "0.9.400.3.0" ) stop("Please update package 'RcppArmadillo' from RCran before continuing. \n Use: install.packages('RcppArmadillo')")
+
     ## Check burn and thin and create the vector of generations.
     ## Note here that the first generation is gen 0.
     post_seq <- seq(from = gen * burn, to = (gen-1), by = thin)
