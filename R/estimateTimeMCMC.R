@@ -18,6 +18,9 @@
 estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
     ## This version of the function does not take into account writing the MCMC to files and making the proposal steps.
     ## A quick check with an overestimation of the process (by running the whole 'ratematrixMCMC' tree pre-processing) increased time estimates by 30 min only. So, the function the way it is seems fine.
+
+    ## Check if using the updated version of "RcppArmadillo":
+    if( packageVersion("RcppArmadillo") < "0.9.400.3.0" ) stop("Please update package 'RcppArmadillo' from RCran before continuing. \n Use: install.packages('RcppArmadillo')")
     
     ## Define some objects for the loglik to work.
     v <- 50
