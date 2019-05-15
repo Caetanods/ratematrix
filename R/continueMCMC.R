@@ -26,10 +26,7 @@ continueMCMC <- function(handle, add.gen=NULL, save.handle=TRUE, dir=NULL){
     ## Also need to read the last line of the MCMC file and use it as the starting state.
     ## No special step is needed to write to the same file. Just need to take care and not open it again or write
     ##    another header to the same file. This might need another argument for the single and multi MCMC functions.
-
-    ## Check if using the updated version of "RcppArmadillo":
-    if( packageVersion("RcppArmadillo") < "0.9.400.3.0" ) stop("Please update package 'RcppArmadillo' from RCran before continuing. \n Use: install.packages('RcppArmadillo')")
-    
+   
     if( !is.null(dir) ) handle$dir <- dir
 
     if( handle$p == 1 ){
