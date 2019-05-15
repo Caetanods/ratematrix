@@ -6,17 +6,13 @@
 
 R package for the study of patterns of evolutionary correlation among two or more traits using phylogenetic trees. 'ratematrix' offers a suite of tools to estimate the evolutionary rate matrix (R) incorporating uncertainty in the form of a posterior distribution using Markov-chain Monte Carlo.
 
-For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article published on Systematic Biology: "Caetano, D. S., and L. J. Harmon. 2018. Estimating correlated rates of trait evolution with uncertainty. Syst Biol, doi: 10.1093/sysbio/syy067"
+For more information on the kind of models implemented here and their performance with empirical and simulated data, please refer to our article published on Systematic Biology: "Caetano, D. S., and L. J. Harmon. 2019. Estimating Correlated Rates of Trait Evolution with Uncertainty. Syst Biol 68:412–429."
 
 An overview of the package can be found at "Caetano, D. S., and L. J. Harmon. 2017. ratematrix: an R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecolology and Evolution http://dx.doi.org/10.1111%2F2041-210X.12826"
 
 ## Tutorials
 
 Please check the package vignettes for tutorials on how to use the package. Vignettes can be found on the RCran page for the package "https://cran.r-project.org/web/packages/ratematrix/index.html". The pdf files can also be accessed on the directory `inst/doc/` of this repository.
-
-An introduction to the package usage is here: <https://github.com/Caetanods/ratematrix/raw/master/inst/doc/Intro_on_the_package.pdf>
-
-Information on how to set up prior probabilities can be found here: <https://github.com/Caetanods/ratematrix/raw/master/inst/doc/Making_prior_on_ratematrix.pdf>
 
 ## Examples from the literature
 
