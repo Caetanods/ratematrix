@@ -20,6 +20,7 @@
 ##' @author Daniel Caetano
 ##' @export
 ##' @importFrom ape reorder.phylo Nnode Ntip
+##' @importFrom geiger treedata
 ##' 
 fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_nshifts = 100, silence = FALSE){
     if( !silence ){
@@ -30,8 +31,11 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
         if( any( !colnames( Q ) %in% x ) ) stop(" colnames of Q need to be the states in the data." )
         if( !ncol( Q ) == length( unique(x) ) ) stop(" number of states in x and Q need to match." )
         if( any( !unique(x) %in% colnames(Q) ) ) stop(" all states in the data need to ne present in Q." )
-        if( any(!rowSums( Q ) == 0) ) stop( " rowSums(Q) need to be 0 " )
-        cat("MAKE SURE THE DATA AND THE TREE MATCH! \n")
+        if( any(abs(rowSums(Q)) > 1e-8) ) stop( " Rows of Q need to sum to 0." )
+        if( is.null( names(x) ) ) stop("Data need to have names matching the tips of the phylogeny.")
+        data.ord <- treedata( phy = tree, data = x )
+        tree <- data.ord$phy
+        x <- data.ord$data[,1]
     }
 
     ## NEED TO IMPLEMENT THIS:
