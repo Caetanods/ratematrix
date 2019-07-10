@@ -2153,20 +2153,23 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 // Functions to implement a relaxed random walk using the discrete-Gamma distributed rates.
 // Testing the integration function.
 
-// Define the integration functions.
+// Sets the first integration.
 double f_int1(double x, void *params){
   double beta = *(double *) params;
   double den = x * gsl_ran_gamma_pdf(x, beta, 1.0/beta);
   return den;
 }
   
+// Sets the second integration.
 double f_int2(double x, void *params){
   double beta = *(double *) params;
   double den = gsl_ran_gamma_pdf(x, beta, 1.0/beta);
   return den;
 }
 
+// Define the integration functions.
 double integrateGamma(double a, double b, double beta) {
+  // This function will return the mean value for a given category for a discrete-Gamma distribution.
 
   // Define the integration parameters (hard coded at the moment).
   double abserr = 0.0;
