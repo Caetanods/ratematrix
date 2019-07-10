@@ -2,6 +2,7 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include <RcppArmadillo.h>
+#include <RcppGSL.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
@@ -250,6 +251,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// integrateGamma
+double integrateGamma(double a, double b, double beta);
+RcppExport SEXP _ratematrix_integrateGamma(SEXP aSEXP, SEXP bSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(integrateGamma(a, b, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
 // logLikPrunningFixedAnc
 double logLikPrunningFixedAnc(arma::mat tips_poly, arma::mat nodes_poly, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R);
 RcppExport SEXP _ratematrix_logLikPrunningFixedAnc(SEXP tips_polySEXP, SEXP nodes_polySEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP) {
@@ -372,6 +386,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_runRatematrixMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_C, 28},
     {"_ratematrix_runRatematrixMultiMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMultiMCMC_C, 28},
     {"_ratematrix_runRatematrixMCMC_jointMk_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_jointMk_C, 39},
+    {"_ratematrix_integrateGamma", (DL_FUNC) &_ratematrix_integrateGamma, 3},
     {"_ratematrix_logLikPrunningFixedAnc", (DL_FUNC) &_ratematrix_logLikPrunningFixedAnc, 10},
     {"_ratematrix_Gibbs_sample_nodes", (DL_FUNC) &_ratematrix_Gibbs_sample_nodes, 9},
     {"_ratematrix_runRatematrixPolytopeMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeMCMC, 26},

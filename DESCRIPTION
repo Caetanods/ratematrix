@@ -29,5 +29,6 @@ VignetteBuilder:
     knitr
 LinkingTo: 
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    RcppGSL
 RoxygenNote: 6.1.1

@@ -1,4 +1,10 @@
 #include <RcppArmadillo.h>
+#include <RcppGSL.h>
+#include <stdio.h>
+#include <math.h>
+#include <gsl/gsl_integration.h>
+#include <gsl/gsl_randist.h>
+
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 using namespace arma;
@@ -2143,6 +2149,53 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 // Functions to estimate the model that samples from hypervolumes to incorporate the within-species variation for the multivariate traits. The approach is an extension of work by Lemey et al. (2010) Mol Biol Evol. In this work the authors sampled from an area to estimate a relaxed random walk for phylogeography.
 // The central idea is to use data augmentation to directly sample the ancestrals and sample the tip values from their volumes defined by the variation observed in the species.
 // The simplest case will have a single rate across the whole tree. Then we can also use predictive regimes and, finally, the most complex case is a relaxed random walk across the branches. The relaxed random walk allows every branch to have their own scaler i.i.d. from an underlying discretized rate distribution (Drummond et al., 2006). This is similar to the Gamma-distributed rate variation with MK models.
+
+// Functions to implement a relaxed random walk using the discrete-Gamma distributed rates.
+// Testing the integration function.
+
+// Define the integration functions.
+double f_int1(double x, void *params){
+  double beta = *(double *) params;
+  double den = x * gsl_ran_gamma_pdf(x, beta, 1.0/beta);
+  return den;
+}
+  
+double f_int2(double x, void *params){
+  double beta = *(double *) params;
+  double den = gsl_ran_gamma_pdf(x, beta, 1.0/beta);
+  return den;
+}
+
+double integrateGamma(double a, double b, double beta) {
+
+  // Define the integration parameters (hard coded at the moment).
+  double abserr = 0.0;
+  double relerr = 1.e-7;
+  double result_int1; // the integral value
+  double error_int1; // the error estimate
+  double result_int2; // the integral value
+  double error_int2; // the error estimate
+  size_t np = 1000; // work area size
+  
+  gsl_integration_workspace *w = gsl_integration_workspace_alloc(np);
+
+  gsl_function F_int1;  
+  gsl_function F_int2;
+
+  F_int1.function = &f_int1;
+  F_int1.params = &beta;
+  F_int2.function = &f_int2;
+  F_int2.params = &beta;  
+  // The function now only have a single parameter. So this is not necessary.
+  // F.params = &n;
+
+  gsl_integration_qag(&F_int1, a, b, abserr, relerr, np, GSL_INTEG_GAUSS15, w, &result_int1, &error_int1);
+  gsl_integration_qag(&F_int2, a, b, abserr, relerr, np, GSL_INTEG_GAUSS15, w, &result_int2, &error_int2);
+
+  double final_int = result_int1 / result_int2;
+
+  return final_int;  
+}
 
 arma::mat samplePolytope(arma::mat edge) {
   // Function to sample a single point from the polytope given the edges with min and max for the traits.
