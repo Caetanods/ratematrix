@@ -184,4 +184,99 @@ arma::mat cov2cor_C(arma::mat V){
   return Vdiag * V * Vdiag;
 }
 
+// Some functions to work with polytopes:
+
+arma::mat samplePolytope(arma::mat edge) {
+  // Function to sample a single point from the polytope given the edges with min and max for the traits.
+  // This assumes that the space is a n-dimensional cube, with straight lines making the limits of the space.
+  // We sample from the volume delimited by the max and min values for each of the dimentions.
+
+  arma::uword dim_poly = edge.n_cols / 2; // number of dimensions.
+  arma::uword n_samples = edge.n_rows; // number of samples to be taken.
+  // Retuning container need to have samples as rows and traits as columns (same format as other functions).
+  arma::mat samples = mat(n_samples, dim_poly);
+  arma::vec rand_sample = vec(dim_poly);
+  arma::vec range_axis = vec(dim_poly);
+  arma::vec min_axis = vec(dim_poly);
+  int axis_count;
+
+  for(uword i=0; i < n_samples; i++) {
+    // Need to sample from a uniform distribution for each of the dimensions.
+    rand_sample = randu(dim_poly);
+    axis_count = 0;
+
+    for(uword j=0; j < edge.n_cols; ) { // No advancement statement here.
+      // Create the vector with the range.
+      range_axis(axis_count) = edge(i,j+1) - edge(i,j);
+      min_axis(axis_count) = edge(i,j);
+      // Make the advancement:
+      j += 2;
+      axis_count++;
+    }
+
+    // Here need to transpose the col vector to a row vector.
+    if( all(range_axis) ){
+      // If all elements of the range are non-zero:
+    samples.row(i) = trans( min_axis + ( rand_sample % range_axis ) );
+    } else{
+      // At least one of the elements is zero. Do not compute the difference.
+      // Keep the min values, since the max and min are equal.
+      samples.row(i) = trans( min_axis );
+    }
+  }
+
+  arma::mat samples_trans = trans(samples);
+  return samples_trans;
+}
+
+arma::mat mvrnormArma(int n, arma::vec mu, arma::mat sigma) {
+  // Define a function to sample from a multivariate normal.
+  // Source: http://gallery.rcpp.org/articles/simulate-multivariate-normal/
+  // Author: Ahmadou Dicko - Mar 12, 2013
+  int ncols = sigma.n_cols;
+  arma::mat Y = arma::randn(n, ncols);
+  return arma::repmat(mu, 1, n).t() + Y * arma::chol(sigma);
+}
+
+arma::vec Gibbs_get_trio(arma::vec a, arma::vec d1, arma::vec d2, arma::vec s, arma::vec t1, arma::vec t2, arma::cube R, arma::uword p, int is_root){
+  // Sample the value for a node given the descendant values and the ancestor value.
+  // This follows algorithm described in Quintero et al. (2015).
+  // The branch lengths s, t1, t2 are just (transposed) rows from the mapped.edge matrix.
+  if( p == 1){
+    // Single regime only.
+    double muA;
+    arma::vec muB;
+    arma::vec mu; // Final mean of the multivariate normal.
+    double scaler;
+    arma::mat V;
+    arma::mat node_sample; // But this should be a column!
+    if( is_root == 1 ){
+      mu = ( (d1*t2[0])+(d2*t1[0]) ) / (t1[0]+t2[0]);
+      scaler = (t1[0] * t2[0]) / (t1[0] + t2[0]);
+      V = scaler * R.slice(0);      
+    } else{
+      // Compute the mean:
+      muA = 1.0 / ( (t1[0]*t2[0]) + ((t1[0]+t2[0])*s[0]) );
+      muB = (t1[0]*t2[0]*a) + (s[0]*t2[0]*d1) + (s[0]*t1[0]*d2);
+      mu = muA * muB;
+      // Compute the variance:
+      scaler = (t1[0]*t2[0]*s[0]) / ( (t1[0]*t2[0]) + ( (t1[0]+t2[0])*s[0] ) );
+      V = R.slice(0) * scaler;
+    }
+    // We can draw from the posterior distribution:
+    node_sample = mvrnormArma(1, mu, V);
+    arma::vec output_fn = trans( node_sample.row(0) );
+    return trans( node_sample.row(0) ); // Return need to be a row vector.
+  } else{
+    // Make a draw taking into account multiple regimes.
+    // In this case we need to use similar steps to the pruning algorithm.
+    // When computing the variance we need to scale each of the rate matrices by their respective regimes.
+    // DUMMY RETURN. THIS ELSE BRACHET DOES NOT WORK IN THE CURRENT VERSION.
+    // Using object of correct format and scope for the dummy return.
+    arma::vec dummy;
+    return dummy; // Return need to be a row vector.
+  }
+}
+
+
 #endif

@@ -43,4 +43,96 @@ void writeQToFile(std::ostream& Q_mcmc_stream, arma::vec vec_Q, arma::uword k, s
   }
 }
 
+// Some functions to work with polytopes.
+
+void writeToMultFileNoRoot(std::ostream& mcmc_stream, arma::uword p, arma::uword k, arma::cube R){
+  // Same as the 'writeToMultFile_C' function but without the root value.
+  // Note the 'std::ostream&' argument here is the use of a reference.
+
+  // In the case of a single regime we need to make a fix to the workaround below.
+  if( p == 1 ){
+
+    for( arma::uword j=0; j < k; j++ ){
+      for( arma::uword z=0; z < k; z++ ){
+	mcmc_stream << R.slice(0)(j,z);
+	if( j == k-1 && z == k-1 ) {
+	  // Finish the line on the last element.
+	  mcmc_stream << "\n";
+	} else{
+	  // Not the last, add a separator.
+	  mcmc_stream << "; ";
+	}
+      }
+    }
+    
+  } else{ // Normal case with multiple regimes fitted to the tree.
+    // Will need a work-around to be able to close the line.
+    for( arma::uword i=0; i < p-1; i++ ){
+      for( arma::uword j=0; j < k; j++ ){
+	for( arma::uword z=0; z < k; z++ ){
+	  mcmc_stream << R.slice(i)(j,z);
+	  mcmc_stream << "; ";
+	}
+      }
+    }
+
+    for( arma::uword j=0; j < k; j++ ){
+      for( arma::uword z=0; z < k; z++ ){
+	mcmc_stream << R.slice(p-1)(j,z);
+	if( j == k-1 && z == k-1 ) {
+	  // Finish the line on the last element.
+	  mcmc_stream << "\n";
+	} else{
+	  // Not the last, add a separator.
+	  mcmc_stream << "; ";
+	}
+      }
+    }
+  }
+  
+}
+
+void writePolySample(std::ostream& poly_stream, arma::mat poly_tips, arma::mat poly_nodes){
+  // Write the sample for the tip states and for the internal nodes to file.
+
+  // Need to write down by row.
+  for( arma::uword i=0; i < poly_tips.n_rows; i++ ) {
+    for( arma::uword j=0; j < poly_tips.n_cols; j++ ) {
+      poly_stream << poly_tips(i,j);
+      poly_stream << "; ";
+    }
+  }
+
+  for( arma::uword i=0; i < poly_nodes.n_rows; i++ ) {
+    for( arma::uword j=0; j < poly_nodes.n_cols; j++ ) {
+      poly_stream << poly_nodes(i,j);
+      if( i == (poly_nodes.n_rows-1) && j == (poly_nodes.n_cols-1) ) {
+	// Last element, add a line end.
+	poly_stream << "\n";
+      } else{
+	// Not the last element. Add a separator.
+	poly_stream << "; ";
+      }
+    }
+  }
+
+}
+
+void writePolySampleTipsOnly(std::ostream& poly_stream, arma::mat poly_tips){
+  
+  // Write the sample for the tips to the log file.
+  for( arma::uword i=0; i < poly_tips.n_rows; i++ ) {
+    for( arma::uword j=0; j < poly_tips.n_cols; j++ ) {
+      poly_stream << poly_tips(i,j);
+      if( i == (poly_tips.n_rows-1) && j == (poly_tips.n_cols-1) ){
+	// Last element, add a line end.
+	poly_stream << "\n";
+      } else{
+	poly_stream << "; ";
+      }
+    }
+  }
+
+}
+
 #endif
