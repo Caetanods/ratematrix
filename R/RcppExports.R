@@ -17,18 +17,6 @@ logLikPrunningMCMC_C <- function(X, k, p, nodes, des, anc, names_anc, mapped_edg
     .Call('_ratematrix_logLikPrunningMCMC_C', PACKAGE = 'ratematrix', X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu)
 }
 
-cov2cor_C <- function(V) {
-    .Call('_ratematrix_cov2cor_C', PACKAGE = 'ratematrix', V)
-}
-
-priorCorr_C <- function(corr, nu, sigma) {
-    .Call('_ratematrix_priorCorr_C', PACKAGE = 'ratematrix', corr, nu, sigma)
-}
-
-makePropIWish_C <- function(vcv, k, v) {
-    .Call('_ratematrix_makePropIWish_C', PACKAGE = 'ratematrix', vcv, k, v)
-}
-
 runRatematrixMCMC_C <- function(X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, post_seq, write_header) {
     .Call('_ratematrix_runRatematrixMCMC_C', PACKAGE = 'ratematrix', X, k, p, nodes, des, anc, names_anc, mapped_edge, R, mu, sd, Rcorr, w_mu, par_prior_mu, den_mu, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, prob_sample_root, prob_sample_sd, gen, post_seq, write_header)
 }
