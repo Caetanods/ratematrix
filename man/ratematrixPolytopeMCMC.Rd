@@ -28,7 +28,7 @@ ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
 
 \item{burn}{percentage to discard as burn in. Set 'burn' in to 0.0 to start writing from the first generation.}
 
-\item{thin}{number of generations to be skipped as thinning. Set 'thin' to 0 to write every generation to the file.}
+\item{thin}{number of generations to be skipped as thinning. Set 'thin' to 1 to write every generation to the file.}
 
 \item{v}{value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.}
 

@@ -81,6 +81,16 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     
     ## Check burn and thin and create the vector of generations.
     ## Note here that the first generation is gen 0.
+    if( burn < 0.0 ) burn <- 0.0 ## Cannot be negative.
+    final.post.samples <- (gen-1) - (gen * burn)
+    if( final.post.samples <= thin ){
+        warning( "thinning is larger than posterior samples. Setting thin = 1" )
+        thin  <- 1 ## No thinning in this case.
+    }    
+    if( thin < 1.0 ){
+        warning( "thinning parameter need to be 1 or larger. Setting thin = 1" )
+        thin <- 1
+    }
     post_seq <- seq(from = gen * burn, to = (gen-1), by = thin)
     post_seq <- post_seq + 1 ## Bounce the generation vector forward to start from 1.
     

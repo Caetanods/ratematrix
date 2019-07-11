@@ -15,7 +15,7 @@
 ##' @param start the starting state for the MCMC chain. Must be "prior_sample" (the default) or a list in the same format as the prior sample generated from the "samplePrior" function. The function will also search for a "$anc" element on the list to use as the starting state for the internal nodes (if 'sample_internal = TRUE' ).
 ##' @param gen number of generations for the chain.
 ##' @param burn percentage to discard as burn in. Set 'burn' in to 0.0 to start writing from the first generation.
-##' @param thin number of generations to be skipped as thinning. Set 'thin' to 0 to write every generation to the file.
+##' @param thin number of generations to be skipped as thinning. Set 'thin' to 1 to write every generation to the file.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param w_mu value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.
@@ -52,9 +52,19 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
 
     ## Check burn and thin and create the vector of generations.
     ## Note here that the first generation is gen 0.
+    if( burn < 0.0 ) burn <- 0.0 ## Cannot be negative.
+    final.post.samples <- (gen-1) - (gen * burn)
+    if( final.post.samples <= thin ){
+        warning( "thinning is larger than posterior samples. Setting thin = 1" )
+        thin  <- 1 ## No thinning in this case.
+    }    
+    if( thin < 1.0 ){
+        warning( "thinning parameter need to be 1 or larger. Setting thin = 1" )
+        thin <- 1
+    }
     post_seq <- seq(from = gen * burn, to = (gen-1), by = thin)
     post_seq <- post_seq + 1 ## Bounce the generation vector forward to start from 1.
-    
+   
     ## Quickly check if a directory was provided. If not return an error.
     if( is.null(dir) ) stop('Need to provide a path to write MCMC samples. Use dir="." to write files to current directory.')
     if( !inherits(dir, what="character") ) stop("Value for argument 'dir' need to be a character. See help page.")
@@ -256,7 +266,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
             data.mat <- sapply(data, is.matrix)
             data.range <- lapply(data[data.mat], function(x) apply(x, 2, range) )
             data.range.mat <- do.call(rbind, c(data.range, data[!data.mat]))
-            data.range <- t( apply(data, 2, range) )
+            data.range <- t( apply(data.range.mat, 2, range) )
             ## If this prior is used, then the max on the standard deviation is hard-coded. (Not a bad value though).
             rep.sd.regime <- rep(c(0,sqrt(10)), times=p)
             par.sd <- matrix(data=rep.sd.regime, nrow=p, ncol=2, byrow=TRUE)
@@ -266,7 +276,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
             data.mat <- sapply(data, is.matrix)
             data.range <- lapply(data[data.mat], function(x) apply(x, 2, range) )
             data.range.mat <- do.call(rbind, c(data.range, data[!data.mat]))
-            data.range <- t( apply(data, 2, range) )
+            data.range <- t( apply(data.range.mat, 2, range) )
             cat("Guessing magnitude of rates from the data. \n")
             ## Using a single random observation for each of the species.
             simple.data <- matrix(ncol = ncol(data[[1]]), nrow = Ntip(phy) )
