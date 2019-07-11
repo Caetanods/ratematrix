@@ -25,7 +25,7 @@ void writeToMultFile_C(std::ostream& mcmc_stream, arma::uword p, arma::uword k, 
   }
   mcmc_stream << mu.tail(1);
   // mcmc_stream << "\n";
-  
+
 }
 
 void writeQToFile(std::ostream& Q_mcmc_stream, arma::vec vec_Q, arma::uword k, std::string model_Q){

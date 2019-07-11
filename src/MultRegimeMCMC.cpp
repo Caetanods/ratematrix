@@ -708,7 +708,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
   for( int j=0; j < p; j++ ){
     for( int i=0; i < k; i++ ){
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(j,i) ) * log( (k-1.0)/2.0 ) );
+      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
     }
   }
 
@@ -2751,7 +2751,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, arma
   return "Done.";
 }
 
-// Below is a function very similar to the one above. The difference is that we do not sample values for the internal nodes. We just added the step of sampling tip values from a distribution. The idea here is that we are evaluating the likelihood of the model by marginalizing (integrating over) the values for the ancestral values of each of the nodes.
+// Below is a function very similar to the one above. The difference is that we do not sample values for the inernal nodes. We just added the step of sampling tip values from a distribution. The idea here is that we are evaluating the likelihood of the model by marginalizing (integrating over) the values for the ancestral values of each of the nodes.
 
 double logLikPrunningREML(arma::mat X, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R) {
 
