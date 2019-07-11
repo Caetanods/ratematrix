@@ -78,7 +78,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
-
+    
     ## Check burn and thin and create the vector of generations.
     ## Note here that the first generation is gen 0.
     post_seq <- seq(from = gen * burn, to = (gen-1), by = thin)
