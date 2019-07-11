@@ -3,112 +3,24 @@
 using namespace Rcpp;
 using namespace arma;
 
-// This will have a function to run the MCMC and all the cpp functions that this depends on. The idea is that R functions will prepare the prior parameters and the objects needed to run this function. The output of the function will be the files mcmc and log.
+// Source file calls multiple C++ headers.
+// You can finde the headers with the C++ code on: inst/include/*.h
+// All exported functions need to be defined here.
 
 // #######################################################
-// ###### Support Functions
+// ###### Supporting functions
 // #######################################################
 
+// Include a series of supporting functions.
+// These have both statistical distributions and some helping functions.
+#include <distributions_and_helpers.h>
+
 // #######################################################
-// ###### The stochastic mapping functions
+// ###### Stochastic mappings
 // #######################################################
 
-arma::mat getReconStates(arma::uword n_nodes, int n_tips, int n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type) {
-  // This is the same as the logLikFunction but it returns a matrix with the probabilities for each of the states at each node of the phylogeny.
-
-  // n_nodes = number of nodes in phy
-  // n_tips = number of tips in phy
-  // n_states = number of states in the regime.
-  // edge_len = vector with the edge length
-  // edge_mat = the edge matrix for the tree.
-  // parents = vector with the unique( edge.matrix[,1] )
-  // X = data matrix. number of columns equal to the number of states. rows in the same order as the tip.labels. a 1 marks state is present and a 0 mark state absent.
-  // Q = the transition matrix.
-  // root_node = the node number for the root node
-  // root_type = the type to compute the root probabilities. 0 = equal and 1 = madfitz
-
-  arma::mat append_mat = mat(n_nodes, n_states, fill::zeros);
-  arma::mat liks = join_vert(X, append_mat);
-  arma::vec comp = vec(n_nodes + n_tips);
-  arma::uword anc;
-  arma::uvec ii; // This is a vector of indexes.
-  arma::mat v = mat(n_states, 2); // Two descendant nodes.
-
-  // Loop to traverse the tree.
-  for(uword i=0; i < n_nodes; i++) {
-
-    // Need to check the usage of 'anc'. Is it an index or a vector test?
-    
-    anc = parents[i] - 1; // This is an index. C++ starts from 0.
-    ii = find( parents[i] == edge_mat.col(0) ); // More than one entry.
-    
-    uword des;
-    arma::vec v_root = vec(n_states, fill::ones);
-    for(uword j=0; j < 2; j++) {
-      des = as_scalar( edge_mat(ii[j], 1) ) - 1; // This is an index
-      v.col(j) = expmat(Q * edge_len[ ii[j] ]) * trans( liks.row( des ) );
-      v_root = v_root % v.col(j);
-    }
-	  
-    if( parents[i] == root_node ){ // The computations at the root
-      if( root_type == 0 ){
-	// This is the equal root probability model:
-	arma::vec equal_pi = vec(n_states, fill::ones);
-	equal_pi = equal_pi / n_states;
-	comp[ anc ] = sum( v_root % equal_pi );
-      } else{
-	// if( root_type == 1) // This needs to be TRUE
-	// This is the Maddison and Fitzjohn method.
-	// arma::vec comp_unscaled = sum( v_root.col(0) );
-	arma::vec liks_root = v_root / sum( v_root );
-	arma::vec root_p = liks_root / sum( liks_root );
-	comp[ anc ] = sum( v_root % root_p );
-      }
-    } else{
-      comp[ anc ] = sum( v_root );
-    }
-
-    liks.row(anc) = trans( v_root / comp[ anc ] ); // Need row vector.
-  }
-
-  // Get the probabilities for the states at each node:
-  // Make sure that they all sum to 1
-  arma::mat recon_states = mat(liks);
-  for(uword mr=0; mr < recon_states.n_rows; mr++) {
-    recon_states.row(mr) = liks.row(mr) / sum( liks.row(mr) );
-  }
-  
-  return recon_states;
-}
-
-int rMultinom(arma::vec p) {
-  // This is a function to make a single draw from a multinominal distribution.
-  // p is a vector of probabilities and need to sum to 1.
-  p = p / sum(p);
-
-  if( any(p < 0.0) ){
-    // If probabilities < 0 then bounce to 0.
-    for( arma::uword w = 0; w < p.n_rows; w++ ){
-      if( p[w] < 0.0 ){
-	p[w] = 0.0;
-      }
-    }
-  }
-  
-  double unif_draw = as_scalar(randu(1));
-
-  // Use this random draw to select one of the outcomes. Note that this is a simple map computation, the continuous draw is mapped to an integer depending on the value.
-
-  arma::uword i = 0;
-  double map_ref = p[i];
-  while( unif_draw >= map_ref ) {
-    // The loop will not break because p sums to 1.
-    i++;
-    map_ref = map_ref + p[i];
-  }
-
-  return i;  
-}
+// Include functions to make stochastic maps:
+#include <stochastic_mapping.h>
 
 // [[Rcpp::export]]
 arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int sims_limit) {
@@ -401,6 +313,13 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
 }
 
 // #######################################################
+// ###### Prior distributions
+// #######################################################
+
+// Include prior densities.
+#include <priors.h>
+
+// #######################################################
 // ###### The logLikelihood functions
 // #######################################################
 
@@ -466,12 +385,8 @@ double logLikMk_C(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states,
   return sum( log( comp.subvec(0 + n_tips, n_nodes + n_tips - 1) ) );
 }
 
-double logLikNode_C(arma::vec ss, arma::mat sigma_len, arma::mat sigma_len_inv, int k) {
-  double val;
-  double signal;
-  arma::log_det(val, signal, sigma_len); // val is logdeterminant and signal should be 0.
-  return -0.5 * ( k * log(2 * arma::datum::pi) + val + as_scalar(trans(ss) * sigma_len_inv * ss));
-}
+// Include log-likelihood for the mvBM model using pruning.
+#include <likelihood_pruning.h>
 
 // [[Rcpp::export]]
 double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::vec mu) {
@@ -669,206 +584,15 @@ double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec
   return(ll);
 }
 
-// #######################################################
-// ###### The distribution functions
-// #######################################################
-// These are some distribution functions that are not available on Rcpp or on RcppArmadillo.
-
-double logDensityIWish_C(arma::mat W, double v, arma::mat S){
-  // Function for the density of a inverse Wishart distribution.
-  // W the covariance matrix.
-  // v the degrees of freedom parameter.
-  // S the standard matrix for the distribution.
-  double valS;
-  double valW;
-  double sign_sink;
-  double lgammapart = 0;
-    
-  double k = S.n_cols;
-  for(arma::uword i=0; i < S.n_cols; i++) {
-    lgammapart = lgammapart + lgamma((v-i)/2);
-  }
-  log_det(valS, sign_sink, S);
-  log_det(valW, sign_sink, W);
-  
-  double ldenom = lgammapart + ( ( (v*k)/2.0 ) * log( 2.0 ) ) + ( ( (k*(k-1.0))/4.0 ) * log( arma::datum::pi ) );
-  // Need to make sure that we are doing 'double' operations here!
-  double lnum = ( ( v/2.0 ) * valS ) + ( ( -(v + k + 1.0)/2.0 ) * valW ) + ( -0.5 * trace( S * inv(W) ) );
-  return lnum - ldenom;
-}
-
-arma::mat riwish_C(int v, arma::mat S){
-  // Generates a random draw from a inverse-Wishart distribution.
-  // arma::mat CC = chol( inv(S) );
-  arma::mat CC = chol( inv(S) );
-  int p = S.n_cols;
-  // Make a diagonal matrix with the elements:
-  // R::rchisq( df ) // with df in a sequence v:(v - p + 1)
-  arma::vec chi_sample(p);
-  // regspace will make a sequence.
-  arma::vec df = regspace(v, v-p+1); // The degrees of freedom when sampling.
-  for( int i=0; i < p; i++ ) {
-    chi_sample[i] = sqrt( R::rchisq( df[i] ) );
-  }
-  arma::mat Z = diagmat( chi_sample );
-  // Need to fill the upper triangular elements with samples from a standard normal.
-  for( int i=0; i < p-1; i++) {
-    // randn uses a normal distribution to sample.
-    Z(i,span((i+1), (p-1))) = trans(randn(p-(i+1)));
-  }
-  arma::mat out = Z * CC;
-  return inv( trans(out) * out );
-}
-
-double hastingsDensity_C(arma::cube R, arma::cube R_prop, int k, arma::vec v, int Rp){
-  // The hasting is only computed for the regime that is updated (Rp).
-  arma::mat center_curr = (v[Rp]-k-1) * R.slice(Rp);
-  arma::mat center_prop = (v[Rp]-k-1) * R_prop.slice(Rp);
-  return logDensityIWish_C(R.slice(Rp), v[Rp], center_prop) - logDensityIWish_C(R_prop.slice(Rp), v[Rp], center_curr);
-}  
-
-// [[Rcpp::export]]
-arma::mat cov2cor_C(arma::mat V){
-  // This is a **brute force** function for the correlation matrix.
-  arma::mat Vdiag = inv( sqrt( diagmat(V) ) );
-  return Vdiag * V * Vdiag;
-}
+// Define some proposal functions:
+#include <proposals.h>
 
 // #######################################################
-// ###### The prior functions
+// ###### The MCMC functions
 // #######################################################
 
-double priorRoot_C(arma::vec mu, arma::mat par_prior_mu, std::string den_mu){
-  // Here the 'par_prior_mu' need to be a matrix constructed before.
-  // The value for 'den_mu' will also be given before.
-  // These objects will be constructed by 'makePrior' function.
-  // If you have a problem with the vector type you can use:
-  // NumericVector(a.begin(),a.end()) to transform into a Rcpp vector.
-  double pp = 0.0;
-  if( den_mu == "unif" ){
-    for( arma::uword i=0; i < mu.n_elem; i++ ){
-      pp = pp + R::dunif(mu[i], par_prior_mu(i,0), par_prior_mu(i,1), true);
-    }
-  } else{
-    for( arma::uword i=0; i < mu.n_elem; i++ ){
-      pp = pp + R::dnorm(mu[i], par_prior_mu(i,0), par_prior_mu(i,1), true);
-    }
-  }  
-  return pp;
-}
-
-double priorSD_C(arma::mat sd, arma::mat par_prior_sd, std::string den_sd){
-  // FUNCTION FOR 2 OR MORE RATE REGIMES.
-  // 'sd' is a matrix with number of columns equal to 'p', number of regimes.
-  // This function will work even if there is only a single regime, because Armadillo treats the vectors as column vector. So 'sd' will be a matrix with a single column.
-  double pp = 0.0;
-  if( den_sd == "unif" ){
-    for( arma::uword i=0; i < sd.n_rows; i++ ){
-      for( arma::uword j=0; j < sd.n_cols; j++){
-	// Each line of the 'par_prior_sd' correspond to each of the sd vectors stored as the columns of the 'sd' matrix.
-	pp = pp + R::dunif(sd(i,j), par_prior_sd(j,0), par_prior_sd(j,1), true);
-      }
-    }
-  } else{
-    for( arma::uword i=0; i < sd.n_rows; i++ ){
-      for( arma::uword j=0; j < sd.n_cols; j++){
-	// Each line of the 'par_prior_sd' correspond to each of the sd vectors stored as the columns of the 'sd' matrix.
-	pp = pp + R::dlnorm(sd(i,j), par_prior_sd(j,0), par_prior_sd(j,1), true);
-      }
-    }
-  }  
-  return pp;
-}
-
-// [[Rcpp::export]]
-double priorCorr_C(arma::cube corr, arma::vec nu, arma::cube sigma){
-  // FUNCTION FOR 2 OR MORE RATE REGIMES.
-  // nu is a vector with the correspondent degree of freedom for the rate regime.
-  // This is the more complicated one. Need to deal with the Wishart distributions.
-  // If the correlation prior was set to "uniform'. Then we just need to set sigma and v to the standard values when doing the 'makePrior' step. No need for a if test here.
-  // Will treat the correlation and sigma as arrays (cube). This will work even if they are matrices. I think.
-  arma::uword p = corr.n_slices;
-  double pp = 0.0;
-  for( arma::uword i=0; i < p; i++ ) {
-    pp = pp + logDensityIWish_C(corr.slice(i), nu[i], sigma.slice(i)); // Need to define this one.
-  }
-  return pp;
-}
-
-// #######################################################
-// ###### The proposal functions
-// #######################################################
-
-arma::vec multiplierProposal_C(int size, arma::vec w_sd){
-  // A proposal that scales with the absolute value of the parameter. (Always positive.)
-  // Get this return factor and multiply by the current value for the proposal.
-  // Return is a vector of length 'size', so it will work for multiple parameters.
-  // The proposal ratio is the sum of the output vector.
-  return exp( (randu(size) - 0.5) % w_sd );
-}
-
-arma::vec slideWindowLogSpace_C(arma::vec mu, arma::vec w_mu){
-  // This will take the vector of root values mu and a vector of widths and make a draw.
-  // Difference is that here we do the sliding window in log-space.
-  // This proposal strategy is symmetrical in log-space but assymetrical in normal space.
-  // Not a problem because the symmetry need to happen in the proposal step.
-  // in R this is doing:
-  // y <- sapply(1:length(mu), function(x) exp( log(mu) - (log(w_mu)/2) + (runif(1) * log(w_mu)) ) )
-  return exp( log(mu) - (log(w_mu)/2) + (randu(mu.n_elem) % log(w_mu)) );
-}
-
-arma::vec slideWindow_C(arma::vec mu, arma::vec w_mu){
-  // This will take the vector of root values mu and a vector of widths and make a draw.
-  // in R this is doing:
-  // y <- sapply(1:length(mu), function(x) runif(1, min = mu[i] - (w_mu[i]/2), max = mu[i] + (w_mu[i]/2) ) )
-  return (mu - (w_mu/2)) + ( randu( mu.n_elem ) % w_mu );
-}
-
-// arma::vec slideWindowPositive_C(arma::vec sd, arma::vec w_sd){
-//   // This will take the vector of root values mu and a vector of widths and make a draw.
-//   arma::vec prop_sd = (sd - (w_sd/2)) + ( randu(sd.n_elem) % w_sd );
-//   for(int i=0; i < sd.n_elem; i++){
-//     prop_sd[i] = std::abs(prop_sd[i]);
-//   }
-//   return prop_sd;
-// }
-
-// [[Rcpp::export]]
-arma::mat makePropIWish_C(arma::mat vcv, double k, double v){
-  // Function to make a proposal for the correlation structure.
-  // Proposal for a single R matrix, so vcv is not a cube.
-  // Defining the parameters here as double because of the multiplication.
-  // v here is the size if the step. This will usually be a large number.
-  arma::mat center = (v-k-1) * vcv;
-  // Need the riwish function here.
-  return riwish_C(v, center);
-}
-
-// #######################################################
-// ###### Function to write to file
-// #######################################################
-
-void writeToMultFile_C(std::ostream& mcmc_stream, arma::uword p, arma::uword k, arma::cube R, arma::vec mu){
-  // Note the 'std::ostream&' argument here is the use of a reference.
-  for( arma::uword i=0; i < p; i++ ){
-    for( arma::uword j=0; j < k; j++ ){
-      for( arma::uword z=0; z < k; z++ ){
-	mcmc_stream << R.slice(i)(j,z);
-	mcmc_stream << "; ";
-      }
-    }
-  }
-  for( arma::uword i=0; i < k-1; i++ ){
-    mcmc_stream << mu[i];
-    mcmc_stream << "; ";
-  }
-  mcmc_stream << mu.tail(1);
-  // mcmc_stream << "\n";
-}
-
-// #######################################################
-// ###### The MCMC function.
-// #######################################################
+// Include functions to write to the log file:
+#include <log_functions.h>
 
 // This is the MCMC function when there is only a single tree/regime configuration to be estimated. Allowing for multiple trees could be done in the same function. However, it is faster and simpler just to duplicate this function and assume that we are always working with a list of trees.
 // The function 'runRatematrixMultiMCMC_C' is doing this.
@@ -1492,130 +1216,6 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   return "Done.";
 }
 
-// The function with joint estimation for the Markov model together with the mvBM. This will sample Q matrices, will sample the stochastic mappings. Starting states are the Q matrix and the mapped_edge for the stochastic mapping.
-
-// Helping functions for the jointMk estimation.
-// These are related to the proposal, priors and write to file for the Q matrices.
-
-double priorQ(arma::vec vec_Q, arma::vec par_prior_Q, std::string den_Q){
-  // Compute the prior probability for the Q matrix rates.
-  // Can be uniform or exponential prior.
-  // The 'par_prior_Q' can be a vector with 1 or 2 elements, depeding on the density.
-  double pp = 0.0;
-  if( den_Q == "uniform" ){
-    for( arma::uword i=0; i < vec_Q.n_rows; i++ ){ // vec_Q is a column.
-      // If "unif" then 'par_prior_Q' is a vector with 2 elements.
-      pp = pp + R::dunif(vec_Q[i], par_prior_Q[0], par_prior_Q[1], true);
-    }
-  } else{ // Then it is an exponential prior.
-    for( arma::uword i=0; i < vec_Q.n_rows; i++ ){
-      // In Rcpp the exponential is '1/rate' whereas in R it is simply 'rate' .
-      // Here only one parameter is needed.
-      pp = pp + R::dexp(vec_Q[i], 1/par_prior_Q[0], true);
-    }
-  }
-  
-  return pp;
-}
-
-arma::vec extractQ(arma::mat Q, arma::uword size, std::string model_Q){
-  // Function to extract a column vector from the Q matrix.
-  // Length of the vector will depend on the type of the model for the Q matrix.
-  // Need to use the same pattern to extract and rebuild the matrix.
-  arma::vec vec_Q;
-  
-  if( model_Q == "ER" ){
-    vec_Q = vec(1, fill::zeros);
-    vec_Q[0] = Q(0,1); // All off-diagonals are the same.
-  } else if( model_Q == "SYM" ){
-    arma::uword count = 0;
-    int size_vec = ( ( size * size ) - size ) / 2;
-    vec_Q = vec(size_vec, fill::zeros);
-    for( arma::uword i=0; i < size; i++ ){
-      for( arma::uword j=0; j < size; j++ ){
-	if( i >= j ) continue;
-	vec_Q[count] = Q(i,j);
-	count++;
-      }
-    }
-  } else{ // model_Q == "ARD"
-    arma::uword count = 0;
-    int size_vec = ( size * size ) - size;
-    vec_Q = vec(size_vec, fill::zeros);
-    for( arma::uword i=0; i < size; i++ ){
-      for( arma::uword j=0; j < size; j++ ){
-	if( i == j ) continue;
-	vec_Q[count] = Q(i,j);
-	count++;
-      }
-    }
-  }
-
-  return vec_Q;
-}
-
-arma::mat buildQ(arma::vec vec_Q, arma::uword size, std::string model_Q){
-  // Function to re-build the Q matrix.
-  // Need to follow the same pattern used to extract the vector.
-  arma::mat Q = mat(size, size, fill::zeros);
-  
-  if( model_Q == "ER" ){
-    Q.fill(vec_Q[0]);
-    // Now fill the diagonal.
-    for( arma::uword i=0; i < size; i++ ){
-      Q(i,i) = -1.0 * ( sum( Q.row(i) ) - vec_Q[0] );
-    }
-  } else if( model_Q == "SYM" ){
-    Q.fill(0); // Fill the matrix with 0.
-    arma::uword count = 0;
-    // Go over the matrix and fill the upper and lower-tri.
-    for( arma::uword i=0; i < size; i++ ){
-      for( arma::uword j=0; j < size; j++ ){
-	if( i >= j ) continue;
-	Q(i,j) = vec_Q[count];
-	Q(j,i) = vec_Q[count]; // The trick to fill the lower-tri.
-	count++;
-      }
-    }
-    // Now fill the diagonal.
-    for( arma::uword i=0; i < size; i++ ){
-      Q(i,i) = -1.0 * sum( Q.row(i) );
-    }
-  } else{ // model_Q == "ARD"
-    Q.fill(0); // Fill the matrix with 0.
-    arma::uword count = 0;
-    // Go over the matrix and fill the upper and lower-tri.
-    for( arma::uword i=0; i < size; i++ ){
-      for( arma::uword j=0; j < size; j++ ){
-	if( i == j ) continue;
-	Q(i,j) = vec_Q[count];
-	count++;
-      }
-    }
-    // Now fill the diagonal.
-    for( arma::uword i=0; i < size; i++ ){
-      Q(i,i) = -1.0 * sum( Q.row(i) );
-    }
-  }
-
-  return Q;
-}
-
-void writeQToFile(std::ostream& Q_mcmc_stream, arma::vec vec_Q, arma::uword k, std::string model_Q){
-  // Note the 'std::ostream&' argument here is the use of a reference.
-  if( model_Q == "ER" ){
-    Q_mcmc_stream << vec_Q;
-  } else{
-    arma::uword print_size = vec_Q.n_rows;
-    for( arma::uword i=0; i < (print_size-1); i++ ){
-      Q_mcmc_stream << vec_Q[i];
-      Q_mcmc_stream << "; ";
-    }
-    Q_mcmc_stream << vec_Q[print_size-1];
-    Q_mcmc_stream << "\n";
-  }
-}
-
 
 // [[Rcpp::export]]
 std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uword k, arma::uword p, arma::vec nodes, arma::uword n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, arma::uword n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, arma::uword gen, arma::vec post_seq, int write_header, arma::uword sims_limit){
@@ -2128,3 +1728,4 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 
   return "Done.";
 }
+
