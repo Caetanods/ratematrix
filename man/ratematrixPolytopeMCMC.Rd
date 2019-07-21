@@ -5,11 +5,11 @@
 \title{Joint estimate the multidimentional phenotypic space for ancestrals and the evolutionary rate matrix}
 \usage{
 ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
-  save_start_anc = TRUE, prior = "uniform_scaled",
-  start = "prior_sample", gen, burn = 0.25, thin = 100, v = 50,
-  w_sd = 0.5, w_mu = 0.5, prop_par = c(0.2, 0.4, 0.4),
-  n_tips_move = 1, dir = NULL, outname = "ratematrixPolyMCMC",
-  IDlen = 5, save.handle = TRUE)
+  save_start_anc = TRUE, rate_variation = FALSE, ncat = 10,
+  prior = "uniform_scaled", start = "prior_sample", gen, burn = 0.25,
+  thin = 100, v = 50, w_sd = 0.5, w_gamma = 0.5,
+  prop_par = c(0.2, 0.2, 0.2, 0.2, 0.2), n_tips_move = 1, dir = NULL,
+  outname = "ratematrixPolyMCMC", IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.}
@@ -19,6 +19,10 @@ ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
 \item{sample_internal}{whether to sample the internal nodes of the tree (i.e., ancestral states) using Gibbs sampler together with the estimates of the other parameter of the model. NOTE: Preliminary results showed that including this parameter can decrease the mixing of the MCMC chain.}
 
 \item{save_start_anc}{whether to save the starting state for the internal nodes. This can be used as the starting state for search replicates using the same data. See 'start' argument for more information. This is ignored if 'sample_internal = FALSE'.}
+
+\item{rate_variation}{whether to allow for rate heterogeity on the model. Rate variation is modelled using a discrete-Gamma distribution (Yang, 1994). This is similar to the +G models of molecular evolution.}
+
+\item{ncat}{number of categories of the discrete-Gamma distribution for variation of rates. Large numbers allow for more smooth rate variation but make convergence of the model slower.}
 
 \item{prior}{the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.}
 
@@ -34,9 +38,9 @@ ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
 
 \item{w_sd}{the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.}
 
-\item{w_mu}{value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.}
+\item{w_gamma}{the multiplying factor for the multiplier proposal on the rate parameter for the Gamma distributed rate variation across the branches of the tree.}
 
-\item{prop_par}{a numeric vector of length 3 with the proposal frequencies for the parameters in this order: tip states, variance, and correlation. Default value is 'c(0.2, 0.4, 0.4)'.}
+\item{prop_par}{a numeric vector of length 5 with the proposal frequencies for the parameters in this order: tip states, variance (rates), correlation, Gamma parameter (beta), and samples from the Gamma rate distribution. Default value is 'c(0.2, 0.2, 0.2, 0.2, 0.2)'.}
 
 \item{n_tips_move}{the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.}
 
@@ -78,6 +82,8 @@ Bouckaert, R., P. Lemey, M. Dunn, S. J. Greenhill, A. V. Alekseyenko, A. J. Drum
 Caetano, D. S., and L. J. Harmon. 2017. ratematrix: An R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecology and Evolution 8:1920–1927.
 
 Caetano, D. S., and L. J. Harmon. 2018. Estimating Correlated Rates of Trait Evolution with Uncertainty. Systematic Biology, doi: 10.1093/sysbio/syy067.
+
+Yang, Z. 1994. Maximum likelihood phylogenetic estimation from DNA sequences with variable rates over sites: Approximatemethods. Journal of Molecular Evolution 39:306-314.
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

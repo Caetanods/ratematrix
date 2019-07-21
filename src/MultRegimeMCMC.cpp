@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_integration.h>
+#include <gsl/gsl_cdf.h>
 #include <gsl/gsl_randist.h>
 
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -2540,7 +2541,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, arma
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header){
+std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header, int gamma, double gamma_min, double gamma_max, int gamma_cat, double gamma_init, double gamma_step, std::string gamma_file){
 
   // Function is vey similar to 'runRatematrixPolytopeMCMC'.
   // Note that here we are not sampling the internal nodes of the tree.
@@ -2550,6 +2551,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   std::ofstream log_stream (log_file, ios::out | ios::app);
   std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
   std::ofstream poly_stream (poly_file, ios::out | ios::app);
+  std::ofstream gamma_stream (gamma_file, ios::out | ios::app);
 
   // Write the header for the mcmc file.
   if(write_header == 1){
@@ -2573,7 +2575,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     
     // Write the header for the log file.
     // This is very different from the other version of the MCMC.
-    log_stream << "accepted; tip_trait; sd; corr; log_lik \n";
+    log_stream << "accepted; tip_trait; gamma; sd; corr; log_lik \n";
 
     // Write the header for the poly file.
     // In this version of the sampler, only the tip values are sampled.
@@ -2591,6 +2593,21 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	  poly_stream << "; ";
 	}
       }
+    }
+
+    if( gamma == 1){
+      // Write header for the Gamma rates.
+      // This will be a rate scalar for each of the branches.
+      // First column will be always the current Gamma parameter.
+      gamma_stream << "beta; ";
+      for( arma::uword i=1; i < mapped_edge.n_rows; i++ ){
+      	gamma_stream << "br_";
+	gamma_stream << i;
+	gamma_stream << "; ";
+      }
+      gamma_stream << "br_";
+      gamma_stream << mapped_edge.n_rows;
+      gamma_stream << "\n"; // Last columns for the log.
     }
     
   } else{
@@ -2644,15 +2661,55 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   // A control to choose which parameter to be sampled.
   int update;
   double it_prob; // Help to sample the update.
+
+  // The vector of Gamma rates:
+  arma::vec gamma_rates = vec(gamma_cat);
+  arma::vec prop_gamma_rates = vec(gamma_cat);
+  // The number of branches for this phylogeny:
+  arma::uword n_branches = mapped_edge.n_rows;
+  // The Gamma distribution parameter.
+  double gamma_beta;
+  gamma_beta = gamma_init; // Initialize the parameter.
+  double prop_gamma_beta; // The proposal container.
+  // The vector of rate scalars for each of the branches.
+  arma::vec gamma_branches = vec(n_branches);
+  arma::vec prop_gamma_branches = vec(n_branches);
+  // A vector of probabilities for the multinomial sample of rate categories:
+  arma::vec gamma_multinom = vec(gamma_cat);
+  gamma_multinom.fill(1.0/gamma_cat); // Equal chance to sample from each category.
+  // The container for scaling the branch lengths of the tree:
+  arma::mat mapped_edge_scaled = mat( size(mapped_edge) );
+  arma::mat prop_mapped_edge_scaled = mat( size(mapped_edge) );
+  double prop_gamma_lik; // The proposal likelihood for a change on the gamma rates.
+  // Define the current prior just in case (avoid compiler warning.)
+  double curr_gamma_prior = R::dunif(gamma_init, gamma_min, gamma_max, true); // Prior probabilities.
+  double prop_gamma_prior; // Prior probabilities.
+  double gamma_multi_factor; // Multiplier proposal factor.
   
   // Make starting sample from polytopes.
   sample_poly_tips = samplePolytope(X_poly);
   // Initate the proposal for the polytope:
   sample_poly_tips_prop = sample_poly_tips;
+
+  if( gamma == 1 ){
+    // Taking initial samples from the Gamma distribution.  
+    gamma_rates = getGammaRates(gamma_init, gamma_cat);
+    // Sample a rate for each of the branches:
+    for( arma::uword i=0; i < n_branches; i++ ){
+      gamma_branches(i) = gamma_rates( rMultinom(gamma_multinom) );
+    }
+    // Scale the branches of the tree to reflect the rates.
+    mapped_edge_scaled = mapped_edge; // Keeping the original branch lengths, because we need to scale.
+    mapped_edge_scaled.each_col() %= gamma_branches;
+  } else{
+    // Just make a copy of the regular edge matrix.
+    mapped_edge_scaled = mapped_edge;
+  }
   
   // Get starting priors, likelihood, and jacobian.
   // Need to make sure the likelihood function will work if p == 1.
-  lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R);
+  // lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R);
+  lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge_scaled, R);
   curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd, p);
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
@@ -2671,19 +2728,31 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 
   if( post_seq[post_seq_id] == 1 ){
     // Print starting point to files:
-    // order: accept, tip, sd, corr, lik.
-    log_stream << "1; 0; 0; 0; ";
+    // order: accept, tip, gamma, sd, corr, lik.
+    log_stream << "1; 0; 0; 0; 0; ";
     log_stream << lik;
     log_stream << "\n";
     writeToMultFileNoRoot(mcmc_stream, p, k, R);
     // Modified function that only writes the values for the tips to file.
     writePolySampleTipsOnly(poly_stream, sample_poly_tips);
+    if( gamma == 1 ){
+      // Write initial state to the log file:
+      writeGammaSample(gamma_stream, gamma_init, gamma_branches);
+    }
     // Update the id to write to file. Because this is just the starting state.
     post_seq_id++;
   }
 
   Rcout << "Starting MCMC ... \n";
 
+  if( gamma == 0 ){
+  // If not using Gamma, then need to set the update 3 and 4 to zero.
+  // NOTE: This will mess a little with the log file. But not much. The log file will show that Gamma was never updated.
+    prob_proposals[3] = 0.0;
+    prob_proposals[4] = 0.0;
+    prob_proposals = prob_proposals / accu(prob_proposals);
+  }
+  
   // Starting the MCMC.
 
   for( arma::uword i=0; i < gen; i++ ){
@@ -2691,13 +2760,17 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     // Choose which par to sample.
     it_prob = as_scalar(randu(1));
     // Without the root values, prob_proposals will only have 3 elements.
-    // Here prob_proposals has 3 elements, probability for the tip traits, sd vector and correlation matrix.
+    // Here prob_proposals has 4 elements, probability for the tip traits, sd vector and correlation matrix.
     if(it_prob < prob_proposals[0]){
       update = 0; // Update the tip traits.
     } else if(it_prob < (prob_proposals[0] + prob_proposals[1]) ){
       update = 1; // Update standard deviation.
-    } else {
+    } else if(it_prob < (prob_proposals[0] + prob_proposals[1] + prob_proposals[2]) ){
       update = 2; // Update the correlation.
+    } else if(it_prob < (prob_proposals[0] + prob_proposals[1] + prob_proposals[2] + prob_proposals[3]) ){
+      update = 3; // Update the Gamma parameter.
+    } else{
+      update = 4; // Update the Gamma rates scaler vector.
     }
     
     // If matrix or variance is updated, which regime?
@@ -2730,8 +2803,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       if( exp(r) > unif_draw ){ // Accept.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
-	  // order: accept, tip, sd, corr, lik.
-	  log_stream << "1; 1; 0; 0; ";
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "1; 1; 0; 0; 0; ";
 	  log_stream << prop_trait_lik;
 	  log_stream << "\n";
 	}
@@ -2741,8 +2814,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       } else{ // Reject. Keep the values the same.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
-	  // order: accept, tip, sd, corr, lik.
-	  log_stream << "0; 1; 0; 0; ";
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "0; 1; 0; 0; 0; ";
 	  log_stream << lik;
 	  log_stream << "\n";
 	}
@@ -2776,8 +2849,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       if( exp(r) > unif_draw ){ // Accept.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
-	  // order: accept, tip, sd, corr, lik.
-	  log_stream << "1; 0; ";
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "1; 0; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; 0; ";
 	  log_stream << prop_sd_lik;
@@ -2791,8 +2864,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       } else{ // Reject. Keep the values the same.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
-	  // order: accept, tip, sd, corr, lik.
-	  log_stream << "0; 0; ";
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "0; 0; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; 0; ";
 	  log_stream << lik;
@@ -2843,8 +2916,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       if( exp(r) > unif_draw ){ // Accept.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
-	  // order: accept, tip, sd, corr, lik.
-	  log_stream << "1; 0; 0; ";
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "1; 0; 0; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; ";
 	  log_stream << prop_corr_lik;
@@ -2859,8 +2932,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       } else{ // Reject. Keep the values the same.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
-	  // order: accept, tip, sd, corr, lik.
-	  log_stream << "0; 0; 0; ";
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "0; 0; 0; 0; ";
 	  log_stream << Rp+1;
 	  log_stream << "; ";
 	  log_stream << lik;
@@ -2871,12 +2944,118 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 
     }
 
+    if(update == 3){
+      // Update the parameter for the Gamma distribution of rates.
+      // Generates the multiplier factor, which is also the Hastings.
+      gamma_multi_factor = multiplierProposalDouble(gamma_step);
+      // Below is the update using the sliding window, maybe we do not need this proposal function anymore.
+      // prop_gamma_beta = slideWindowLogSpaceDouble(gamma_beta, (gamma_max - gamma_min)/100.0);
+      prop_gamma_beta = gamma_beta * gamma_multi_factor;
+      // Print the values for debug:
+      // Rcout << "Current gamma: " << gamma_beta << "| Prop gamma: " << prop_gamma_beta << "\n";
+      
+      // Update the rate scalers for the branches.
+      prop_gamma_rates = getGammaRates(prop_gamma_beta, gamma_cat);
+      for( arma::uword i=0; i < n_branches; i++ ){
+	prop_gamma_branches(i) = prop_gamma_rates( rMultinom(gamma_multinom) );
+      }
+      prop_mapped_edge_scaled = mapped_edge;
+      prop_mapped_edge_scaled.each_col() %= prop_gamma_branches;
+      // Compute the likelihood for the proposal.
+      prop_gamma_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, prop_mapped_edge_scaled, R);
+      ll = prop_gamma_lik - lik;
+
+      // Prior for the parameter is a uniform. (This could use GSL instead.)
+      prop_gamma_prior = R::dunif(prop_gamma_beta, gamma_min, gamma_max, true);
+      pp = prop_gamma_prior - curr_gamma_prior;
+
+      // Proposal ratio. Lik + prior + Hastings (for the multiplier proposal).
+      r = ll + pp + gamma_multi_factor;
+
+      // Advance to the acceptance step.
+      unif_draw = as_scalar(randu(1));
+      if( exp(r) > unif_draw ){ // Accept.
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // Write gen to file.
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "1; 0; 1; 0; 0; ";
+	  log_stream << prop_gamma_lik;
+	  log_stream << "\n";
+	}
+	// Make the updates
+	lik = prop_gamma_lik;
+	curr_gamma_prior = prop_gamma_prior;
+	mapped_edge_scaled = prop_mapped_edge_scaled;
+	gamma_branches = prop_gamma_branches;
+	gamma_beta = prop_gamma_beta;
+      } else{ // Reject. Keep the values the same.
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // Write gen to file.
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "0; 0; 1; 0; 0; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
+	// No updates to be made.
+      }
+      
+    }
+
+    if(update == 4){
+      // Update the Gamma rates vector conditioned on the Gamma parameter.
+      // This is just a sample from the Gamma prior of rates.
+
+      // Update the rate scalers for the branches.
+      // Use the current gamma_beta parameter.
+      prop_gamma_rates = getGammaRates(gamma_beta, gamma_cat);
+      for( arma::uword i=0; i < n_branches; i++ ){
+	prop_gamma_branches(i) = prop_gamma_rates( rMultinom(gamma_multinom) );
+      }
+      prop_mapped_edge_scaled = mapped_edge; // Always refer back to the original branch lengths.
+      prop_mapped_edge_scaled.each_col() %= prop_gamma_branches;
+      // Compute the likelihood for the proposal.
+      prop_gamma_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, prop_mapped_edge_scaled, R);
+      ll = prop_gamma_lik - lik;
+
+      // Get the ratio i log space. Loglik, log prior, log hastings and log jacobian.
+      r = ll; // The prior is flat here. Proposal comes from within the prior range.
+
+      // Advance to the acceptance step.
+      unif_draw = as_scalar(randu(1));
+      if( exp(r) > unif_draw ){ // Accept.
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // Write gen to file.
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "1; 0; 1; 0; 0; ";
+	  log_stream << prop_gamma_lik;
+	  log_stream << "\n";
+	}
+	// Make the updates
+	lik = prop_gamma_lik;
+	mapped_edge_scaled = prop_mapped_edge_scaled;
+	gamma_branches = prop_gamma_branches;
+      } else{ // Reject. Keep the values the same.
+	if( post_seq[post_seq_id] == (i+1) ){
+	  // Write gen to file.
+	  // order: accept, tip, gamma, sd, corr, lik.
+	  log_stream << "0; 0; 1; 0; 0; ";
+	  log_stream << lik;
+	  log_stream << "\n";
+	}
+	// No updates to be made.
+      }
+      
+    }
+    
     // Write the current state to the MCMC file and update the counter for the posterior samples to keep.
     // Note that the counter will not be updated until the sample is reached and written to file.
     if( post_seq[post_seq_id] == (i+1) ){
       // writeToMultFile_C(mcmc_stream, p, k, R, root);
       writeToMultFileNoRoot(mcmc_stream, p, k, R);
       writePolySampleTipsOnly(poly_stream, sample_poly_tips);
+      if( gamma == 1 ){
+	writeGammaSample(gamma_stream, gamma_beta, gamma_branches);
+      }
       post_seq_id++;
     }
     
@@ -2887,6 +3066,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   mcmc_stream.close();
   log_stream.close();
   poly_stream.close();
+  gamma_stream.close();
 
   return "Done.";
 }

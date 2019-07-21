@@ -290,8 +290,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // runRatematrixPolytopeTipsOnlyMCMC
-std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header);
-RcppExport SEXP _ratematrix_runRatematrixPolytopeTipsOnlyMCMC(SEXP X_polySEXP, SEXP n_input_moveSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP poly_fileSEXP, SEXP prob_proposalsSEXP, SEXP genSEXP, SEXP post_seqSEXP, SEXP write_headerSEXP) {
+std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header, int gamma, double gamma_min, double gamma_max, int gamma_cat, double gamma_init, double gamma_step, std::string gamma_file);
+RcppExport SEXP _ratematrix_runRatematrixPolytopeTipsOnlyMCMC(SEXP X_polySEXP, SEXP n_input_moveSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP RSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP poly_fileSEXP, SEXP prob_proposalsSEXP, SEXP genSEXP, SEXP post_seqSEXP, SEXP write_headerSEXP, SEXP gammaSEXP, SEXP gamma_minSEXP, SEXP gamma_maxSEXP, SEXP gamma_catSEXP, SEXP gamma_initSEXP, SEXP gamma_stepSEXP, SEXP gamma_fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -320,7 +320,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::uword >::type gen(genSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type post_seq(post_seqSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type write_header(write_headerSEXP);
-    rcpp_result_gen = Rcpp::wrap(runRatematrixPolytopeTipsOnlyMCMC(X_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header));
+    Rcpp::traits::input_parameter< int >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_min(gamma_minSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_max(gamma_maxSEXP);
+    Rcpp::traits::input_parameter< int >::type gamma_cat(gamma_catSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_init(gamma_initSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_step(gamma_stepSEXP);
+    Rcpp::traits::input_parameter< std::string >::type gamma_file(gamma_fileSEXP);
+    rcpp_result_gen = Rcpp::wrap(runRatematrixPolytopeTipsOnlyMCMC(X_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header, gamma, gamma_min, gamma_max, gamma_cat, gamma_init, gamma_step, gamma_file));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -336,7 +343,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_logLikPrunningFixedAnc", (DL_FUNC) &_ratematrix_logLikPrunningFixedAnc, 10},
     {"_ratematrix_Gibbs_sample_nodes", (DL_FUNC) &_ratematrix_Gibbs_sample_nodes, 9},
     {"_ratematrix_runRatematrixPolytopeMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeMCMC, 26},
-    {"_ratematrix_runRatematrixPolytopeTipsOnlyMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeTipsOnlyMCMC, 25},
+    {"_ratematrix_runRatematrixPolytopeTipsOnlyMCMC", (DL_FUNC) &_ratematrix_runRatematrixPolytopeTipsOnlyMCMC, 32},
     {NULL, NULL, 0}
 };
 

@@ -11,6 +11,8 @@
 ##' @param phy a single phylogeny of the class "simmap" with the mapped regimes for two or more R regimes OR a phylogeny of the class "phylo" for a single regime. The number of evolutionary rate matrices fitted to the phylogeny is equal to the number of regimes in 'phy'. Regime names will also be used.
 ##' @param sample_internal whether to sample the internal nodes of the tree (i.e., ancestral states) using Gibbs sampler together with the estimates of the other parameter of the model. NOTE: Preliminary results showed that including this parameter can decrease the mixing of the MCMC chain.
 ##' @param save_start_anc whether to save the starting state for the internal nodes. This can be used as the starting state for search replicates using the same data. See 'start' argument for more information. This is ignored if 'sample_internal = FALSE'.
+##' @param rate_variation whether to allow for rate heterogeity on the model. Rate variation is modelled using a discrete-Gamma distribution (Yang, 1994). This is similar to the +G models of molecular evolution.
+##' @param ncat number of categories of the discrete-Gamma distribution for variation of rates. Large numbers allow for more smooth rate variation but make convergence of the model slower.
 ##' @param prior the prior densities for the MCMC. Must be one of "uniform", "uniform_scaled" (the default, see 'Details'), or the output of the "makePrior" function. See more information on 'makePrior' and in the examples below.
 ##' @param start the starting state for the MCMC chain. Must be "prior_sample" (the default) or a list in the same format as the prior sample generated from the "samplePrior" function. The function will also search for a "$anc" element on the list to use as the starting state for the internal nodes (if 'sample_internal = TRUE' ).
 ##' @param gen number of generations for the chain.
@@ -18,8 +20,8 @@
 ##' @param thin number of generations to be skipped as thinning. Set 'thin' to 1 to write every generation to the file.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
-##' @param w_mu value for the width of the sliding window proposal for the vector of root values (phylogenetic mean). This can be a single value to be used for the root value of all traits or a vector of length equal to the number of traits. If a vector, then each element will be used as the width of the proposal distribution for each trait in the same order as the columns in 'data'. When 'prior="uniform_scaled"' (the default) this parameter is computed from the data.
-##' @param prop_par a numeric vector of length 3 with the proposal frequencies for the parameters in this order: tip states, variance, and correlation. Default value is 'c(0.2, 0.4, 0.4)'.
+##' @param w_gamma the multiplying factor for the multiplier proposal on the rate parameter for the Gamma distributed rate variation across the branches of the tree.
+##' @param prop_par a numeric vector of length 5 with the proposal frequencies for the parameters in this order: tip states, variance (rates), correlation, Gamma parameter (beta), and samples from the Gamma rate distribution. Default value is 'c(0.2, 0.2, 0.2, 0.2, 0.2)'.
 ##' @param n_tips_move the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.
 ##' @param dir path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
@@ -33,6 +35,7 @@
 ##' @references Bouckaert, R., P. Lemey, M. Dunn, S. J. Greenhill, A. V. Alekseyenko, A. J. Drummond, R. D. Gray, M. A. Suchard, and Q. D. Atkinson. 2012. Mapping the Origins and Expansion of the Indo-European Language Family. Science 337:957–960.
 ##' @references Caetano, D. S., and L. J. Harmon. 2017. ratematrix: An R package for studying evolutionary integration among several traits on phylogenetic trees. Methods in Ecology and Evolution 8:1920–1927.
 ##' @references Caetano, D. S., and L. J. Harmon. 2018. Estimating Correlated Rates of Trait Evolution with Uncertainty. Systematic Biology, doi: 10.1093/sysbio/syy067.
+##' @references Yang, Z. 1994. Maximum likelihood phylogenetic estimation from DNA sequences with variable rates over sites: Approximatemethods. Journal of Molecular Evolution 39:306-314.
 ##' @export
 ##' @importFrom mvMORPH mvBM
 ##' @importFrom corpcor decompose.cov
@@ -45,7 +48,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.5, w_mu=0.5, prop_par=c(0.2, 0.4, 0.4), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, rate_variation = FALSE, ncat = 10, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.5, w_gamma=0.5, prop_par=c(0.2, 0.2, 0.2, 0.2, 0.2), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -124,15 +127,8 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     cat("\n")
 
     ## Check the characteristics of the prop_par vector:
-    if( length( prop_par ) != 3 ) stop("prop_par vector needs length of 3.")
+    if( length( prop_par ) != 5 ) stop("prop_par vector needs length of 5.")
     prop_par <- prop_par / sum( prop_par ) ## Make sure it sums to 1.
-
-    ## Check formats for 'w_mu'. Need to delay check for 'w_sd' until we get the number of regimes.
-    if( length( w_mu ) > 1 ){
-        if( !length(w_mu) == ncol(data[[1]]) ) stop("Length of 'w_mu' need to be 1 or equal to number of traits.")
-    } else{
-        w_mu <- rep(w_mu, times = ncol(data[[1]]) )
-    }
     
     ## Inform that default options are being used:
     if( inherits(prior, what="character") && prior == "uniform_scaled" ) cat("Using new default prior. \n")
@@ -339,7 +335,8 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     mcmc.par <- list()
     mcmc.par$v <- v
     mcmc.par$w_sd <- w_sd
-    mcmc.par$w_mu <- w_mu
+    mcmc.par$w_gamma <- w_gamma
+    mcmc.par$w_mu <- NA
     mcmc.par$prop_par <- prop_par
     mcmc.par$sample_internal <- sample_internal    
 
@@ -357,6 +354,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     mcmc_file_name <- file.path(dir, paste(outname, ".", new.ID, ".mcmc", sep=""))
     log_file_name <- file.path(dir, paste(outname, ".", new.ID, ".log", sep=""))
     poly_file_name <- file.path(dir, paste(outname, ".", new.ID, ".traitspace", sep=""))
+    gamma_file_name <- file.path(dir, paste(outname, ".", new.ID, ".gamma", sep=""))
     write_header <- 1
     ## }
 
@@ -523,6 +521,30 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
         }
     }
 
+    ## PREPARE THE PARAMETERS FOR THE GAMMA RATE VARIATION.
+    if( rate_variation ){
+        ## Set the discrete_Gamma parameters.
+        use_gamma <- 1 ## To make sure that this is in the correct format.
+        ncat <- ceiling( ncat ) ## Need to be integer.
+        beta.range <- findMinBeta(ncats = ncat, precision = 0.01)
+        ## Sample from the log-transformed values.
+        beta.init <- exp( runif(n = 1, min = log(beta.range[1]), max = log(beta.range[2]) ) )
+        ## Record the parameters for the search.
+        mcmc.par$ncat <- ncat
+        mcmc.par$beta.range <- beta.range
+        mcmc.par$beta.init <- beta.init
+    } else{
+        ## Inform the the Gamma was not used.
+        use_gamma <- 0 ## To make sure that this is in the correct format.
+        ## Set dummy values:
+        ncat <- 5
+        beta.range <- c(0.0, 1.0)
+        beta.init <- 0.5
+        mcmc.par$ncat <- NA
+        mcmc.par$beta.range <- NA
+        mcmc.par$beta.init <- NA
+    }
+    
     if( sample_internal ){
         ## Call for the Polytope sampler in C++ without the root.
         runRatematrixPolytopeMCMC(X_poly=X_poly, anc_poly=t(anc_start), n_input_move=n_tips_move
@@ -536,14 +558,18 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
                                 , post_seq=post_seq, write_header=write_header)
     } else{
         runRatematrixPolytopeTipsOnlyMCMC(X_poly=X_poly, n_input_move=n_tips_move
-                                , k=k, p=p, nodes=nodes, des=des, anc=anc
-                                , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
-                                , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
-                                , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
-                                , sigma=sigma_array, v=v, log_file=log_file_name
-                                , mcmc_file=mcmc_file_name, poly_file=poly_file_name
-                                , prob_proposals=prop_par, gen=gen
-                                , post_seq=post_seq, write_header=write_header)
+                                        , k=k, p=p, nodes=nodes, des=des, anc=anc
+                                        , names_anc=names_anc, mapped_edge=mapped.edge, R=startR
+                                        , sd=sd_mat_par, Rcorr=startCorr, w_sd=w_sd
+                                        , par_prior_sd=par_sd, den_sd=den_sd, nu=nu
+                                        , sigma=sigma_array, v=v, log_file=log_file_name
+                                        , mcmc_file=mcmc_file_name, poly_file=poly_file_name
+                                        , prob_proposals=prop_par, gen=gen
+                                        , post_seq=post_seq, write_header=write_header
+                                        , gamma = use_gamma, gamma_min = beta.range[1]
+                                        , gamma_max = beta.range[2], gamma_cat = ncat
+                                        , gamma_init = beta.init, gamma_step = w_gamma
+                                        , gamma_file = gamma_file_name)
     }
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )
