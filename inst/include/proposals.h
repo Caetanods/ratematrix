@@ -3,11 +3,6 @@
 #ifndef proposals_h
 #define proposals_h
 
-#include <RcppArmadillo.h>
-// [[Rcpp::depends(RcppArmadillo)]]
-using namespace Rcpp;
-using namespace arma;
-
 // #######################################################
 // ###### The proposal functions
 // #######################################################
@@ -20,6 +15,11 @@ arma::vec multiplierProposal_C(int size, arma::vec w_sd){
   return exp( (randu(size) - 0.5) % w_sd );
 }
 
+double multiplierProposalDouble(double w_move){
+  // Same as the multiplierProposal_C but it returns a single double multiplier.
+  return exp( (as_scalar(randu(1)) - 0.5) * w_move );
+}
+
 arma::vec slideWindowLogSpace_C(arma::vec mu, arma::vec w_mu){
   // This will take the vector of root values mu and a vector of widths and make a draw.
   // Difference is that here we do the sliding window in log-space.
@@ -28,6 +28,11 @@ arma::vec slideWindowLogSpace_C(arma::vec mu, arma::vec w_mu){
   // in R this is doing:
   // y <- sapply(1:length(mu), function(x) exp( log(mu) - (log(w_mu)/2) + (runif(1) * log(w_mu)) ) )
   return exp( log(mu) - (log(w_mu)/2) + (randu(mu.n_elem) % log(w_mu)) );
+}
+
+double slideWindowLogSpaceDouble(double mu, double w_mu){
+  // Same as `slideWindowLogSpace_C` but with a double.
+  return exp( log(mu) - (log(w_mu)/2) + (as_scalar(randu(1)) * log(w_mu)) );
 }
 
 arma::vec slideWindow_C(arma::vec mu, arma::vec w_mu){
@@ -57,3 +62,7 @@ arma::mat makePropIWish_C(arma::mat vcv, double k, double v){
 }
 
 #endif
+
+// Local Variables:
+// mode: c++
+// End:

@@ -3,11 +3,6 @@
 #ifndef dist_help_h
 #define dist_help_h
 
-#include <RcppArmadillo.h>
-// [[Rcpp::depends(RcppArmadillo)]]
-using namespace Rcpp;
-using namespace arma;
-
 // #######################################################
 // ###### The distribution functions
 // #######################################################
@@ -280,3 +275,7 @@ arma::vec Gibbs_get_trio(arma::vec a, arma::vec d1, arma::vec d2, arma::vec s, a
 
 
 #endif
+
+// Local Variables:
+// mode: c++
+// End:

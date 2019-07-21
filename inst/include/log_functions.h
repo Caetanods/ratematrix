@@ -3,11 +3,6 @@
 #ifndef log_fn_h
 #define log_fn_h
 
-#include <RcppArmadillo.h>
-// [[Rcpp::depends(RcppArmadillo)]]
-using namespace Rcpp;
-using namespace arma;
-
 void writeToMultFile_C(std::ostream& mcmc_stream, arma::uword p, arma::uword k, arma::cube R, arma::vec mu){
   // Note the 'std::ostream&' argument here is the use of a reference.
   // This function will work fine when p = 1. No need to create exception for the case of a single regime.
@@ -135,4 +130,23 @@ void writePolySampleTipsOnly(std::ostream& poly_stream, arma::mat poly_tips){
 
 }
 
+// Write the samples for the Gamma rates to file.
+void writeGammaSample(std::ostream& gamma_stream, double beta, arma::vec branches){
+  
+  // Write the sample for the tips to the log file.
+  gamma_stream << beta;
+  gamma_stream << "; ";
+  for( arma::uword i=0; i < branches.n_rows-1; i++ ) {
+      gamma_stream << branches(i);
+      gamma_stream << "; ";
+  }
+  gamma_stream << branches( branches.n_rows-1 );
+  gamma_stream << "\n";
+
+}
+
 #endif
+
+// Local Variables:
+// mode: c++
+// End:

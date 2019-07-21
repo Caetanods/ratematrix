@@ -3,11 +3,6 @@
 #ifndef priors_h
 #define priors_h
 
-#include <RcppArmadillo.h>
-// [[Rcpp::depends(RcppArmadillo)]]
-using namespace Rcpp;
-using namespace arma;
-
 // #######################################################
 // ###### The prior functions
 // #######################################################
@@ -94,3 +89,7 @@ double priorQ(arma::vec vec_Q, arma::vec par_prior_Q, std::string den_Q){
 }
 
 #endif
+
+// Local Variables:
+// mode: c++
+// End:

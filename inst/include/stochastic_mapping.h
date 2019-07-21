@@ -3,11 +3,6 @@
 #ifndef stochastic_mapping_h
 #define stochastic_mapping_h
 
-#include <RcppArmadillo.h>
-// [[Rcpp::depends(RcppArmadillo)]]
-using namespace Rcpp;
-using namespace arma;
-
 // #######################################################
 // ###### The stochastic mapping functions
 // #######################################################
@@ -82,3 +77,7 @@ arma::mat getReconStates(arma::uword n_nodes, int n_tips, int n_states, arma::ve
 
 
 #endif
+
+// Local Variables:
+// mode: c++
+// End:
