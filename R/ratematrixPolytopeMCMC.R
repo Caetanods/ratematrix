@@ -21,6 +21,7 @@
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
 ##' @param w_gamma the multiplying factor for the multiplier proposal on the rate parameter for the Gamma distributed rate variation across the branches of the tree.
+##' @param max_branch_update sets the max number of branches to have rate scalars updated at a single move. This is a proportion from 0 (only a single branch is updated) to 1 (all branches updated at once). Note that the parameter 'prop_par' need to be used in order to turn off updates for the rate scalars.
 ##' @param prop_par a numeric vector of length 5 with the proposal frequencies for the parameters in this order: tip states, variance (rates), correlation, Gamma parameter (beta), and samples from the Gamma rate distribution. Default value is 'c(0.2, 0.2, 0.2, 0.2, 0.2)'.
 ##' @param n_tips_move the number of nodes (among tip nodes and internal nodes) that are going to be updated during each step of the MCMC. Min of 1 and max should be no more than the number of tips in the tree.
 ##' @param dir path of the directory to write the files. Has no default value (due to RCran policy). The path can be provided both as relative or absolute. It should accept Linux, Mac and Windows path formats.
@@ -48,7 +49,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, rate_variation = FALSE, ncat = 10, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.5, w_gamma=0.5, prop_par=c(0.2, 0.2, 0.2, 0.2, 0.2), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, rate_variation = FALSE, ncat = 10, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.5, w_gamma=0.5, max_branch_update=0.5, prop_par=c(0.2, 0.2, 0.2, 0.2, 0.2), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -336,6 +337,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     mcmc.par$v <- v
     mcmc.par$w_sd <- w_sd
     mcmc.par$w_gamma <- w_gamma
+    mcmc.par$max_branch_update <- max_branch_update
     mcmc.par$w_mu <- NA
     mcmc.par$prop_par <- prop_par
     mcmc.par$sample_internal <- sample_internal    
@@ -533,6 +535,11 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
         mcmc.par$ncat <- ncat
         mcmc.par$beta.range <- beta.range
         mcmc.par$beta.init <- beta.init
+        if( max_branch_update < 0.01 ){
+            number_max_branch_update <- 1 ## Update one branch at a time.
+        } else{
+            number_max_branch_update <- ceiling( max_branch_update * length( phy$edge.length ) )
+        }
     } else{
         ## Inform the the Gamma was not used.
         use_gamma <- 0 ## To make sure that this is in the correct format.
@@ -569,7 +576,8 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
                                         , gamma = use_gamma, gamma_min = beta.range[1]
                                         , gamma_max = beta.range[2], gamma_cat = ncat
                                         , gamma_init = beta.init, gamma_step = w_gamma
-                                        , gamma_file = gamma_file_name)
+                                        , gamma_file = gamma_file_name
+                                        , max_branch_update = number_max_branch_update)
     }
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )

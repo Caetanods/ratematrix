@@ -2541,7 +2541,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, arma
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header, int gamma, double gamma_min, double gamma_max, int gamma_cat, double gamma_init, double gamma_step, std::string gamma_file){
+std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header, int gamma, double gamma_min, double gamma_max, int gamma_cat, double gamma_init, double gamma_step, std::string gamma_file, int max_branch_update){
 
   // Function is vey similar to 'runRatematrixPolytopeMCMC'.
   // Note that here we are not sampling the internal nodes of the tree.
@@ -2685,6 +2685,12 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   double curr_gamma_prior = R::dunif(gamma_init, gamma_min, gamma_max, true); // Prior probabilities.
   double prop_gamma_prior; // Prior probabilities.
   double gamma_multi_factor; // Multiplier proposal factor.
+  // Creates a vector with the position of the branches (will be used to draw random branches to be updated).
+  // This is a long vector with will be shuffled for random draws later.
+  arma::uvec branch_ids = uvec(n_branches);
+  for( arma::uword i=0; i < n_branches; i++ ){
+    branch_ids(i) = i;
+  }
   
   // Make starting sample from polytopes.
   sample_poly_tips = samplePolytope(X_poly);
@@ -2988,6 +2994,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	mapped_edge_scaled = prop_mapped_edge_scaled;
 	gamma_branches = prop_gamma_branches;
 	gamma_beta = prop_gamma_beta;
+	gamma_rates = prop_gamma_rates;
       } else{ // Reject. Keep the values the same.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
@@ -3004,15 +3011,28 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     if(update == 4){
       // Update the Gamma rates vector conditioned on the Gamma parameter.
       // This is just a sample from the Gamma prior of rates.
+      // Here we will vary the number of branches that will be updated at each time.
+      // The number of branches updated will be a sample from a distribution.
 
-      // Update the rate scalers for the branches.
-      // Use the current gamma_beta parameter.
-      prop_gamma_rates = getGammaRates(gamma_beta, gamma_cat);
-      for( arma::uword i=0; i < n_branches; i++ ){
-	prop_gamma_branches(i) = prop_gamma_rates( rMultinom(gamma_multinom) );
-      }
+      // Take a sample of integers from 1 to max_branch_update.
+      arma::uword num_branch_update = std::ceil( as_scalar(randu(1)) * max_branch_update );
+      arma::uvec update_branch_ids = shuffle( branch_ids ); // Return shuffled vector.
+      prop_gamma_branches = gamma_branches; // Make sure inital state of the proposal is the same as the current.
+      for( arma::uword i=0; i < num_branch_update; i ++ ){
+	// Tale a sample from a rate category.
+	// Note that 'gamma_rates' have been updated by update == 3.
+	prop_gamma_branches( update_branch_ids(i) ) = gamma_rates( rMultinom(gamma_multinom) );
+      }	
+
+      // Old code was updating all the branches at once.
+      // prop_gamma_rates = getGammaRates(gamma_beta, gamma_cat);
+      // for( arma::uword i=0; i < n_branches; i++ ){
+      // 	prop_gamma_branches(i) = prop_gamma_rates( rMultinom(gamma_multinom) );
+      // }
+      
       prop_mapped_edge_scaled = mapped_edge; // Always refer back to the original branch lengths.
       prop_mapped_edge_scaled.each_col() %= prop_gamma_branches;
+      
       // Compute the likelihood for the proposal.
       prop_gamma_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, prop_mapped_edge_scaled, R);
       ll = prop_gamma_lik - lik;
@@ -3070,4 +3090,5 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 
   return "Done.";
 }
+
 

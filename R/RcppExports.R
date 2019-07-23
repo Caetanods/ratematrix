@@ -41,7 +41,7 @@ runRatematrixPolytopeMCMC <- function(X_poly, anc_poly, n_input_move, k, p, node
     .Call('_ratematrix_runRatematrixPolytopeMCMC', PACKAGE = 'ratematrix', X_poly, anc_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header)
 }
 
-runRatematrixPolytopeTipsOnlyMCMC <- function(X_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header, gamma, gamma_min, gamma_max, gamma_cat, gamma_init, gamma_step, gamma_file) {
-    .Call('_ratematrix_runRatematrixPolytopeTipsOnlyMCMC', PACKAGE = 'ratematrix', X_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header, gamma, gamma_min, gamma_max, gamma_cat, gamma_init, gamma_step, gamma_file)
+runRatematrixPolytopeTipsOnlyMCMC <- function(X_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header, gamma, gamma_min, gamma_max, gamma_cat, gamma_init, gamma_step, gamma_file, max_branch_update) {
+    .Call('_ratematrix_runRatematrixPolytopeTipsOnlyMCMC', PACKAGE = 'ratematrix', X_poly, n_input_move, k, p, nodes, des, anc, names_anc, mapped_edge, R, sd, Rcorr, w_sd, par_prior_sd, den_sd, nu, sigma, v, log_file, mcmc_file, poly_file, prob_proposals, gen, post_seq, write_header, gamma, gamma_min, gamma_max, gamma_cat, gamma_init, gamma_step, gamma_file, max_branch_update)
 }
 

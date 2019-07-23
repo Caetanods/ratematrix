@@ -8,8 +8,9 @@ ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
   save_start_anc = TRUE, rate_variation = FALSE, ncat = 10,
   prior = "uniform_scaled", start = "prior_sample", gen, burn = 0.25,
   thin = 100, v = 50, w_sd = 0.5, w_gamma = 0.5,
-  prop_par = c(0.2, 0.2, 0.2, 0.2, 0.2), n_tips_move = 1, dir = NULL,
-  outname = "ratematrixPolyMCMC", IDlen = 5, save.handle = TRUE)
+  max_branch_update = 0.5, prop_par = c(0.2, 0.2, 0.2, 0.2, 0.2),
+  n_tips_move = 1, dir = NULL, outname = "ratematrixPolyMCMC",
+  IDlen = 5, save.handle = TRUE)
 }
 \arguments{
 \item{data}{a named list with multiple trait values per species. Names of list elements need to match tip labels. list of matrices with observations as rows and trait values as columns. See "Details" for more information.}
@@ -39,6 +40,8 @@ ratematrixPolytopeMCMC(data, phy, sample_internal = FALSE,
 \item{w_sd}{the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.}
 
 \item{w_gamma}{the multiplying factor for the multiplier proposal on the rate parameter for the Gamma distributed rate variation across the branches of the tree.}
+
+\item{max_branch_update}{sets the max number of branches to have rate scalars updated at a single move. This is a proportion from 0 (only a single branch is updated) to 1 (all branches updated at once). Note that the parameter 'prop_par' need to be used in order to turn off updates for the rate scalars.}
 
 \item{prop_par}{a numeric vector of length 5 with the proposal frequencies for the parameters in this order: tip states, variance (rates), correlation, Gamma parameter (beta), and samples from the Gamma rate distribution. Default value is 'c(0.2, 0.2, 0.2, 0.2, 0.2)'.}
 
