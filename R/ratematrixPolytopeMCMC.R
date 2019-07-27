@@ -20,6 +20,7 @@
 ##' @param thin number of generations to be skipped as thinning. Set 'thin' to 1 to write every generation to the file.
 ##' @param v value for the degrees of freedom parameter of the inverse-Wishart proposal distribution for the correlation matrix. Smaller values provide larger steps and larger values provide smaller steps. (Yes, it is counterintuitive.) This needs to be a single value applied to all regimes or a vector with the same length as the number of regimes.
 ##' @param w_sd the multiplying factor for the multiplier proposal on the vector of standard deviations. This can be a single value to be used for the sd of all traits for all regimes or a matrix with number of columns equal to the number of regimes and number of rows equal to the number of traits. If a matrix, then each element will be used to control the correspondent width of the standard deviation.
+##' @param w_branch_sd move for the rate at the branches.
 ##' @param w_gamma the multiplying factor for the multiplier proposal on the rate parameter for the Gamma distributed rate variation across the branches of the tree.
 ##' @param max_branch_update sets the max number of branches to have rate scalars updated at a single move. This is a proportion from 0 (only a single branch is updated) to 1 (all branches updated at once). Note that the parameter 'prop_par' need to be used in order to turn off updates for the rate scalars.
 ##' @param prop_par a numeric vector of length 5 with the proposal frequencies for the parameters in this order: tip states, variance (rates), correlation, Gamma parameter (beta), and samples from the Gamma rate distribution. Default value is 'c(0.2, 0.2, 0.2, 0.2, 0.2)'.
@@ -28,6 +29,7 @@
 ##' @param outname name for the MCMC chain (default is 'ratematrixMCMC'). Name will be used in all the files alongside a unique ID of numbers with length of 'IDlen'.
 ##' @param IDlen length of digits of the numeric identifier used to name output files (default is 5).
 ##' @param save.handle whether the handle for the MCMC should be saved to the directory in addition to the output files.
+##' @param verbose if the likelihood value and the number of the generation should be printed to the screen.
 ##' @return Function returns the 'handle' object and writes the posterior distribution and log as files in the directory (see 'dir'). The handle is a list with the details of the MCMC chain. It is composed by: *k* the number of traits; *p* the number of R regimes fitted to the tree; *ID* the unique identifier of the run; *dir* the directory where the posterior and log files were saved; *outname* the name for the chain; *trait.names* a vector with the label for the traits; *regime.names* a vector with the label for the rate regimes; *data* the data used in the analysis; *phy* a single phylogeny or the list of phylogenies; *prior* a list with the prior functions; *start* a list with the starting parameters for the chain; *gen* the number of generations for the chain; *mcmc.par* a list with the tunning parameters for the MCMC.
 ##' @author Daniel S. Caetano and Luke J. Harmon
 ##' @references Revell, L. J., and L. J. Harmon. 2008. Testing quantitative genetic hypotheses about the evolutionary rate matrix for continuous characters. Evolutionary Ecology Research 10:311.
@@ -49,7 +51,7 @@
 ##' \donttest{
 ##' ## Need to add examples.
 ##' }
-ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, rate_variation = FALSE, ncat = 10, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.5, w_gamma=0.5, max_branch_update=0.5, prop_par=c(0.2, 0.2, 0.2, 0.2, 0.2), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE){
+ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_start_anc = TRUE, rate_variation = FALSE, ncat = 10, prior="uniform_scaled", start="prior_sample", gen, burn = 0.25, thin = 100, v=50, w_sd=0.5, w_branch_sd=0.5, w_gamma=0.5, max_branch_update=0.5, prop_par=c(0.2, 0.2, 0.2, 0.2), n_tips_move=1, dir=NULL, outname="ratematrixPolyMCMC", IDlen=5, save.handle=TRUE, verbose = TRUE){
 
     ## #######################
     ## Block to check arguments, give warnings and etc.
@@ -128,7 +130,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     cat("\n")
 
     ## Check the characteristics of the prop_par vector:
-    if( length( prop_par ) != 5 ) stop("prop_par vector needs length of 5.")
+    if( length( prop_par ) != 4 ) stop("prop_par vector needs length of 5.")
     prop_par <- prop_par / sum( prop_par ) ## Make sure it sums to 1.
     
     ## Inform that default options are being used:
@@ -356,7 +358,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     mcmc_file_name <- file.path(dir, paste(outname, ".", new.ID, ".mcmc", sep=""))
     log_file_name <- file.path(dir, paste(outname, ".", new.ID, ".log", sep=""))
     poly_file_name <- file.path(dir, paste(outname, ".", new.ID, ".traitspace", sep=""))
-    gamma_file_name <- file.path(dir, paste(outname, ".", new.ID, ".gamma", sep=""))
+    sd_file_name <- file.path(dir, paste(outname, ".", new.ID, ".sd", sep=""))
     write_header <- 1
     ## }
 
@@ -523,6 +525,13 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
         }
     }
 
+    ## Make sure the verbose parameter is an integer.
+    if( verbose ){
+        print_stuff <- 1
+    } else{
+        print_stuff <- 0
+    }    
+    
     ## PREPARE THE PARAMETERS FOR THE GAMMA RATE VARIATION.
     if( rate_variation ){
         ## Set the discrete_Gamma parameters.
@@ -573,11 +582,9 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
                                         , mcmc_file=mcmc_file_name, poly_file=poly_file_name
                                         , prob_proposals=prop_par, gen=gen
                                         , post_seq=post_seq, write_header=write_header
-                                        , gamma = use_gamma, gamma_min = beta.range[1]
-                                        , gamma_max = beta.range[2], gamma_cat = ncat
-                                        , gamma_init = beta.init, gamma_step = w_gamma
-                                        , gamma_file = gamma_file_name
-                                        , max_branch_update = number_max_branch_update)
+                                        , max_branch_update = number_max_branch_update
+                                        , sd_file = sd_file_name, w_branch_sd = w_branch_sd
+                                        , verbose = print_stuff )
     }
 
     cat( paste("Finished MCMC run ", outname, ".", new.ID, "\n", sep="") )

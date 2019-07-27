@@ -2541,7 +2541,7 @@ std::string runRatematrixPolytopeMCMC(arma::mat X_poly, arma::mat anc_poly, arma
 }
 
 // [[Rcpp::export]]
-std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header, int gamma, double gamma_min, double gamma_max, int gamma_cat, double gamma_init, double gamma_step, std::string gamma_file, int max_branch_update){
+std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move, arma::uword k, arma::uword p, arma::vec nodes, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::cube R, arma::mat sd, arma::cube Rcorr, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string poly_file, arma::vec prob_proposals, arma::uword gen, arma::vec post_seq, arma::uword write_header, int max_branch_update, double w_branch_sd, std::string sd_file, int verbose){
 
   // Function is vey similar to 'runRatematrixPolytopeMCMC'.
   // Note that here we are not sampling the internal nodes of the tree.
@@ -2550,10 +2550,13 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   // The log_file, mcmc_file, and poly_file arguments.
   std::ofstream log_stream (log_file, ios::out | ios::app);
   std::ofstream mcmc_stream (mcmc_file, ios::out | ios::app);
+  // Another file to store the vector of variance for each of the branches.
+  std::ofstream sd_stream (sd_file, ios::out | ios::app);
   std::ofstream poly_stream (poly_file, ios::out | ios::app);
-  std::ofstream gamma_stream (gamma_file, ios::out | ios::app);
+  
 
   // Write the header for the mcmc file.
+  // This will store the correlation matrix. (The format can be reduced later)
   if(write_header == 1){
     for( arma::uword kk=1; kk < p+1; kk++ ){
       for( arma::uword ii=1; ii < k+1; ii++ ){
@@ -2572,6 +2575,20 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	}
       }
     }
+
+    // Write header for the standard deviation mcmc file.
+    // Note that at the moment this only assumes a single regime.
+    arma::uword sd_mat_size = k * mapped_edge.n_rows;
+    for( arma::uword kk=1; kk < sd_mat_size; kk++ ){
+      // This is a big a matrix collapsed into a vector. Will need to build the matrix again.
+      sd_stream << "sd_";
+      sd_stream << kk;
+      sd_stream << "; ";
+    }
+    // Write the last column.
+    sd_stream << "sd_";
+    sd_stream << sd_mat_size;
+    sd_stream << "\n";
     
     // Write the header for the log file.
     // This is very different from the other version of the MCMC.
@@ -2594,21 +2611,6 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	}
       }
     }
-
-    if( gamma == 1){
-      // Write header for the Gamma rates.
-      // This will be a rate scalar for each of the branches.
-      // First column will be always the current Gamma parameter.
-      gamma_stream << "beta; ";
-      for( arma::uword i=1; i < mapped_edge.n_rows; i++ ){
-      	gamma_stream << "br_";
-	gamma_stream << i;
-	gamma_stream << "; ";
-      }
-      gamma_stream << "br_";
-      gamma_stream << mapped_edge.n_rows;
-      gamma_stream << "\n"; // Last columns for the log.
-    }
     
   } else{
     // Do nothing.
@@ -2620,26 +2622,21 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   // The starting point prior:
   double curr_sd_prior;
   double Rcorr_curr_prior;
-  // The jacobian for the MCMC. There are one for each regime.
-  // Because need to track the jump separatelly.
-  arma::vec curr_jacobian = vec(k, fill::zeros);
+  // The jacobian for the MCMC.
+  arma::vec curr_jacobian = vec(p); // Here we have a single regime, so length should be 1.
+  curr_jacobian.fill(0.0); // Initialize with zeros.
 
   double pp;
   double ll;
   double r;
   double unif_draw;
   int Rp;
-  arma::mat prop_sd;
-  double prop_sd_prior;
-  arma::mat prop_diag_sd;
-  arma::cube R_prop;
   double prop_sd_lik;
+  double prop_sd_prior;
   arma::cube Rcorr_prop;
   double Rcorr_prop_prior;
-  arma::mat diag_sd;
   double prop_corr_lik;
   double hh;
-  arma::vec decomp_var;
   double prop_jacobian = 0.0; // Need always to reset this one.
   double jj;
   arma::vec multi_factor; // Stores the multiplier proposal scaler.
@@ -2662,73 +2659,48 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   int update;
   double it_prob; // Help to sample the update.
 
-  // The vector of Gamma rates:
-  arma::vec gamma_rates = vec(gamma_cat);
-  arma::vec prop_gamma_rates = vec(gamma_cat);
   // The number of branches for this phylogeny:
   arma::uword n_branches = mapped_edge.n_rows;
-  // The Gamma distribution parameter.
-  double gamma_beta;
-  gamma_beta = gamma_init; // Initialize the parameter.
-  double prop_gamma_beta; // The proposal container.
-  // The vector of rate scalars for each of the branches.
-  arma::vec gamma_branches = vec(n_branches);
-  arma::vec prop_gamma_branches = vec(n_branches);
-  // A vector of probabilities for the multinomial sample of rate categories:
-  arma::vec gamma_multinom = vec(gamma_cat);
-  gamma_multinom.fill(1.0/gamma_cat); // Equal chance to sample from each category.
-  // The container for scaling the branch lengths of the tree:
-  arma::mat mapped_edge_scaled = mat( size(mapped_edge) );
-  arma::mat prop_mapped_edge_scaled = mat( size(mapped_edge) );
-  double prop_gamma_lik; // The proposal likelihood for a change on the gamma rates.
-  // Define the current prior just in case (avoid compiler warning.)
-  double curr_gamma_prior = R::dunif(gamma_init, gamma_min, gamma_max, true); // Prior probabilities.
-  double prop_gamma_prior; // Prior probabilities.
-  double gamma_multi_factor; // Multiplier proposal factor.
-  // Creates a vector with the position of the branches (will be used to draw random branches to be updated).
-  // This is a long vector with will be shuffled for random draws later.
   arma::uvec branch_ids = uvec(n_branches);
   for( arma::uword i=0; i < n_branches; i++ ){
     branch_ids(i) = i;
   }
+  arma::uword num_branch_update;
+  arma::uvec update_branch_ids = uvec(branch_ids);
+
+  // Create some objects to deal with the new matrix of standard variations.
+  arma::mat sd_mat = mat(n_branches, k); // k is the number of traits.
+  arma::mat prop_sd_mat = mat(sd_mat); // Same dimensions as the other matrix.
+  sd_mat.fill(1.0);
+  sd_mat.each_row() %= trans( sd.col(0) ); // Assuming a single regime. (In place multiplication)
   
   // Make starting sample from polytopes.
   sample_poly_tips = samplePolytope(X_poly);
   // Initate the proposal for the polytope:
   sample_poly_tips_prop = sample_poly_tips;
 
-  if( gamma == 1 ){
-    // Taking initial samples from the Gamma distribution.  
-    gamma_rates = getGammaRates(gamma_init, gamma_cat);
-    // Sample a rate for each of the branches:
-    for( arma::uword i=0; i < n_branches; i++ ){
-      gamma_branches(i) = gamma_rates( rMultinom(gamma_multinom) );
-    }
-    // Scale the branches of the tree to reflect the rates.
-    mapped_edge_scaled = mapped_edge; // Keeping the original branch lengths, because we need to scale.
-    mapped_edge_scaled.each_col() %= gamma_branches;
-  } else{
-    // Just make a copy of the regular edge matrix.
-    mapped_edge_scaled = mapped_edge;
-  }
-  
   // Get starting priors, likelihood, and jacobian.
   // Need to make sure the likelihood function will work if p == 1.
-  // lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R);
-  lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge_scaled, R);
-  curr_sd_prior = priorSD_C(sd, par_prior_sd, den_sd, p);
+  lik = logLikPrunningREML_ext(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, Rcorr, sd_mat);
+  
+  // The prior for the sd need to be a sum of the prior across all branches.
+  curr_sd_prior = 0.0;
+  // Need to compute a prior for each of the branches of the tree.
+  for( arma::uword i=0; i < n_branches; i++ ){
+    // This prior function is taking a vector as input.
+    // Assuming a single regime only, again.
+    curr_sd_prior += priorSD_vec(sd_mat.row(i), par_prior_sd.row(0), den_sd, p);
+  }
   Rcorr_curr_prior = priorCorr_C(Rcorr, nu, sigma);
 
   Rcout << "Starting point Log-likelihood: " << lik << "\n";
 
-  // In the case of a single regime this will have a single column.
-  arma::mat var_vec = square(sd);
-  // Jacobian for the regimes:
-  // Need to check is this code is visiting all the variances.
-  for( arma::uword j=0; j < p; j++ ){
-    for( arma::uword i=0; i < k; i++ ){
+  // Jacobian for both the regimes:
+  for( arma::uword j=0; j < p; j++ ){ // loop over the regimes.
+    for( arma::uword i=0; i < k; i++ ){ // loop over the traits.
       // The jacobian is computed on the variances!
-      curr_jacobian[j] = curr_jacobian[j] + ( log( var_vec(i,j) ) * log( (k-1.0)/2.0 ) );
+      arma::vec var_vec = diagvec( Rcorr.slice(j) ); // Using the current Rcorr
+      curr_jacobian[j] += log( var_vec(i) ) * log( (k-1.0)/2.0 );
     }
   }
 
@@ -2738,26 +2710,20 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     log_stream << "1; 0; 0; 0; 0; ";
     log_stream << lik;
     log_stream << "\n";
+    
     writeToMultFileNoRoot(mcmc_stream, p, k, R);
     // Modified function that only writes the values for the tips to file.
     writePolySampleTipsOnly(poly_stream, sample_poly_tips);
-    if( gamma == 1 ){
-      // Write initial state to the log file:
-      writeGammaSample(gamma_stream, gamma_init, gamma_branches);
-    }
+    writeSDMat(sd_stream, sd_mat);
+    
     // Update the id to write to file. Because this is just the starting state.
     post_seq_id++;
   }
 
   Rcout << "Starting MCMC ... \n";
 
-  if( gamma == 0 ){
-  // If not using Gamma, then need to set the update 3 and 4 to zero.
-  // NOTE: This will mess a little with the log file. But not much. The log file will show that Gamma was never updated.
-    prob_proposals[3] = 0.0;
-    prob_proposals[4] = 0.0;
-    prob_proposals = prob_proposals / accu(prob_proposals);
-  }
+  // Make sure the vector sums to 1.
+  prob_proposals = prob_proposals / accu(prob_proposals);
   
   // Starting the MCMC.
 
@@ -2770,13 +2736,11 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     if(it_prob < prob_proposals[0]){
       update = 0; // Update the tip traits.
     } else if(it_prob < (prob_proposals[0] + prob_proposals[1]) ){
-      update = 1; // Update standard deviation.
+      update = 1; // Update each standard deviation for ALL branches.
     } else if(it_prob < (prob_proposals[0] + prob_proposals[1] + prob_proposals[2]) ){
       update = 2; // Update the correlation.
-    } else if(it_prob < (prob_proposals[0] + prob_proposals[1] + prob_proposals[2] + prob_proposals[3]) ){
-      update = 3; // Update the Gamma parameter.
     } else{
-      update = 4; // Update the Gamma rates scaler vector.
+      update = 3; // Update ALL standard deviations for each branch. (Number of branches updated vary.)
     }
     
     // If matrix or variance is updated, which regime?
@@ -2799,7 +2763,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	sample_poly_tips_prop.col(which_sample) = sample_poly_tips_tmp.col(which_sample);
       }
 
-      prop_trait_lik = logLikPrunningREML(sample_poly_tips_prop, k, p, nodes, des, anc, names_anc, mapped_edge, R);
+      prop_trait_lik = logLikPrunningREML_ext(sample_poly_tips_prop, k, p, nodes, des, anc, names_anc, mapped_edge, Rcorr, sd_mat);
+      // prop_trait_lik = logLikPrunningREML(sample_poly_tips_prop, k, p, nodes, des, anc, names_anc, mapped_edge, R);
       ll = prop_trait_lik - lik;
       // Flat prior here.
       r = ll;
@@ -2831,22 +2796,32 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     }
     
     if(update == 1){
-      // Update the variance vector.
-      prop_sd = sd; // The matrix of standard deviations.
+      // Update the standard deviation of each of the traits across ALL branches of the tree.
+      // This is the same as the original update scheme. But here we are using a large matrix with a sd vector for each of the branches.
+      
+      prop_sd_mat = sd_mat; // The matrix of standard deviations.
       multi_factor = multiplierProposal_C(k, w_sd.col(Rp) ); // The factor for proposal. Also proposal ratio.
-      prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
-      prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd, p);
+      prop_sd_mat.each_row() %= trans( multi_factor ); // Same multiplication factor across all rows.
+      // Compute the prior for the proposal of standard deviations.
+      prop_sd_prior = 0.0;
+      for( arma::uword ii=0; ii < n_branches; ii++ ){
+	prop_sd_prior += priorSD_vec(prop_sd_mat.row(ii), par_prior_sd.row(0), den_sd, p);
+      }
       pp = prop_sd_prior - curr_sd_prior;
   
-      // Need to rebuild the R matrix to compute the likelihood:
-      prop_diag_sd = diagmat( prop_sd.col(Rp) );
-      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
-      R_prop = R; // R is the current R matrix.
-      R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
-      // Compute the likelihood using current values for all other parameters.
-      prop_sd_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
-      ll = prop_sd_lik - lik;
+      // // Need to rebuild the R matrix to compute the likelihood:
+      // prop_diag_sd = diagmat( prop_sd.col(Rp) );
+      // // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      // R_prop = R; // R is the current R matrix.
+      // R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
+      // // Compute the likelihood using current values for all other parameters.
+      // prop_sd_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
 
+      // Here we will rebuild the R matrix as we visit each of the branches of the tree.
+      prop_sd_lik = logLikPrunningREML_ext(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, Rcorr, prop_sd_mat);
+
+      ll = prop_sd_lik - lik;
+      
       // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
       r = ll + pp + accu(multi_factor);
 
@@ -2863,8 +2838,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	  log_stream << "\n";
 	}
 	// Make the updates
-	sd = prop_sd;
-	R = R_prop;
+	sd_mat = prop_sd_mat;
 	curr_sd_prior = prop_sd_prior;
 	lik = prop_sd_lik;
       } else{ // Reject. Keep the values the same.
@@ -2886,6 +2860,10 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       // Update the correlation matrix.
       // IMPORTANT: R here needs to be the vcv used to draw the correlation only.
       // This is not the full VCV of the model.
+
+      // Here we just need to adapt to use the big matrix of standard deviations.
+      // We will also write the correlation matrix to file instead of the covariance matrix. (Facilitate reading back)
+      
       Rcorr_prop = Rcorr;
       // Here v is a vector. So the width can be controlled for each regime.
       Rcorr_prop.slice(Rp) = makePropIWish_C(Rcorr.slice(Rp), k, v[Rp]);
@@ -2896,21 +2874,26 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       Rcorr_prop_prior = priorCorr_C(Rcorr_prop, nu, sigma);
       pp = Rcorr_prop_prior - Rcorr_curr_prior;
 
-      // Need to rebuild the R matrix to compute the likelihood:
-      diag_sd = diagmat( sd.col(Rp) );
-      // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
-      R_prop = R;
-      // 'cor' is not the correct function to use here!
-      R_prop.slice(Rp) = diag_sd * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_sd;
-      prop_corr_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
+      // // Need to rebuild the R matrix to compute the likelihood:
+      // diag_sd = diagmat( sd.col(Rp) );
+      // // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      // R_prop = R;
+      // // 'cor' is not the correct function to use here!
+      // R_prop.slice(Rp) = diag_sd * cov2cor_C( Rcorr_prop.slice(Rp) ) * diag_sd;
+      // prop_corr_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
+
+      prop_corr_lik = logLikPrunningREML_ext(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, Rcorr_prop, sd_mat);
+      
       ll = prop_corr_lik - lik;
-      // This is the sdiance of the proposed vcv matrix.
-      decomp_var = diagvec( Rcorr_prop.slice(Rp) ); // These are variances
-      prop_jacobian = 0.0; // Always need to reset.
-      // The Jacobian of the transformation.
-      for( arma::uword i=0; i < k; i++ ){
-	prop_jacobian = prop_jacobian + log(decomp_var[i]) * log( (k-1.0)/2.0 );
+
+      // Jacobian of the transformation.
+      prop_jacobian = 0.0; // Reset the variable.
+      for( arma::uword ii=0; ii < k; ii++ ){ // loop over the traits.
+	// The jacobian is computed on the variances!
+	arma::vec var_vec = diagvec( Rcorr_prop.slice(Rp) );
+	prop_jacobian += log( var_vec(ii) ) * log( (k-1.0)/2.0 );
       }
+
       // The curr_jacobian is a vector. There are a jacobian for each regime.
       jj = prop_jacobian - curr_jacobian[Rp];
 
@@ -2930,7 +2913,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	  log_stream << "\n";
 	}
 	// Make the updates
-	R = R_prop;
+	// R = R_prop; // Not using the complete VCV anymore in this version. Only the correlation matrix.
 	Rcorr = Rcorr_prop;
 	Rcorr_curr_prior = Rcorr_prop_prior;
 	lik = prop_corr_lik;
@@ -2951,32 +2934,44 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     }
 
     if(update == 3){
-      // Update the parameter for the Gamma distribution of rates.
-      // Generates the multiplier factor, which is also the Hastings.
-      gamma_multi_factor = multiplierProposalDouble(gamma_step);
-      // Below is the update using the sliding window, maybe we do not need this proposal function anymore.
-      // prop_gamma_beta = slideWindowLogSpaceDouble(gamma_beta, (gamma_max - gamma_min)/100.0);
-      prop_gamma_beta = gamma_beta * gamma_multi_factor;
-      // Print the values for debug:
-      // Rcout << "Current gamma: " << gamma_beta << "| Prop gamma: " << prop_gamma_beta << "\n";
-      
-      // Update the rate scalers for the branches.
-      prop_gamma_rates = getGammaRates(prop_gamma_beta, gamma_cat);
-      for( arma::uword i=0; i < n_branches; i++ ){
-	prop_gamma_branches(i) = prop_gamma_rates( rMultinom(gamma_multinom) );
+      // Update ALL the standard variations for each of the branches.
+      // The number of branches to be updated is sampled from a prior distribution.
+      prop_sd_mat = sd_mat; // The matrix of standard deviations.
+      num_branch_update = std::ceil( as_scalar(randu(1)) * max_branch_update );
+      update_branch_ids = shuffle( branch_ids ); // Return shuffled vector.
+
+      double branch_multi_factor;
+      double branch_step_prop_ratio = 0.0; // Reset the value.
+      for( uword ii=0; ii < num_branch_update; ii++ ){
+	// Generate the multiplier factors for each of the branches to be updated.
+	branch_multi_factor = multiplierProposalDouble(w_branch_sd);
+	// Update the whole vector of sds for that branch.
+	prop_sd_mat.row( update_branch_ids(ii) ) *= branch_multi_factor;
+	branch_step_prop_ratio += branch_multi_factor;
       }
-      prop_mapped_edge_scaled = mapped_edge;
-      prop_mapped_edge_scaled.each_col() %= prop_gamma_branches;
-      // Compute the likelihood for the proposal.
-      prop_gamma_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, prop_mapped_edge_scaled, R);
-      ll = prop_gamma_lik - lik;
 
-      // Prior for the parameter is a uniform. (This could use GSL instead.)
-      prop_gamma_prior = R::dunif(prop_gamma_beta, gamma_min, gamma_max, true);
-      pp = prop_gamma_prior - curr_gamma_prior;
+      // Compute the prior for the proposal of standard deviations.
+      prop_sd_prior = 0.0;
+      for( arma::uword ii=0; ii < n_branches; ii++ ){
+	prop_sd_prior += priorSD_vec(prop_sd_mat.row(ii), par_prior_sd.row(0), den_sd, p);
+      }
+      pp = prop_sd_prior - curr_sd_prior;
+  
+      // // Need to rebuild the R matrix to compute the likelihood:
+      // prop_diag_sd = diagmat( prop_sd.col(Rp) );
+      // // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
+      // R_prop = R; // R is the current R matrix.
+      // R_prop.slice(Rp) = prop_diag_sd * cov2cor_C( R.slice(Rp) ) * prop_diag_sd;
+      // // Compute the likelihood using current values for all other parameters.
+      // prop_sd_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, R_prop);
 
-      // Proposal ratio. Lik + prior + Hastings (for the multiplier proposal).
-      r = ll + pp + gamma_multi_factor;
+      // Here we will rebuild the R matrix as we visit each of the branches of the tree.
+      prop_sd_lik = logLikPrunningREML_ext(sample_poly_tips, k, p, nodes, des, anc, names_anc, mapped_edge, Rcorr, prop_sd_mat);
+      
+      ll = prop_sd_lik - lik;
+
+      // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
+      r = ll + pp + branch_step_prop_ratio;
 
       // Advance to the acceptance step.
       unif_draw = as_scalar(randu(1));
@@ -2984,81 +2979,23 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, gamma, sd, corr, lik.
-	  log_stream << "1; 0; 1; 0; 0; ";
-	  log_stream << prop_gamma_lik;
+	  log_stream << "1; 0; 0; ";
+	  log_stream << Rp+1;
+	  log_stream << "; 0; ";
+	  log_stream << prop_sd_lik;
 	  log_stream << "\n";
 	}
 	// Make the updates
-	lik = prop_gamma_lik;
-	curr_gamma_prior = prop_gamma_prior;
-	mapped_edge_scaled = prop_mapped_edge_scaled;
-	gamma_branches = prop_gamma_branches;
-	gamma_beta = prop_gamma_beta;
-	gamma_rates = prop_gamma_rates;
+	sd_mat = prop_sd_mat;
+	curr_sd_prior = prop_sd_prior;
+	lik = prop_sd_lik;
       } else{ // Reject. Keep the values the same.
 	if( post_seq[post_seq_id] == (i+1) ){
 	  // Write gen to file.
 	  // order: accept, tip, gamma, sd, corr, lik.
-	  log_stream << "0; 0; 1; 0; 0; ";
-	  log_stream << lik;
-	  log_stream << "\n";
-	}
-	// No updates to be made.
-      }
-      
-    }
-
-    if(update == 4){
-      // Update the Gamma rates vector conditioned on the Gamma parameter.
-      // This is just a sample from the Gamma prior of rates.
-      // Here we will vary the number of branches that will be updated at each time.
-      // The number of branches updated will be a sample from a distribution.
-
-      // Take a sample of integers from 1 to max_branch_update.
-      arma::uword num_branch_update = std::ceil( as_scalar(randu(1)) * max_branch_update );
-      arma::uvec update_branch_ids = shuffle( branch_ids ); // Return shuffled vector.
-      prop_gamma_branches = gamma_branches; // Make sure inital state of the proposal is the same as the current.
-      for( arma::uword i=0; i < num_branch_update; i ++ ){
-	// Tale a sample from a rate category.
-	// Note that 'gamma_rates' have been updated by update == 3.
-	prop_gamma_branches( update_branch_ids(i) ) = gamma_rates( rMultinom(gamma_multinom) );
-      }	
-
-      // Old code was updating all the branches at once.
-      // prop_gamma_rates = getGammaRates(gamma_beta, gamma_cat);
-      // for( arma::uword i=0; i < n_branches; i++ ){
-      // 	prop_gamma_branches(i) = prop_gamma_rates( rMultinom(gamma_multinom) );
-      // }
-      
-      prop_mapped_edge_scaled = mapped_edge; // Always refer back to the original branch lengths.
-      prop_mapped_edge_scaled.each_col() %= prop_gamma_branches;
-      
-      // Compute the likelihood for the proposal.
-      prop_gamma_lik = logLikPrunningREML(sample_poly_tips, k, p, nodes, des, anc, names_anc, prop_mapped_edge_scaled, R);
-      ll = prop_gamma_lik - lik;
-
-      // Get the ratio i log space. Loglik, log prior, log hastings and log jacobian.
-      r = ll; // The prior is flat here. Proposal comes from within the prior range.
-
-      // Advance to the acceptance step.
-      unif_draw = as_scalar(randu(1));
-      if( exp(r) > unif_draw ){ // Accept.
-	if( post_seq[post_seq_id] == (i+1) ){
-	  // Write gen to file.
-	  // order: accept, tip, gamma, sd, corr, lik.
-	  log_stream << "1; 0; 1; 0; 0; ";
-	  log_stream << prop_gamma_lik;
-	  log_stream << "\n";
-	}
-	// Make the updates
-	lik = prop_gamma_lik;
-	mapped_edge_scaled = prop_mapped_edge_scaled;
-	gamma_branches = prop_gamma_branches;
-      } else{ // Reject. Keep the values the same.
-	if( post_seq[post_seq_id] == (i+1) ){
-	  // Write gen to file.
-	  // order: accept, tip, gamma, sd, corr, lik.
-	  log_stream << "0; 0; 1; 0; 0; ";
+	  log_stream << "0; 0; 0; ";
+	  log_stream << Rp+1;
+	  log_stream << "; 0; ";
 	  log_stream << lik;
 	  log_stream << "\n";
 	}
@@ -3070,12 +3007,14 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     // Write the current state to the MCMC file and update the counter for the posterior samples to keep.
     // Note that the counter will not be updated until the sample is reached and written to file.
     if( post_seq[post_seq_id] == (i+1) ){
-      // writeToMultFile_C(mcmc_stream, p, k, R, root);
-      writeToMultFileNoRoot(mcmc_stream, p, k, R);
-      writePolySampleTipsOnly(poly_stream, sample_poly_tips);
-      if( gamma == 1 ){
-	writeGammaSample(gamma_stream, gamma_beta, gamma_branches);
+      // Print the likelihood value so people can track it.
+      if( verbose == 1 ){
+	Rcout << "Log-lik: " << lik << "; step " << i << "\n";
       }
+      // writeToMultFile_C(mcmc_stream, p, k, R, root);
+      writeToMultFileNoRoot(mcmc_stream, p, k, Rcorr); // We are only working the the Rcorr matrix in this version.
+      writePolySampleTipsOnly(poly_stream, sample_poly_tips);
+      writeSDMat(sd_stream, sd_mat);
       post_seq_id++;
     }
     
@@ -3086,7 +3025,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
   mcmc_stream.close();
   log_stream.close();
   poly_stream.close();
-  gamma_stream.close();
+  sd_stream.close();
 
   return "Done.";
 }

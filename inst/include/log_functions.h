@@ -145,6 +145,25 @@ void writeGammaSample(std::ostream& gamma_stream, double beta, arma::vec branche
 
 }
 
+void writeSDMat(std::ostream& sd_stream, arma::mat sd_mat){
+
+  arma::uword nrows = sd_mat.n_rows;
+  arma::uword ncols = sd_mat.n_cols;
+  
+  for( arma::uword i=0; i < nrows; i++ ){
+    for( arma::uword j=0; j < ncols; j++ ){
+      sd_stream << sd_mat(i,j);
+      if(i == nrows-1 && j == ncols-1){
+	// Last element. Write the end of the line.
+	sd_stream << "\n";
+      } else{
+	sd_stream << "; ";
+      }
+    }
+  }
+
+}
+
 #endif
 
 // Local Variables:

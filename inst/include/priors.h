@@ -53,6 +53,28 @@ double priorSD_C(arma::mat sd, arma::mat par_prior_sd, std::string den_sd, int p
   return pp;
 }
 
+double priorSD_vec(arma::rowvec sd, arma::rowvec par_prior_sd, std::string den_sd, int p){
+  // SAME FUNCTION AS priorSD_C BUT WORKS FOR THE CASE OF A SINGLE REGIME.
+  // 'sd' is a matrix with number of columns equal to 'p', number of regimes.
+  // 'par_prior_sd' is a matrix with parameters, each row for each regime.
+  // p is the number of regimes in the model.
+
+  double pp = 0.0;
+  if( den_sd == "unif" ){
+    for( arma::uword i=0; i < sd.n_cols; i++ ){
+	// Each line of the 'par_prior_sd' correspond to each of the sd vectors stored as the columns of the 'sd' matrix.
+	pp = pp + R::dunif(sd(i), par_prior_sd(0), par_prior_sd(1), true);
+    }
+  } else{
+    for( arma::uword i=0; i < sd.n_cols; i++ ){
+      // Each line of the 'par_prior_sd' correspond to each of the sd vectors stored as the columns of the 'sd' matrix.
+      pp = pp + R::dlnorm(sd(i), par_prior_sd(0), par_prior_sd(1), true);
+    }
+  }
+  return pp;
+  
+}
+
 double priorCorr_C(arma::cube corr, arma::vec nu, arma::cube sigma){
   // FUNCTION FOR 2 OR MORE RATE REGIMES.
   // nu is a vector with the correspondent degree of freedom for the rate regime.
