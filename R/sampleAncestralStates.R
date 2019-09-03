@@ -68,6 +68,16 @@ sampleAncestralStates <- function(phy, mcmc, trait = NULL, n = 1){
     ## The starting state will refer to the MLE for the model with 0 covariance.
     ## We might want to run some draws before start sampling for real.
     anc_start <- t( sapply(1:k, function(x) get.ML.anc(tree = phy, x = poly_tips[x,], rate = sigma_vec[x]) ) )
+    ## Get the number of the nodes visited.
+    node_labels <- colnames( anc_start )
+
+    ## Note that the start sample before did not use the covariance among the traits.
+    ## So here we can take additional sample from the conditional distribution so we pass the burning stage.
+    for( i in 1:10 ){
+        anc_start <- Gibbs_sample_nodes(poly_tips = poly_tips, poly_nodes = anc_start, p = 1
+                                      , nodes = nodes, des = des, anc = anc, names_anc = names_anc
+                                      , mapped_edge = mapped.edge, R = R)
+    }
 
     ## Start to take the samples:
     n_samples <- length( mcmc$matrix )
@@ -103,6 +113,8 @@ sampleAncestralStates <- function(phy, mcmc, trait = NULL, n = 1){
         count <- count + 1
     }
 
+    ## Make sure that the array has the names for the nodes.
+    dimnames( poly_nodes_sample )[[2]] <- node_labels    
     return( poly_nodes_sample )
 }
 
