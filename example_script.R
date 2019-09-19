@@ -2,6 +2,10 @@
 ## Package version: 1.2.1
 ## Date: 09/19/2019
 
+## Get the most up to date version of the package:
+library( devtools )
+devtools::install_github("Caetanods/ratematrix")
+
 ## Load packages.
 library( ratematrix )
 library( phytools )
@@ -108,8 +112,18 @@ hist( x = corr.samples$terrestrial, xlim = c(0,1) )
 ## See more information here: Caetano, D. S., and L. J. Harmon. 2019. Estimating Correlated Rates of Trait Evolution with Uncertainty. Syst Biol 68:412–429.
 
 ## Test for changes in the evolutionary integration among traits:
-testRatematrix(chain = full.mcmc, par = "correlation") ## Not different!
+testRatematrix( chain = full.mcmc, par = "correlation" )
+testRatematrix( chain = full.mcmc, par = "correlation", median.test = TRUE)
+testRatematrix( chain = full.mcmc, par = "correlation", plot = TRUE)
 
-testRatematrix(chain = full.mcmc, par = "rates") ## Not different!
+## Test for changes in the rates of evolution for the traits:
+testRatematrix( chain = full.mcmc, par = "rates" )
+testRatematrix( chain = full.mcmc, par = "rates", median.test = TRUE)
+testRatematrix( chain = full.mcmc, par = "rates", plot = TRUE)
 
-testRatematrix(chain = full.mcmc, par = "all")
+## Test for changes on all parameters of the evolutionary rate matrix:
+testRatematrix( chain = full.mcmc, par = "all" )
+testRatematrix( chain = full.mcmc, par = "all", median.test = TRUE)
+testRatematrix( chain = full.mcmc, par = "all", plot = TRUE)
+
+## NOTE: On the tests above, the 'median.test' option returns an average of the differences among all elements. For example, when testing for the correlation, then we get the median value of the overlap among all correlations.
