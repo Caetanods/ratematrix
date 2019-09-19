@@ -31,7 +31,7 @@
 ##' }
 testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=FALSE, median.test=FALSE, regimes=NULL, plot=FALSE){
 
-    par <- match.arg(par)
+    par <- match.arg(par, choices = c("all","correlation","rates"), several.ok = FALSE)
 
     if( inherits(chain, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ){
         if( inherits(chain, what=c("ratematrix_single_chain")) ){
@@ -77,22 +77,20 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=
     }
     if(par == "correlation"){
         ## This part will break if the rate matrix is 2x2. The median do not need to be calculated.
-        if( ncol( chain$matrix[[1]][[1]] ) > 2 ){
-            upper <- upper.tri( chain$matrix[[1]][[1]] )
-            for(i in 1:ncol(comb)){
-                mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
-                mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
-                mat.diff[[i]] <- mat1 - mat2
-            }
-        } else{
-            upper <- upper.tri( chain$matrix[[1]][[1]] )
-            for(i in 1:ncol(comb)){
-                mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
-                mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
-                mat.diff[[i]] <- mat1 - mat2
-            }
+        upper <- upper.tri( chain$matrix[[1]][[1]] )
+        for(i in 1:ncol(comb)){
+            mat1 <- t( sapply(chain$matrix[[comb[1,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
+            mat2 <- t( sapply(chain$matrix[[comb[2,i]]], function(x) c( stats::cov2cor(x)[upper] ) ) )
+            mat.diff[[i]] <- mat1 - mat2
         }
     }
+
+    if(par == "correlation"){
+        ## Check if the matrix is 2x2. Then DO NOT return the median test.
+        if( ncol( chain$matrix[[1]][[1]] ) == 2 ){
+            median.test <- FALSE
+        }
+    }  
 
     if(median.test){
         median.diff <- lapply(mat.diff, function(x) apply(x, 1, stats::median))
@@ -106,7 +104,7 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=
     }
     
     if(!median.test){
-        overlap <- lapply(mat.diff, FUN=function(x) getOverlap(x, r=r))
+        overlap <- lapply(mat.diff, FUN=function(x) getOverlap(x, r=r, par=par))
 
         ## The output for the correlations looks strange because we loose the info of the order of the traits.
         ## Here I will re-format the output if the test is made on the correlations.
@@ -142,12 +140,24 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=
 }
 
 ## Some helping functions for the output:
-getOverlap <- function(mt.dif, r){
+getOverlap <- function(mt.dif, r, par = NULL){
+    ## r = number of traits.
     if( r == 2 ){
-        cdf <- stats::ecdf(mt.dif[1,])
-        qq <- cdf(0)
-        test <- 2 * min(qq,1-qq)
-        return( test ) ## Single number.
+        if( par == "correlation" ){
+            ## We have a single value. Need to call the row.
+            cdf <- stats::ecdf(mt.dif[1,])
+            qq <- cdf(0)
+            test <- 2 * min(qq,1-qq)
+            return( test ) ## Single number.
+        } else{
+            ## We have multiple values. Need to go throught the columns.
+            nc <- ncol(mt.dif)
+            cdf.list <- lapply(1:nc, function(x) stats::ecdf(mt.dif[,x]))
+            qq.list <- lapply(cdf.list, FUN = function(x) x(0) )
+            test <- lapply(qq.list, FUN = function(x) 2*apply(cbind(x, 1-x), 1, min) )
+            test.dt <- do.call(cbind, test)
+            return( as.vector(test.dt) )
+        }
     } else{
         nc <- ncol(mt.dif)
         cdf.list <- lapply(1:nc, function(x) stats::ecdf(mt.dif[,x]))
