@@ -127,3 +127,12 @@ testRatematrix( chain = full.mcmc, par = "all", median.test = TRUE)
 testRatematrix( chain = full.mcmc, par = "all", plot = TRUE)
 
 ## NOTE: On the tests above, the 'median.test' option returns an average of the differences among all elements. For example, when testing for the correlation, then we get the median value of the overlap among all correlations.
+
+## ##################################################
+## Joint analyses of the predictor regimes and the evolutionary rate matrices.
+## ##################################################
+
+## The previous analyses were using a fixed predictor regime created using stochastic mapping. However, this approach is not taking into account the variation of the predictor regime.
+## We can use another function to perform a MCMC to estimate both the evolutionary rate matrices and the predictor regimes.
+
+joint.handle <- ratematrixJointMCMC(data_BM = data, data_Mk = state, phy = phy, dir = "test_joint", gen = 10000, burn = 0.1, thin = 10)
