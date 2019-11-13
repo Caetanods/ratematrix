@@ -25,13 +25,13 @@
 ##' }
 readMCMC <- function(handle, burn=0, thin=1, dir=NULL){
     
-    if( !inherits(handle, what=c("ratematrix_single_mcmc", "ratematrix_multi_mcmc", "ratematrix_poly_mcmc")) ){
+    if( !inherits(handle, what=c("ratematrix_single_mcmc", "ratematrix_multi_mcmc", "ratematrix_poly_mcmc", "ratematrix_poly_multi_mcmc", "ratematrix_poly_single_mcmc")) ){
         stop( "Argument 'handle' need to be the output of the 'ratematrixMCMC', 'ratematrixJointMCMC', or 'ratematrixPolytopeMCMC' function." )
     }
     
     if(handle$p == 1){
         ## Check if it is a polytope results:
-        if( inherits(handle, what="ratematrix_poly_mcmc") ){
+        if( inherits(handle, what=c("ratematrix_poly_mcmc", "ratematrix_poly_single_mcmc")) ){
             mcmc <- readPolyMCMC(out=handle, burn=burn, thin=thin, dir=dir, single_rate = TRUE)
         } else{
             mcmc <- readSingleRegimeMCMC(out=handle, burn=burn, thin=thin, dir=dir)
@@ -41,7 +41,7 @@ readMCMC <- function(handle, burn=0, thin=1, dir=NULL){
     
     if(handle$p > 1){
         ## Check if it is a polytope results:
-        if( inherits(handle, what="ratematrix_poly_mcmc") ){
+        if( inherits(handle, what=c("ratematrix_poly_mcmc","ratematrix_poly_multi_mcmc") ) ){
             mcmc <- readPolyMCMC(out=handle, burn=burn, thin=thin, dir=dir, single_rate = FALSE)
         } else{
             mcmc <- readMultRegimeMCMC(out=handle, burn=burn, thin=thin, dir=dir)

@@ -33,12 +33,22 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=
 
     par <- match.arg(par, choices = c("all","correlation","rates"), several.ok = FALSE)
 
-    if( inherits(chain, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ){
+    if(inherits(chain, what = "ratematrix_poly_chain")){
+        if( !chain$p > 1 ){
+            stop("Cannot perform test with a single regime. \n")
+        }
+    }
+    
+    if( inherits(chain, what=c("ratematrix_single_chain", "ratematrix_multi_chain", "ratematrix_poly_chain")) ){
         if( inherits(chain, what=c("ratematrix_single_chain")) ){
             stop("Cannot perform test with a single regime. \n")
         } else{
             p <- length( chain$matrix )
-            r <- ncol( chain$root )
+            if( inherits(chain, what = "ratematrix_poly_chain") ){
+                r <- length( chain$trait.names )
+            } else{
+                r <- ncol( chain$root )
+            }            
         }
     } else{
         stop("Arguments need to be the posterior distribution of class 'ratematrix_single_chain' or 'ratematrix_multi_chain'. See 'readMCMC'. \n")
@@ -53,7 +63,13 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=
             comb <- utils::combn(regimes, 2)
         }
         if( is.character( regimes ) ){
-            nm <- names( chain$matrix )
+            ## Names depend on the format of the chain.
+            if( inherits(chain, what=c("ratematrix_poly_chain")) ){
+                nm <- chain$trait.names
+            } else{
+                nm <- names( chain$matrix )
+            }
+            
             if( as.logical( sum(!regimes %in% nm) ) ) stop("Names of regimes in argument 'regimes' need to match names of regimes of the posterior distribution (see 'names(chain$matrix)' ). \n")
             reg.id <- which( nm %in% regimes )
             comb <- utils::combn(reg.id, 2)
@@ -115,12 +131,18 @@ testRatematrix <- function(chain, par=c("all","correlation","rates"), diff.test=
         } else{
             overlap.mat <- lapply(overlap, function(x) matrix(x, ncol=r, byrow = TRUE) )
         }
-        
-        if( is.null(names(chain$matrix)) ){
-            main <- paste("Regime #",comb[1,], " x #", comb[2,], sep="")
-        } else{
-            main <- paste("Regime ", names(chain$matrix)[comb[1,]], " x ", names(chain$matrix)[comb[2,]], sep="")
+
+        ## Insert the names for the regimes:
+        if( inherits(chain, what=c("ratematrix_poly_chain")) ){
+            main <- paste("Regime ", chain$trait.names[comb[1,]], " x ", chain$trait.names[comb[2,]], sep="")
+        } else{        
+            if( is.null(names(chain$matrix)) ){
+                main <- paste("Regime #",comb[1,], " x #", comb[2,], sep="")
+            } else{
+                main <- paste("Regime ", names(chain$matrix)[comb[1,]], " x ", names(chain$matrix)[comb[2,]], sep="")
+            }
         }
+        
         if(plot){
             n <- length( overlap.mat )
             old.par <- par(no.readonly = TRUE)

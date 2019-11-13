@@ -79,14 +79,14 @@ readPolyMCMC <- function(out, burn = 0.5, thin = 1, dir=NULL, single_rate = FALS
         tip_samples <- t( trait_space[1:(n_tips*out$k),] )
         anc_samples <- t( trait_space[((n_tips*out$k)+1):length(trait_space_header),] )
         out <- list(matrix = RR, tip_samples = tip_samples, anc_samples = anc_samples, trait.names = out$trait.names
-                  , n_post_samples = nrow(tip_samples) )
+                  , n_post_samples = nrow(tip_samples), p = out$p )
     } else{
         ## We only have the tip traits.
         n_tips <- Ntip( out$phy )
         tips_header <- trait_space_header[]
         tip_samples <- t( trait_space[1:(n_tips*out$k),] )
         out <- list(matrix = RR, tip_samples = tip_samples, anc_samples = NA, trait.names = out$trait.names
-                  , n_post_samples = nrow(tip_samples) )
+                  , n_post_samples = nrow(tip_samples), p = out$p )
     }
     class(out) <- "ratematrix_poly_chain"
     
