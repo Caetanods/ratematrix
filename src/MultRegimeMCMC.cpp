@@ -2580,7 +2580,7 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     // Note that at the moment this only assumes a single regime.
     arma::uword sd_mat_size = k * mapped_edge.n_rows;
     for( arma::uword kk=1; kk < sd_mat_size; kk++ ){
-      // This is a big a matrix collapsed into a vector. Will need to build the matrix again.
+      // This is a big matrix collapsed into a vector. Will need to build the matrix again.
       sd_stream << "sd_";
       sd_stream << kk;
       sd_stream << "; ";

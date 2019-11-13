@@ -59,7 +59,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     ## Check burn and thin and create the vector of generations.
     ## Note here that the first generation is gen 0.
     if( burn < 0.0 ) burn <- 0.0 ## Cannot be negative.
-    final.post.samples <- (gen-1) - (gen * burn)
+    final.post.samples <- (gen - 1) - (gen * burn)
     if( final.post.samples <= thin ){
         warning( "thinning is larger than posterior samples. Setting thin = 1" )
         thin  <- 1 ## No thinning in this case.
@@ -230,16 +230,16 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     }
     
     ## First check if analysis will use regimes.
-    if( !no_phymap ){
+    if( no_phymap ){
+        ## In the case of a single regime analysis:
+        regime.names <- NA
+    } else{
         if( is.null( colnames(phy$mapped.edge) ) ){
             regime.names <- paste("regime_", 1:ncol(phy$mapped.edge), sep="")
         } else{
             ## In the case we do not have names.
             regime.names <- colnames(phy$mapped.edge)
         }
-    } else{
-        ## In the case of a single regime analysis:
-        regime.names <- NA
     }
 
     ## #######################
@@ -328,7 +328,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
         if( length( v ) > 1 ){
             v <- v[1]
         }
-    }    
+    }
 
     ## Take care about the format of the data matrix.
     ## Need to transpose the data matrix.
@@ -353,6 +353,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     ##     write_header <- 0
     ##     gen <- add.gen
     ## } else{
+    
     ## Generate identifier and name for the files:
     new.ID <- paste( sample(x=1:9, size=IDlen, replace=TRUE), collapse="")
     mcmc_file_name <- file.path(dir, paste(outname, ".", new.ID, ".mcmc", sep=""))
@@ -360,6 +361,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     poly_file_name <- file.path(dir, paste(outname, ".", new.ID, ".traitspace", sep=""))
     sd_file_name <- file.path(dir, paste(outname, ".", new.ID, ".sd", sep=""))
     write_header <- 1
+    
     ## }
 
     ## Compute important info from the phylogeny:
@@ -472,13 +474,15 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
     ## Adjust the format for the parameter in case of a single regime for the matrix.
     if( p == 1 ){
         ## Create a matrix out of some of the parameters to be able to run the model.
+        ## This is because the C++ code is expecting a matrix not a vector.
         sd_mat_par <- sqrt(startvar)
         sd_mat_par <- cbind( sd_mat_par, sd_mat_par)
         w_sd <- cbind(w_sd, w_sd)
         par_sd <- rbind(par_sd, par_sd)
     } else{
+        ## Here the objects are in the correct format.
         sd_mat_par <- sqrt(startvar)
-    }    
+    }
 
     if( sample_internal ){        
         ## Need to create the 'anc_poly' matrix. This is a matrix of starting values for the internal nodes of the tree.
@@ -500,7 +504,7 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
                 ## Get a (so so) estimate for the ancestral nodes given a rate:
                 ## This is just for the univariate case:
                 mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
-                R_mean_value <- apply( array.mat, 1:2, mean )
+                R_mean_value <- apply( startR, 1:2, mean ) ## get an average of the rates.
                 sigma_vec <- diag( R_mean_value )
                 anc_start <- sapply(1:k, function(x) get.ML.anc(tree = phy, x = mean_trait[,x], rate = sigma_vec[x]) )
                 if( save_start_anc ){
@@ -514,13 +518,14 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
             anc_start <- start_run$anc
         }        
     } else{
+        ## Don't make draws for the states of the internal nodes.
         ## Just need to prepare the vectors for the normal model. No need for the matrix of internal states for the nodes.
         if( p == 1 ){
             mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
             sigma_vec <- diag( startR[,,1] )
         } else{
             mean_trait <- t( sapply(data, function(x) apply(x, 2, mean) ) )
-            R_mean_value <- apply( array.mat, 1:2, mean )
+            R_mean_value <- apply( startR, 1:2, mean ) ## get an average of the rates.
             sigma_vec <- diag( R_mean_value )
         }
     }
@@ -550,9 +555,9 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
             number_max_branch_update <- ceiling( max_branch_update * length( phy$edge.length ) )
         }
     } else{
-        ## Inform the the Gamma was not used.
+        ## Inform the Gamma was not used.
         use_gamma <- 0 ## To make sure that this is in the correct format.
-        ## Set dummy values:
+        ## Set dummy values: (Cpp is expecting values for all parameters.)
         ncat <- 5
         beta.range <- c(0.0, 1.0)
         beta.init <- 0.5
