@@ -415,7 +415,11 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
                   , trait.names = trait.names, regime.names = regime.names
                   , data = data, phy = phy, prior = prior_run, start = start_run
                   , gen = gen, mcmc.par = mcmc.par)
-        class( out ) <- "ratematrix_poly_mcmc"
+        if( no_phymap ){
+            class( out ) <- "ratematrix_poly_single_mcmc"
+        } else{
+            class( out ) <- "ratematrix_poly_multi_mcmc"
+        }
         saveRDS(out, file = file.path(dir, paste(outname,".",new.ID,".mcmc.handle.rds",sep="")) )
     }
 
@@ -598,9 +602,12 @@ ratematrixPolytopeMCMC <- function(data, phy, sample_internal = FALSE, save_star
               , trait.names = trait.names, regime.names = regime.names, data = data
               , phy = phy, prior = prior_run, start = start_run, gen = gen
               , mcmc.par=mcmc.par)
-    class( out ) <- "ratematrix_poly_mcmc"
+    if( no_phymap ){
+        class( out ) <- "ratematrix_poly_single_mcmc"
+    } else{
+        class( out ) <- "ratematrix_poly_multi_mcmc"
+    }
     return( out )
-    
 }
 
 ## Supporting functions.

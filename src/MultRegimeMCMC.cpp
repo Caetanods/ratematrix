@@ -2714,7 +2714,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
     writeToMultFileNoRoot(mcmc_stream, p, k, R);
     // Modified function that only writes the values for the tips to file.
     writePolySampleTipsOnly(poly_stream, sample_poly_tips);
-    writeSDMat(sd_stream, sd_mat);
+    // Do not write the sd values for each of the branches. We are not using this!
+    // writeSDMat(sd_stream, sd_mat);
     
     // Update the id to write to file. Because this is just the starting state.
     post_seq_id++;
@@ -3014,7 +3015,8 @@ std::string runRatematrixPolytopeTipsOnlyMCMC(arma::mat X_poly, int n_input_move
       // writeToMultFile_C(mcmc_stream, p, k, R, root);
       writeToMultFileNoRoot(mcmc_stream, p, k, Rcorr); // We are only working the the Rcorr matrix in this version.
       writePolySampleTipsOnly(poly_stream, sample_poly_tips);
-      writeSDMat(sd_stream, sd_mat);
+      // Do not write to the sd file. We are not using Gamma here.
+      // writeSDMat(sd_stream, sd_mat);
       post_seq_id++;
     }
     
