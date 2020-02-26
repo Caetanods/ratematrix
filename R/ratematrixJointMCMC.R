@@ -50,6 +50,7 @@
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape Ntip
+##' @importFrom ape is.binary
 ##' @importFrom geiger fitContinuous
 ##' @importFrom stats coef rexp
 ##' @examples
@@ -97,7 +98,7 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     if( !inherits(dir, what="character") ) stop("Value for argument 'dir' need to be a character. See help page.")
 
     ## Corrects the data if necessary.
-    if( class(data_BM) == "data.frame" ) data_BM <- as.matrix( data_BM )
+    if( inherits(x = data_BM, what = "data.frame") ) data_BM <- as.matrix( data_BM )
 
     cat("\n")
 
@@ -130,6 +131,8 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     if( is.list(phy[[1]]) ) stop("The joint MCMC for the ratematrix and regime only works with a single phylogeny.")  
     ## Check if the tree is ultrametric, also rescale the tree if needed.
     if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
+    ## Check if the tree is fully resolved.
+    if( !is.binary(phy) ) stop("Phylogenetic tree has polytomies. Try using 'multi2di' function.")
     
     ## Check the data for the Mk model:
     equaln <- Ntip( phy ) == length( data_Mk )
@@ -202,7 +205,7 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
         }
     }
 
-    if( !class(gen) == "numeric" ) stop('gen need to be a "numeric" value.')
+    if( !inherits(x = gen, what = "numeric") ) stop('gen need to be a "numeric" value.')
 
     ## #######################
     ## Block to create the directory for the output:

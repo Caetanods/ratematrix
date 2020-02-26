@@ -4,8 +4,16 @@
 \alias{fastSimmap}
 \title{Fast implementation of stochastic mapping.}
 \usage{
-fastSimmap(tree, x, Q, pi = "equal", nsim = 1, mc.cores = 1,
-  max_nshifts = 100, silence = FALSE)
+fastSimmap(
+  tree,
+  x,
+  Q,
+  pi = "equal",
+  nsim = 1,
+  mc.cores = 1,
+  max_nshifts = 100,
+  silence = FALSE
+)
 }
 \arguments{
 \item{tree}{a phylogenetic tree of class 'phylo'.}

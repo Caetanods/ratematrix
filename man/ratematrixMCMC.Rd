@@ -4,11 +4,23 @@
 \alias{ratematrixMCMC}
 \title{Estimate the evolutionary rate matrix using Markov-chain Monte Carlo}
 \usage{
-ratematrixMCMC(data, phy, prior = "uniform_scaled",
-  start = "prior_sample", gen = 1e+06, burn = 0.25, thin = 100,
-  v = 50, w_sd = 2, w_mu = 0.5, prop = c(0.05, 0.475, 0.475),
-  dir = NULL, outname = "ratematrixMCMC", IDlen = 5,
-  save.handle = TRUE)
+ratematrixMCMC(
+  data,
+  phy,
+  prior = "uniform_scaled",
+  start = "prior_sample",
+  gen = 1e+06,
+  burn = 0.25,
+  thin = 100,
+  v = 50,
+  w_sd = 2,
+  w_mu = 0.5,
+  prop = c(0.05, 0.475, 0.475),
+  dir = NULL,
+  outname = "ratematrixMCMC",
+  IDlen = 5,
+  save.handle = TRUE
+)
 }
 \arguments{
 \item{data}{a matrix with the data. Species names need to be provided as rownames (rownames(data) == phy$tip.label). Each column is a different trait. Names for the columns is used as trait labels. If labels are not provided, the function will use default labels.}

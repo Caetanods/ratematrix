@@ -62,7 +62,7 @@ mergePosterior <- function(...){
     
     if( sum( sapply(chains, function(x) inherits(x, what=c("ratematrix_single_chain", "ratematrix_multi_chain")) ) ) == length(chains) ){
         
-        if( length( unique( sapply(chains, function(x) class(x) ) ) ) > 1 ) stop("Posterior chains need to belong to the same model. \n")
+        if( length( unique( sapply(chains, function(x) class(x)[1] ) ) ) > 1 ) stop("Posterior chains need to belong to the same model. \n")
         
         if( length(chains) == 1 ){
             if( inherits(chains[[1]], what=c("ratematrix_single_chain")) ){

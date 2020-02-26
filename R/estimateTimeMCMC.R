@@ -27,7 +27,7 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
     chunk <- gen/100
 
     ## Change the data to matrix:
-    if( class(data) == "data.frame" ) data <- as.matrix( data )
+    if( inherits(x = data, what = "data.frame") ) data <- as.matrix( data )
 
     ## Check if single or multi regime:
     if( !inherits(phy, what="simmap") ){
@@ -39,7 +39,13 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
 
     ## Use a random phylogeny from the sample, if necessary:
     if( is.list(phy[[1]]) ){
+        ## Multiple phylogenies.
+        binary_tree <- sapply(phy, ape::is.binary)
+        if( !all(binary_tree) ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
         phy <- phy[[ sample(1:length(phy), size=1) ]]
+    } else{
+        binary_tree <- ape::is.binary(phy)
+        if( !binary_tree ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
     }
 
     ## Separate the analysis for the single rate or for the multiple rate regime:

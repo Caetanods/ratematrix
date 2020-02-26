@@ -129,7 +129,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             dd <- ncol( chain$matrix[[p]][[1]] )
             ll <- length( chain$matrix[[p]] )
             ## Check if the chain is a sample from the prior and correct.
-            if( class( chain ) == "ratematrix_prior_sample" ){
+            ## if( class( chain ) == "ratematrix_prior_sample" ){
+            if( inherits(x = chain, what = "ratematrix_prior_sample") ){
                 ## This step will rebuild the R matrix from the samples taken by the prior.
                 corr <- lapply(chain$matrix[[p]], decompose.cov ) ## Over the matrices.
                 rb.matrix <- lapply(1:ll, function(x) rebuild.cov(r=corr[[x]]$r, v=chain$sd[[p]][x,]^2) )
@@ -141,7 +142,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
             cat("Plotting a single regime.","\n")
             dd <- ncol( chain$matrix[[1]] )
             ll <- length( chain$matrix )
-            if( class( chain ) == "ratematrix_prior_sample" ){
+            ## if( class( chain ) == "ratematrix_prior_sample" ){
+            if( inherits(x = chain, what = "ratematrix_prior_sample") ){
                 ## This step will rebuild the R matrix from the samples taken by the prior.
                 corr <- lapply(chain$matrix, decompose.cov ) ## Over the matrices.
                 rb.matrix <- lapply(1:ll, function(x) rebuild.cov(r=corr[[x]]$r, v=chain$sd[x,]^2) )
@@ -180,7 +182,8 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ll <- check.length[1]
         dd <- check.mat[1]
 
-        if( class( chain ) == "ratematrix_prior_sample" ){
+        ## if( class( chain ) == "ratematrix_prior_sample" ){
+        if( inherits(x = chain, what = "ratematrix_prior_sample") ){
             ## This step will rebuild the R matrix from the samples taken by the prior.
             for(i in p){
                 corr <- lapply(chain$matrix[[i]], decompose.cov ) ## Over the matrices.
@@ -259,9 +262,9 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         ##     of the line that is plotted as the mle. The name of the parameter will be changed to
         ##     drop the assumption that the line need to be the mle estimate.
         if( !is.null(point.matrix) ){ ## Check if the value of the argument is what we want:
-            if( !class( point.matrix ) == "list" ) stop( " point.matrix need to be a list of matrices." )
+            if( !inherits(x = point.matrix, what = "list") ) stop( " point.matrix need to be a list of matrices." )
             if( !length( point.matrix ) == length(p) ) stop( "Lenght of point.matrix need to be equal to the number of regimes fitted to the tree." )
-            if( !class( point.matrix[[1]] ) == "matrix" ) stop(" point.matrix need to be a list of matrices." )
+            if( !inherits(x = point.matrix[[1]], what = "matrix") ) stop(" point.matrix need to be a list of matrices." )
             ell.point <- list()
             for( w in 1:length(p) ){
                 ell.point[[w]] <- list()
@@ -471,9 +474,9 @@ plotRatematrix <- function(chain, p=NULL, colors=NULL, set.xlim=NULL, set.leg=NU
         
         ## Create ellipse for the MLE estimate.
         if( !is.null(point.matrix) ){ ## Check if the value of the argument is what we want:
-            if( !class( point.matrix ) == "list" ) stop( " point.matrix need to be a list of matrices." )
+            if( !inherits(x = point.matrix, what = "list") ) stop( " point.matrix need to be a list of matrices." )
             if( !length( point.matrix ) == length(p) ) stop( "Lenght of point.matrix need to be equal to the number of regimes fitted to the tree." )
-            if( !class( point.matrix[[1]] ) == "matrix" ) stop(" point.matrix need to be a list of matrices." )
+            if( !inherits(x = point.matrix[[1]], what = "matrix") ) stop(" point.matrix need to be a list of matrices." )
             ell.point <- list()
             for( w in 1:length(p) ){
                 ell.point[[w]] <- list()

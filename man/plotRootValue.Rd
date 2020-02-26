@@ -4,10 +4,20 @@
 \alias{plotRootValue}
 \title{Plot posterior distribution of root values for the traits}
 \usage{
-plotRootValue(chain, color = "black", set.xlab = NULL,
-  set.cex.lab = 1, set.cex.axis = 1.5, set.xlim = NULL, hpd = 100,
-  mfrow = 1, vline.values = NULL, vline.color = NULL,
-  vline.wd = NULL, show.zero = FALSE)
+plotRootValue(
+  chain,
+  color = "black",
+  set.xlab = NULL,
+  set.cex.lab = 1,
+  set.cex.axis = 1.5,
+  set.xlim = NULL,
+  hpd = 100,
+  mfrow = 1,
+  vline.values = NULL,
+  vline.color = NULL,
+  vline.wd = NULL,
+  show.zero = FALSE
+)
 }
 \arguments{
 \item{chain}{the posterior distribution loaded from the files using 'readMCMC' or samples from the prior generated with the 'samplePrior' function.}

@@ -4,8 +4,7 @@
 \alias{mergeSimmap}
 \title{Merge two or more regimes of a 'simmap' tree}
 \usage{
-mergeSimmap(phy, merge.regimes = NULL, new.regime = NULL,
-  drop.regimes = FALSE)
+mergeSimmap(phy, merge.regimes = NULL, new.regime = NULL, drop.regimes = FALSE)
 }
 \arguments{
 \item{phy}{a phylogeny of the 'simmap' format.}

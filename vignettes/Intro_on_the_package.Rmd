@@ -119,29 +119,27 @@ merged.mcmc <- mergePosterior(mcmc, mcmc2)
 
 ### Extract the correlation from the model
 
-We can extract and plot the correlation for the model from the merged MCMC. The output from the "extractCorrelation" function will be a named list with pairwise correlations among all traits for each of the regimes in the model.
+We can extract and plot the correlation for the model from the merged MCMC. The output from the "extractCorrelation" function will be a matrix with the pairwise correlations among all traits for each of the regimes in the model.
 
 ```{r}
 corr <- extractCorrelation(merged.mcmc)
-names( corr )
-dim( corr$generalist )
+dim( corr ) ## 1500 samples and 2 regimes.
+head( corr )
 ```
 
 We can make histograms to show the distribution of correlation among the traits. Note that here we have only two traits and one evolutionary correlation estimate for each regime fitted to the phylogeny.
 
 ```{r}
-hist(x = corr$generalist, xlim = c(-1,1), main = "Generalist", col = "grey"
+hist(x = corr[,1], xlim = c(-1,1), main = "Generalist", col = "grey"
      , border = "white", breaks = 20, freq = FALSE)
-hist(x = corr$specialist, xlim = c(-1,1), main = "Specialist", col = "grey"
+hist(x = corr[,2], xlim = c(-1,1), main = "Specialist", col = "grey"
      , border = "white", breaks = 20, freq = FALSE)
 ```
 
 We can see that the correlation estimates for the specialist lineages are a little stronger, but the two groups largely overlap each other:
 
 ```{r}
-corr.matrix <- data.frame(corr$generalist, corr$specialist)
-colnames(corr.matrix) <- c("generalist", "specialist")
-summary(corr.matrix)
+boxplot(x = corr)
 ```
 
 ### Using overlap tests

@@ -4,8 +4,17 @@
 \alias{makePrior}
 \title{Generate prior distributions for the multivariate Brownian motion model}
 \usage{
-makePrior(r, p, den.mu = "unif", par.mu, den.sd = "unif", par.sd,
-  unif.corr = TRUE, Sigma = NULL, nu = NULL)
+makePrior(
+  r,
+  p,
+  den.mu = "unif",
+  par.mu,
+  den.sd = "unif",
+  par.sd,
+  unif.corr = TRUE,
+  Sigma = NULL,
+  nu = NULL
+)
 }
 \arguments{
 \item{r}{number of traits in the model.}

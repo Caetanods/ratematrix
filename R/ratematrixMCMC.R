@@ -41,6 +41,7 @@
 ##' @importFrom mvMORPH mvBM
 ##' @importFrom corpcor decompose.cov
 ##' @importFrom ape is.ultrametric
+##' @importFrom ape is.binary
 ##' @importFrom ape Ntip
 ##' @importFrom geiger fitContinuous
 ##' @importFrom stats coef
@@ -89,7 +90,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     if( !inherits(dir, what="character") ) stop("Value for argument 'dir' need to be a character. See help page.")
 
     ## Corrects the data if necessary.
-    if( class(data) == "data.frame" ) data <- as.matrix( data )
+    if( inherits(x = data, what = "data.frame") ) data <- as.matrix( data )
 
     cat("\n")
 
@@ -113,6 +114,9 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     
     ## Check if 'phy' is a single phylogeny or a list of phylogenies.
     if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+        ## check if the trees are binary.
+        binary_tree <- sapply(phy, is.binary)
+        if( !all(binary_tree) ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
         ## Check if the tree is ultrametric, also rescale the tree if needed.
         ultra <- sapply(phy, is.ultrametric)
         if( !sum(ultra)==length(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
@@ -122,6 +126,9 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
             cat('Some (or all) of the phylogenetic tree are not of class "simmap". Fitting a sigle rate regime to the tree. \n')
             no_phymap <- TRUE
         } else{
+            ## Check if the tree is binary.
+            binary_tree <- is.binary(phy)
+            if( !binary_tree ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
             no_phymap <- FALSE
         }
         ## Check if data match the tree. If not, break and return error message.
@@ -221,7 +228,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
         }
     }
 
-    if( !class(gen) == "numeric" ) stop('gen need to be a "numeric" value.')
+    if( !inherits(x = gen, what = "numeric") ) stop('gen need to be a "numeric" value.')
 
     ## #######################
     ## Block to create the directory for the output:
