@@ -41,6 +41,18 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     ## NEED TO IMPLEMENT THIS:
     if( nsim > 1 ) stop( "Sorry. Multiple simmaps coming soon!" )
     
+    ## Check for zero length branches:
+    zb <- any( tree$edge.length == 0 )
+    ## These quantities need to be global variables.
+    short_branch <- min( tree$edge.length[tree$edge.length > min(tree$edge.length)] )
+    almost_zero <- short_branch / 100000 ## A very small fraction of the shortest branch!
+    
+    if( zb ){
+        ## A fix when the phylogeny includes branch lengths of zero length.
+        zero_branches <- tree$edge.length == 0
+        tree$edge.length[ tree$edge.length == 0 ] <- almost_zero
+    }
+    
     ## Compute the elements to use the function:
     prun.tree <- reorder.phylo(x = tree, order = "postorder")
     n_nodes <- Nnode(prun.tree)
@@ -96,6 +108,19 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     
     ## Cannot append the class here. Strangely the class need to be in this particular order.
     class(prun.tree) <- c("simmap", "phylo")
+    
+    if( zb ){
+        ## Before returning the tree we need to return the zero length branches to their original state.
+        prun.tree$edge.length[ prun.tree$edge.length < short_branch ] <- 0.0
+        for( i in 1:length(prun.tree$maps) ){
+            if( length( prun.tree$maps[[i]] ) == 1 ){
+                if( prun.tree$maps[[i]] < short_branch ){
+                    prun.tree$maps[[i]] <- setNames(object = 0.0, nm = names(prun.tree$maps[[i]]))
+                }
+            }
+        }
+        prun.tree$mapped.edge[ prun.tree$mapped.edge == almost_zero ] <- 0.0
+    }
 
     return( prun.tree )
 }
