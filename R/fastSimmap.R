@@ -99,6 +99,8 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     prun.tree$maps <- maps
     prun.tree$mapped.edge <- mapped.edge
     rownames( prun.tree$mapped.edge ) <- apply(prun.tree$edge, 1, function(x) paste(x, collapse=",") )
+    ## Some application in phytools try to get the states for the model from the rownames of Q:
+    rownames( Q ) <- colnames( Q )
     prun.tree$Q <- Q
     ## Get the log likelihood for the Q. This is an element of the simmap object.
     prun.tree$logL <- logLikMk_C(n_nodes=n_nodes, n_tips=n_tips
