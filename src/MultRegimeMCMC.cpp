@@ -223,7 +223,7 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
   }
   
   // The C++ code is not very efficient with growing vectors. So here we need to set a maximum number of per branch shifts events to work on the stochastic maps.
-  Rcout << "Max capacity for shifts on branches: " << max_nshifts << "\n";
+  // Rcout << "Max capacity for shifts on branches: " << max_nshifts << "\n";
   arma::umat maps_state = umat(nrow_mapped_edge, max_nshifts);
   maps_state.fill(n_states); // Help distinguish unnused entries.
   arma::mat maps_edge = mat(nrow_mapped_edge, max_nshifts, fill::zeros); // Zero entries are unnused.
