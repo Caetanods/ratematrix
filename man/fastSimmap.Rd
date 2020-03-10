@@ -46,6 +46,8 @@ The prior probabilities at the root can be set to "equal" (i.e., all states have
 The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. It has no influence in the model, it is only a contraint of the fast implementation of the stochastic mapping algorithm. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch).
 
 The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
+
+If some of the states in the transition matrix "Q" are not present among the observed tips of the phylogeny the function will return some warning messages. The stochastic mapping will work properly however. Please check that ALL states among the tips of the phylogeny are represented on some of the columns (and rows) of the transition matrix "Q".
 }
 \author{
 Daniel Caetano

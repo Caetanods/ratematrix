@@ -7,6 +7,8 @@
 ##' The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. It has no influence in the model, it is only a contraint of the fast implementation of the stochastic mapping algorithm. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch).
 ##' 
 ##' The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
+##' 
+##' If some of the states in the transition matrix "Q" are not present among the observed tips of the phylogeny the function will return some warning messages. The stochastic mapping will work properly however. Please check that ALL states among the tips of the phylogeny are represented on some of the columns (and rows) of the transition matrix "Q".
 ##' @title Fast implementation of stochastic mapping.
 ##' @param tree a phylogenetic tree of class 'phylo'.
 ##' @param x a named vector with the states observed at the tips of the tree.
@@ -26,12 +28,12 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     if( !silence ){
         ## Make essential tests on the data:
         if( inherits(tree,"multiPhylo") ) stop( "Don't work with 'multiPhylo'. See examples." )
-        if( !inherits(tree,"phylo") ) stop("tree should be object of class \"phylo\".")
+        if( !inherits(tree,"phylo") ) stop("Tree should be object of class \"phylo\".")
         if( is.null( colnames( Q ) ) ) stop( "Q needs colnames equal to the states in the data." )
-        if( any( !colnames( Q ) %in% x ) ) stop(" colnames of Q need to be the states in the data." )
-        if( !ncol( Q ) == length( unique(x) ) ) stop(" number of states in x and Q need to match." )
-        if( any( !unique(x) %in% colnames(Q) ) ) stop(" all states in the data need to ne present in Q." )
-        if( any(abs(rowSums(Q)) > 1e-8) ) stop( " Rows of Q need to sum to 0." )
+        if( any( !unique(x) %in% colnames(Q) ) ) stop("All states in the data need to ne present in Q." )
+        ## if( any( !colnames( Q ) %in% x ) ) stop(" colnames of Q need to be the states in the data." )
+        if( any( !colnames( Q ) %in% x ) ) warning( "Some states in Q are not present among the tips. See Details." )
+        if( any(abs(rowSums(Q)) > 1e-8) ) stop( "Rows of Q need to sum to 0." )
         if( is.null( names(x) ) ) stop("Data need to have names matching the tips of the phylogeny.")
         data.ord <- treedata( phy = tree, data = x )
         tree <- data.ord$phy
@@ -57,7 +59,7 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     prun.tree <- reorder.phylo(x = tree, order = "postorder")
     n_nodes <- Nnode(prun.tree)
     n_tips <- Ntip(prun.tree)
-    n_states <- length(unique(x))
+    n_states <- ncol(Q)
     edge_len <- prun.tree$edge.length
     edge_mat <- prun.tree$edge
     parents <- unique( prun.tree$edge[,1] )
