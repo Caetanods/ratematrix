@@ -138,7 +138,7 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
 	while( true ){
 	  
 	  // Here we record the number of times to make a valid simulation on the branch.
-	  // We use the argument 'sims_limit' to break the stochastic map is the number of simulations
+	  // We use the argument 'sims_limit' to break the stochastic map if the number of simulations
 	  //    pass this limit. This particular proposal of stochastic map will be rejected by the MCMC.
 	  sims_trials++;
 	  if( sims_limit > 0 ){
@@ -186,7 +186,7 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
 arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int max_nshifts) {
   // Same as the previous function. But this returns the 'maps' information that allow for reconstruction of the 'phytools' maps element.
   // Function works by assuming that the order of the rows in sim_node_states is the same as in recon_states below. This follows because of the code in 'getReconStates' function.
-
+ 
   // Define containers:
   int nrow_mapped_edge = edge_mat.n_rows;
   double time_chunk;
@@ -272,7 +272,7 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
       // The starting state for the simulation is 'curr_state'
       curr_state = anc_state; // Because 'anc_state' is fixed and curr_state will change.
       maps_state(i, id_shift) = anc_state;
-	  
+
       while( true ){
 	// Time until the next event:
 	if( -1.0 * Q(curr_state,curr_state) <= 0 ){
@@ -295,6 +295,17 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
 	// Updates the current state. Take a conditional sample based on Q:
 	sample_index = rMultinom( trans( trans_table_prob.row( curr_state ) ) );
 	curr_state = trans_table_index(curr_state, sample_index);
+	
+	// Check if the maximum number of events has been reached. Then return 0.
+	if( id_shift+1 >= maps_state.n_cols ){
+	  Rcout << "\n";
+	  Rcout << "Max number of events on a branch reached! \n";
+	  Rcout << "Please increase the value for the max_nshifts parameter. See Details. \n";
+	  // Return a vector of 0.
+	  arma::mat return_null = mat(2, 2, fill::zeros);
+	  return return_null;
+	}
+	
 	maps_state(i, id_shift+1) = curr_state; // Move to the next shift.
 	id_shift++; // Advance the counter.
       }
