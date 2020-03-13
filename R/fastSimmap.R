@@ -4,7 +4,7 @@
 ##'
 ##' The prior probabilities at the root can be set to "equal" (i.e., all states have the same probability to be observed at the root) or to "madfitz" (i.e., state probabilities follow the likelihood of the Mk model).
 ##' 
-##' The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. It has no influence in the model, it is only a contraint of the fast implementation of the stochastic mapping algorithm. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch).
+##' The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch). If the limit is reached the function will print a message and return a value of 0.0 instead of the stochastic map. If that happens, simply increase the number of 'max_nshifts' and run again. Unfortunately, the maximum number of state changes at any branch during an stochastic character mapping analysis depends on many factors and is not easy to estimate.
 ##' 
 ##' The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
 ##' 
@@ -18,13 +18,13 @@
 ##' @param mc.cores same as in 'parallel::mclapply'. This is used to make multiple simulations (controlled with the argument 'nsim') by calling 'parallel::mclapply'.
 ##' @param max_nshifts allocate the max number of events in any given branch. See 'Details'.
 ##' @param silence if function should stop printing messages. This will also stop checks for data format and some informative errors.
-##' @return A stochastic mapped phylogeny of class 'simmap'.
+##' @return A stochastic mapped phylogeny of class 'simmap' or a value of 0 if 'max_nshifts' is reached. Please see 'Details'.
 ##' @author Daniel Caetano
 ##' @export
 ##' @importFrom ape reorder.phylo Nnode Ntip
 ##' @importFrom geiger treedata
 ##' 
-fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_nshifts = 100, silence = FALSE){
+fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_nshifts = 200, silence = FALSE){
     if( !silence ){
         ## Make essential tests on the data:
         if( inherits(tree,"multiPhylo") ) stop( "Don't work with 'multiPhylo'. See examples." )
@@ -70,9 +70,14 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
 
     ## Get the maps list:
     get.maps <- makeSimmapMaps(n_nodes=n_nodes, n_tips=n_tips, n_states=n_states
-                                          , edge_len=edge_len, edge_mat=edge_mat
-                                          , parents=parents, X=X, Q=Q, root_node=root_node
-                                          , root_type=root_type, max_nshifts = max_nshifts)
+                             , edge_len=edge_len, edge_mat=edge_mat
+                             , parents=parents, X=X, Q=Q, root_node=root_node
+                             , root_type=root_type, max_nshifts = max_nshifts)
+    if( nrow(get.maps) == 2 ){
+        ## Number of maximum events on the branch has been reached.
+        ## Will just return a value of 0.
+        return( 0.0 )
+    }
 
     ## Process the results
     nrow <- nrow( get.maps ) / 2

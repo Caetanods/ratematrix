@@ -11,7 +11,7 @@ fastSimmap(
   pi = "equal",
   nsim = 1,
   mc.cores = 1,
-  max_nshifts = 100,
+  max_nshifts = 200,
   silence = FALSE
 )
 }
@@ -43,7 +43,7 @@ This function is a simplification of Revell's 'phytools::make.simmap' function. 
 
 The prior probabilities at the root can be set to "equal" (i.e., all states have the same probability to be observed at the root) or to "madfitz" (i.e., state probabilities follow the likelihood of the Mk model).
 
-The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. It has no influence in the model, it is only a contraint of the fast implementation of the stochastic mapping algorithm. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch).
+The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch). If the limit is reached the function will print a message and return a value of 0.0 instead of the stochastic map. If that happens, simply increase the number of 'max_nshifts' and run again. Unfortunately, the maximum number of state changes one any branch during an stochastic character mapping analysis depends on many factors and is not easy to estimate.
 
 The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
 
