@@ -33,7 +33,7 @@ fastSimmap(
 \item{silence}{if function should stop printing messages. This will also stop checks for data format and some informative errors.}
 }
 \value{
-A stochastic mapped phylogeny of class 'simmap'.
+A stochastic mapped phylogeny of class 'simmap' or a value of 0 if 'max_nshifts' is reached. Please see 'Details'.
 }
 \description{
 Make stochastic map simulations conditioned on a Markov matrix 'Q' and a vector of root probabilities 'pi'.
@@ -43,7 +43,7 @@ This function is a simplification of Revell's 'phytools::make.simmap' function. 
 
 The prior probabilities at the root can be set to "equal" (i.e., all states have the same probability to be observed at the root) or to "madfitz" (i.e., state probabilities follow the likelihood of the Mk model).
 
-The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch). If the limit is reached the function will print a message and return a value of 0.0 instead of the stochastic map. If that happens, simply increase the number of 'max_nshifts' and run again. Unfortunately, the maximum number of state changes one any branch during an stochastic character mapping analysis depends on many factors and is not easy to estimate.
+The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch). If the limit is reached the function will print a message and return a value of 0.0 instead of the stochastic map. If that happens, simply increase the number of 'max_nshifts' and run again. Unfortunately, the maximum number of state changes at any branch during an stochastic character mapping analysis depends on many factors and is not easy to estimate.
 
 The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
 
