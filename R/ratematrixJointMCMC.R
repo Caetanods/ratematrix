@@ -128,7 +128,8 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     if( length( w_q ) > 1 ) stop(" Scaling factor for Q need to be a single numeric value. ")
 
     ## Check if the phylogeny is of type 'phylo' and if it is a single phylo.
-    if( is.list(phy[[1]]) ) stop("The joint MCMC for the ratematrix and regime only works with a single phylogeny.")  
+    phy_type <- check_phy_list( phy )
+    if( phy_type ) stop("The joint MCMC for the ratematrix and regime only works with a single phylogeny.")  
     ## Check if the tree is ultrametric, also rescale the tree if needed.
     if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
     ## Check if the tree is fully resolved.

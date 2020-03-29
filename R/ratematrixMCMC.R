@@ -113,27 +113,30 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     }
     
     ## Check if 'phy' is a single phylogeny or a list of phylogenies.
-    if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+    ## This is a little more complicated, so implementing a more robust test here.
+    phy_type <- check_phy_list(phy)
+    if( phy_type ){ ## Is a list of phylogenies.
         ## check if the trees are binary.
         binary_tree <- sapply(phy, is.binary)
         if( !all(binary_tree) ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
         ## Check if the tree is ultrametric, also rescale the tree if needed.
         ultra <- sapply(phy, is.ultrametric)
-        if( !sum(ultra)==length(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
+        if( !all(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
         ## Check if the phylogeny is of 'simmap' class.
         check.simmap <- sapply(phy, function(x) inherits(x, what="simmap") )
-        if( !sum(check.simmap)==length(check.simmap) ){
+        if( !all(check.simmap) ){
             cat('Some (or all) of the phylogenetic tree are not of class "simmap". Fitting a sigle rate regime to the tree. \n')
             no_phymap <- TRUE
         } else{
-            ## Check if the tree is binary.
-            binary_tree <- is.binary(phy)
-            if( !binary_tree ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
+            ## Fine to use the simmaps.
             no_phymap <- FALSE
         }
+        
         ## Check if data match the tree. If not, break and return error message.
         equaln <- sapply(phy, function(x) Ntip( x ) == nrow( data ) )
+        ## Why the NAs are removed from this test?
         if( !sum(equaln, na.rm=TRUE) == length(phy) ) stop("Number of species in data not equal to tree.")
+        ## Why the NAs are removed from this test?
         same.spp <- sapply(phy, function(x) sum(x$tip.label %in% rownames( data ), na.rm=TRUE) == nrow(data) )
         if( !sum(same.spp) == length(phy) ) stop("Rownames of data does not match the tip labels of the tree.")
         ## Reorder the data to be the same order as the tip labels.
@@ -153,6 +156,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
         ## Check if data match the tree. If not, break and return error message.
         equaln <- Ntip( phy ) == nrow( data )
         if( !equaln ) stop("Number of species in data not equal to tree.")
+        ## Why the NAs are removed from this test?
         same.spp <- sum(phy$tip.label %in% rownames( data ), na.rm=TRUE) == nrow(data)
         if( !same.spp ) stop("Rownames of data does not match the tip labels of the tree.")
         ## Reorder the data to be the same order as the tip labels.
@@ -162,7 +166,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
 
     ## Check the 'w_sd' parameter. Need to know if phylo is a list and if it is simmap.
     ## Get the number of regimes and check the prior, if provided.
-    if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+    if( phy_type ){ ## Is a list of phylogenies.
         if( is.null( phy[[1]]$mapped.edge ) ){
             n_regimes <- 1
             if( inherits(prior, what="ratematrix_prior_function") ){
@@ -251,7 +255,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     }
     ## First check if analysis will use regimes.
     if( !no_phymap ){
-        if( is.list(phy[[1]]) ){ ## Check if phy is a list of phylo.
+        if( phy_type ){ ## Check if phy is a list of phylo.
             if( is.null( colnames(phy[[1]]$mapped.edge) ) ){
                 regime.names <- paste("regime_", 1:ncol(phy[[1]]$mapped.edge), sep="")
             } else{
@@ -311,7 +315,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
                 cat("Computing step size for root value proposal from the data. \n")
                 w_mu <- ( data.range[,2] - data.range[,1] ) / 10
                 cat("Guessing magnitude of rates from the data. \n")
-                if( is.list(phy[[1]]) ){ ## List of phylo.
+                if( phy_type ){ ## List of phylo.
                     ## Using a single core to compute BM model.
                     fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM", ncores = 1) )
                 } else{ ## Only one phylo.
@@ -336,7 +340,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
             }
             if(start == "mle"){ ## This will break if the phylogeny is a list.
                 cat( "Optimizing likelihood for the starting value of the MCMC.\n")
-                if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+                if( phy_type ){ ## Is a list of phylogenies.
                     rr <- sample(1:length(phy), size=1)
                     cat( paste("Using phylogeny number ", rr, " to estimate the MLE.\n", sep="") )
                     phy.sample <- phy[[rr]]
@@ -361,7 +365,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     } else{
 
         ## Check if 'phy' is a single phylogeny or a list of phylogenies.
-        if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+        if( phy_type ){ ## Is a list of phylogenies.
             p <- ncol( phy[[1]]$mapped.edge ) ## Multiple regimes.
         } else{ ## Is a single phylogeny.
             p <- ncol( phy$mapped.edge ) ## Multiple regimes.
@@ -396,7 +400,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
                 cat("Computing step size for root value proposal from the data. \n")
                 w_mu <- ( data.range[,2] - data.range[,1] ) / 10
                 cat("Guessing magnitude of rates from the data. \n")
-                if( is.list(phy[[1]]) ){ ## List of phylo.
+                if( phy_type ){ ## List of phylo.
                     ## Using a single core to compute BM model.
                     fit <- lapply(1:ncol(data), function(x) fitContinuous(phy = phy[[1]], dat=data[,x], model = "BM", ncores = 1) )
                 } else{ ## Only one phylo.
@@ -421,7 +425,7 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
             }
             if(start == "mle"){ ## Need to deal with the list of matrices here.
                 cat( "Optimizing likelihood for the starting value of the MCMC.\n")
-                if( is.list(phy[[1]]) ){ ## Is a list of phylogenies.
+                if( phy_type ){ ## Is a list of phylogenies.
                     rr <- sample(1:length(phy), size=1)
                     cat( paste("Using phylogeny number ", rr, " to estimate the MLE.\n", sep="") )
                     phy.sample <- phy[[r]]

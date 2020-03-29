@@ -76,10 +76,13 @@ logAnalyzer <- function(handle, burn=0, thin=1, show.plots=TRUE, print.result=TR
     at.gen <- round( seq(from=1, to=length(post), length.out = 5) )
     labels.gen <- round( seq(from=post[1], to=post[length(post)], length.out = 5) )
 
+    ## Check if we have a list of phylogenies.
+    phy_type <- check_phy_list( handle$phy )
+
     if( print.result==TRUE ){
         cat("Acceptance ratio for the MCMC and parameters:\n")
         print( accept )
-        if( is.list(handle$phy[[1]]) ){
+        if( phy_type ){
             cat("\n")
             cat("Acceptance ratio for each phylogeny:\n")
             print( mix.phylo )
@@ -104,7 +107,7 @@ logAnalyzer <- function(handle, burn=0, thin=1, show.plots=TRUE, print.result=TR
         graphics::par(old.par)
     }
 
-    if( is.list(handle$phy[[1]]) ){
+    if( phy_type ){
         return( list(accept.ratio=accept, mix.phylo=mix.phylo) )
     } else{
         return( accept.ratio=accept )

@@ -50,7 +50,8 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
     cache.chain$chain <- start ## Starting value for the chain.
     cache.chain$chain[[4]] <- rebuild.cov(r=stats::cov2cor(start[[2]]), v=start[[3]]^2)
     
-    if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
+    phy_type <- check_phy_list( phy )
+    if( phy_type ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
         cache.data$n <- length(phy[[1]]$tip.label) ## Number of tips.
         n.phy <- length(phy)
         init.phylo <- phy[[ sample(1:n.phy, size=1) ]]
@@ -59,7 +60,7 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
                                                , R=cache.chain$chain[[4]]) ## Lik start value.
     }
 
-    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+    if( !phy_type ){ ## There is only one phylogeny.
         cache.data$n <- length(phy$tip.label)
         cache.chain$lik <- logLikSingleRegime(data=cache.data, chain=cache.chain, phy=phy
                                                , root=as.vector(cache.chain$chain[[1]])
@@ -108,11 +109,11 @@ singleRegimeMCMC <- function(X, phy, start, prior, gen, v, w_sd, w_mu, prop=c(0.
 
     ## Build the update.function list:
     ## Now this will have two options. This is the part that the function needs to be updated.
-    if( is.list(phy[[1]]) ){ ## The problem here is that a 'phylo' is also a list. So this checks if the first element is a list.
+    if( phy_type ){
         cat("MCMC chain using multiple trees/regime configurations.\n")
         update.function <- list( function(...) makePropMeanList(..., n.phy=n.phy), function(...) makePropSingleSigmaList(..., n.phy=n.phy) )
     }
-    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+    if( !phy_type ){ ## There is only one phylogeny.
         cat("MCMC chain using a single tree/regime configuration.\n")
         update.function <- list( makePropMean, makePropSingleSigma )
     }

@@ -35,7 +35,8 @@ likelihoodFunction <- function(data, phy, root, R){
     mu <- as.numeric( root )
     
     ## Check if R is a matrix or a list.
-    if( is.list(phy[[1]]) ) stop( "Function does not accept a list of phylo." )
+    phy_type <- check_phy_list(phy)
+    if( phy_type ) stop( "Function does not accept a list of phylo." )
     
     if( is.list(R) ){ ## The case with multiple regimes.
 

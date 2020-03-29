@@ -38,7 +38,8 @@ estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
     }
 
     ## Use a random phylogeny from the sample, if necessary:
-    if( is.list(phy[[1]]) ){
+    phy_type <- check_phy_list(phy)
+    if( phy_type ){
         ## Multiple phylogenies.
         binary_tree <- sapply(phy, ape::is.binary)
         if( !all(binary_tree) ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
