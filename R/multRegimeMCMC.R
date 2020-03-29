@@ -81,8 +81,10 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, post_seq, v, w_sd, w_mu, p
         write_header <- 1
     }
     
+    ## Check if we have a list of phylogenies.
+    phy_type <- check_phy_list( phy )
     
-    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+    if( !phy_type ){ ## There is only one phylogeny.
         cat("MCMC chain using a single tree/regime configuration.\n")
         ord.id <- reorder.phylo(phy, order="postorder", index.only = TRUE) ## Order for traversal.
         mapped.edge <- phy$mapped.edge[ord.id,] ## The regimes.
@@ -102,7 +104,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, post_seq, v, w_sd, w_mu, p
         names_anc <- as.numeric( names(anc) )
     }
 
-    if( is.list(phy[[1]]) ){ ## Phy is a list of phylogenies.
+    if( phy_type ){ ## Phy is a list of phylogenies.
         cat("MCMC chain using multiple trees/regime configurations.\n")
         ord.id <- lapply(phy, function(x) reorder.phylo(x, order="postorder", index.only = TRUE))
         ntrees <- length(ord.id) ## Number of trees in the data.
@@ -113,14 +115,14 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, post_seq, v, w_sd, w_mu, p
         nodes <- sapply(1:ntrees, function(x) unique(anc[,x])) ## The internal nodes we will traverse.
 
         ## Set the types for each of the nodes that are going to be visited.
-        node.to.tip <- sapply(1:ntrees, function(x) which( tabulate( anc[which(des[,x] <= length(phy[[x]]$tip.label)), x] ) == 2 ) )
-        node.to.node <- sapply(1:ntrees, function(x) which( tabulate( anc[which(des[,x] > length(phy[[x]]$tip.label)), x] ) == 2 ) )
-        node.to.tip.node <- sapply(1:ntrees, function(x) unique( anc[,x] )[!unique( anc[,x] ) %in% c(node.to.node[,x], node.to.tip[,x])] )
+        node.to.tip <- lapply(1:ntrees, function(x) which( tabulate( anc[which(des[,x] <= length(phy[[x]]$tip.label)), x] ) == 2 ) )
+        node.to.node <- lapply(1:ntrees, function(x) which( tabulate( anc[which(des[,x] > length(phy[[x]]$tip.label)), x] ) == 2 ) )
+        node.to.tip.node <- lapply(1:ntrees, function(x) unique( anc[,x] )[!unique( anc[,x] ) %in% c(node.to.node[[x]], node.to.tip[[x]])] )
         ## 1) nodes to tips: nodes that lead only to tips, 2) nodes to nodes: nodes that lead only to nodes, 3) nodes to tips and nodes: nodes that lead to both nodes and tips.
         names_anc <- matrix(data=1, nrow=nrow(anc), ncol=ncol(anc))
         for( i in 1:ncol(anc) ){
-            names_anc[which(anc[,i] %in% node.to.node[,i]), i] <- 2
-            names_anc[which(anc[,i] %in% node.to.tip.node[,i]), i] <- 3            
+            names_anc[which(anc[,i] %in% node.to.node[[i]]), i] <- 2
+            names_anc[which(anc[,i] %in% node.to.tip.node[[i]]), i] <- 3            
         }
     }
     
@@ -184,7 +186,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, post_seq, v, w_sd, w_mu, p
     }
 
     ## Pass the arguments and start the MCMC.
-    if( !is.list(phy[[1]]) ){ ## There is only one phylogeny.
+    if( !phy_type ){ ## There is only one phylogeny.
         runRatematrixMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
                           , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
                           , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
@@ -192,7 +194,7 @@ multRegimeMCMC <- function(X, phy, start, prior, gen, post_seq, v, w_sd, w_mu, p
                           , prob_sample_root = prob_sample_root, prob_sample_sd = prob_sample_sd, gen = gen
                           , post_seq = post_seq, write_header = write_header)
     }
-    if( is.list(phy[[1]]) ){ ## Phy is a list of phylogenies.
+    if( phy_type ){ ## Phy is a list of phylogenies.
         runRatematrixMultiMCMC_C(X=X, k=k, p=p, nodes=nodes, des=des, anc=anc, names_anc=names_anc
                                , mapped_edge=mapped.edge, R=startR, mu=start$root, sd=sqrt(startvar), Rcorr=startCorr, w_mu=w_mu
                                , par_prior_mu=par_mu, den_mu=den_mu, w_sd=w_sd, par_prior_sd=par_sd, den_sd=den_sd
