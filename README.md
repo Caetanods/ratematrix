@@ -42,6 +42,8 @@ options(download.file.method = "wget")
 
 ## News and updates
 
+**Feb-2021 (v 1.2.3):** Adds function 'getStartPointFromPosterior' to extract the last MCMC sample from a previous run to use as the starting point of another MCMC. Adds function 'readMCMC_Mk' to read the posterior distribution of transition matrices estimated using the 'ratematrixJointMCMC' function.
+
 **May-2019 (v 1.2.1): SUBMITTED PATCH TO RCran** Corrects issue with function 'ratematrixMCMC'. Simple (but fatal) mistake when indexing one matrix during the MCMC was breaking the chain.
 
 **May-2019 (v 1.2): SUBMITTED TO RCran** Implements burnin and thinning during MCMC sampler. Implements function to compute the correlation among traits from the posterior samples. New version on RCran.
