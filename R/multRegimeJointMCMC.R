@@ -191,9 +191,9 @@ multRegimeJointMCMC <- function(X_BM, X_Mk, phy, start, prior, start_Q, start_ma
 
     ## Returns the data, phylogeny, priors and start point to work with other functions.
     out <- list(k = k, p = p, ID = new.ID, dir = dir, outname = outname, trait.names = traits
-              , regime.names = regimes, data = t(X_BM), data_Mk= t(X_Mk), phy = phy, prior = prior
-              , start = start, start_Q = start_Q, prior_Mk = prior_Mk, par_prior_Mk = par_prior_Mk
-              , gen = gen, mcmc.par = mcmc.par)
+              , regime.names = regimes, data = t(X_BM), data_Mk = t(X_Mk), model_Mk = Mk_model, root_Mk = root_Mk
+              , phy = phy, prior = prior, start = start, start_Q = start_Q, prior_Mk = prior_Mk
+              , par_prior_Mk = par_prior_Mk, gen = gen, mcmc.par = mcmc.par)
     class( out ) <- "ratematrix_multi_mcmc"
     return( out )
 }
