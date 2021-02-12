@@ -18,7 +18,17 @@ Please check the package vignettes for tutorials on how to use the package. Vign
 
 Hermansen, J. S., J. Starrfelt, K. L. Voje, and N. C. Stenseth. 2018. Macroevolutionary consequences of sexual conflict. Biology Letters 14:20180186. (http://rsbl.royalsocietypublishing.org/content/14/6/20180186)
 
+Eliason, C. M., and J. A. Clarke. 2018. Metabolic physiology explains macroevolutionary trends in the melanic colour system across amniotes. Proccedings of the Royal Society B 285(1893) (https://doi.org/10.1098/rspb.2018.2014)
+
 Slater, G. J., and A. R. Friscia. 2019. Hierarchy in adaptive radiation: A case study using the Carnivora (Mammalia). Evolution 73(3):524-539. (https://doi.org/10.1111/evo.13689)
+
+Ledbetter, N. M., and R. M. Bonett. 2019. Terrestriality constrains salamander limb diversification: Implications for the evolution of pentadactyly. Journal of Evolutionary Biology 32(7):642-652. (https://doi.org/10.1111/jeb.13444)
+
+Burress, E. D., C. M. Martinez, and P. C. Wainwright. 2020. Decoupled jaws promote trophic diversity in cichlid fishes. Evolution 74(5):950-961. (https://doi.org/10.1111/evo.13971)
+
+Barden, P., V. Perrichot, and B. Wang. 2020. Specialized Predation Drives Aberrant Morphological Integration and Diversity in the Earliest Ants. Current Biology 30(19):3818:3824. (https://doi.org/10.1016/j.cub.2020.06.106)
+
+Miles, M. C., E. R. Schuppe, and M. J. Fuxjager. 2020. Selection for Rhythm as a Trigger for Recursive Evolution in the Elaborate Display System of Woodpeckers. The American Naturalist 195(5) (https://doi.org/10.1086/707748)
 
 ## Install RCran (released) version
 
