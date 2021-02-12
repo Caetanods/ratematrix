@@ -4,7 +4,9 @@
 \name{anoles}
 \alias{anoles}
 \title{Data and phylogenetic tree for Anolis lizards}
-\format{A list with a dataframe with the morphological data ($data) and a list of stochastic mapped trees with three regimes "island", "mainland" and "mainland.2" ($phy.map).}
+\format{
+A list with a dataframe with the morphological data ($data) and a list of stochastic mapped trees with three regimes "island", "mainland" and "mainland.2" ($phy.map).
+}
 \usage{
 data(anoles)
 }
