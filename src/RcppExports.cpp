@@ -164,6 +164,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// buildQ
+arma::mat buildQ(arma::vec vec_Q, arma::uword size, std::string model_Q);
+RcppExport SEXP _ratematrix_buildQ(SEXP vec_QSEXP, SEXP sizeSEXP, SEXP model_QSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type vec_Q(vec_QSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type model_Q(model_QSEXP);
+    rcpp_result_gen = Rcpp::wrap(buildQ(vec_Q, size, model_Q));
+    return rcpp_result_gen;
+END_RCPP
+}
 // runRatematrixMCMC_jointMk_C
 std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uword k, arma::uword p, arma::vec nodes, arma::uword n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, arma::uword n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, arma::uword gen, arma::vec post_seq, int write_header, arma::uword sims_limit);
 RcppExport SEXP _ratematrix_runRatematrixMCMC_jointMk_C(SEXP XSEXP, SEXP datMkSEXP, SEXP kSEXP, SEXP pSEXP, SEXP nodesSEXP, SEXP n_tipsSEXP, SEXP desSEXP, SEXP ancSEXP, SEXP names_ancSEXP, SEXP mapped_edgeSEXP, SEXP edge_matSEXP, SEXP n_nodesSEXP, SEXP QSEXP, SEXP w_QSEXP, SEXP model_QSEXP, SEXP root_typeSEXP, SEXP den_QSEXP, SEXP par_prior_QSEXP, SEXP RSEXP, SEXP muSEXP, SEXP sdSEXP, SEXP RcorrSEXP, SEXP w_muSEXP, SEXP par_prior_muSEXP, SEXP den_muSEXP, SEXP w_sdSEXP, SEXP par_prior_sdSEXP, SEXP den_sdSEXP, SEXP nuSEXP, SEXP sigmaSEXP, SEXP vSEXP, SEXP log_fileSEXP, SEXP mcmc_fileSEXP, SEXP Q_mcmc_fileSEXP, SEXP par_probSEXP, SEXP genSEXP, SEXP post_seqSEXP, SEXP write_headerSEXP, SEXP sims_limitSEXP) {
@@ -221,6 +234,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_logLikPrunningMCMC_C", (DL_FUNC) &_ratematrix_logLikPrunningMCMC_C, 10},
     {"_ratematrix_runRatematrixMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_C, 28},
     {"_ratematrix_runRatematrixMultiMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMultiMCMC_C, 28},
+    {"_ratematrix_buildQ", (DL_FUNC) &_ratematrix_buildQ, 3},
     {"_ratematrix_runRatematrixMCMC_jointMk_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_jointMk_C, 39},
     {NULL, NULL, 0}
 };

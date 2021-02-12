@@ -131,53 +131,6 @@ arma::vec extractQ(arma::mat Q, arma::uword size, std::string model_Q){
   return vec_Q;
 }
 
-arma::mat buildQ(arma::vec vec_Q, arma::uword size, std::string model_Q){
-  // Function to re-build the Q matrix.
-  // Need to follow the same pattern used to extract the vector.
-  arma::mat Q = mat(size, size, fill::zeros);
-  
-  if( model_Q == "ER" ){
-    Q.fill(vec_Q[0]);
-    // Now fill the diagonal.
-    for( arma::uword i=0; i < size; i++ ){
-      Q(i,i) = -1.0 * ( sum( Q.row(i) ) - vec_Q[0] );
-    }
-  } else if( model_Q == "SYM" ){
-    Q.fill(0); // Fill the matrix with 0.
-    arma::uword count = 0;
-    // Go over the matrix and fill the upper and lower-tri.
-    for( arma::uword i=0; i < size; i++ ){
-      for( arma::uword j=0; j < size; j++ ){
-	if( i >= j ) continue;
-	Q(i,j) = vec_Q[count];
-	Q(j,i) = vec_Q[count]; // The trick to fill the lower-tri.
-	count++;
-      }
-    }
-    // Now fill the diagonal.
-    for( arma::uword i=0; i < size; i++ ){
-      Q(i,i) = -1.0 * sum( Q.row(i) );
-    }
-  } else{ // model_Q == "ARD"
-    Q.fill(0); // Fill the matrix with 0.
-    arma::uword count = 0;
-    // Go over the matrix and fill the upper and lower-tri.
-    for( arma::uword i=0; i < size; i++ ){
-      for( arma::uword j=0; j < size; j++ ){
-	if( i == j ) continue;
-	Q(i,j) = vec_Q[count];
-	count++;
-      }
-    }
-    // Now fill the diagonal.
-    for( arma::uword i=0; i < size; i++ ){
-      Q(i,i) = -1.0 * sum( Q.row(i) );
-    }
-  }
-
-  return Q;
-}
-
 arma::mat cov2cor_C(arma::mat V){
   // This is a **brute force** function for the correlation matrix.
   arma::mat Vdiag = inv( sqrt( diagmat(V) ) );

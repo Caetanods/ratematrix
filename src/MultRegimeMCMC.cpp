@@ -1227,6 +1227,54 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   return "Done.";
 }
 
+// [[Rcpp::export]]
+arma::mat buildQ(arma::vec vec_Q, arma::uword size, std::string model_Q){
+  // Function to re-build the Q matrix.
+  // February 2021: Function was exported to be able to use it to read in the MCMC.
+  // Need to follow the same pattern used to extract the vector.
+  arma::mat Q = mat(size, size, fill::zeros);
+  
+  if( model_Q == "ER" ){
+    Q.fill(vec_Q[0]);
+    // Now fill the diagonal.
+    for( arma::uword i=0; i < size; i++ ){
+      Q(i,i) = -1.0 * ( sum( Q.row(i) ) - vec_Q[0] );
+    }
+  } else if( model_Q == "SYM" ){
+    Q.fill(0); // Fill the matrix with 0.
+    arma::uword count = 0;
+    // Go over the matrix and fill the upper and lower-tri.
+    for( arma::uword i=0; i < size; i++ ){
+      for( arma::uword j=0; j < size; j++ ){
+	if( i >= j ) continue;
+	Q(i,j) = vec_Q[count];
+	Q(j,i) = vec_Q[count]; // The trick to fill the lower-tri.
+	count++;
+      }
+    }
+    // Now fill the diagonal.
+    for( arma::uword i=0; i < size; i++ ){
+      Q(i,i) = -1.0 * sum( Q.row(i) );
+    }
+  } else{ // model_Q == "ARD"
+    Q.fill(0); // Fill the matrix with 0.
+    arma::uword count = 0;
+    // Go over the matrix and fill the upper and lower-tri.
+    for( arma::uword i=0; i < size; i++ ){
+      for( arma::uword j=0; j < size; j++ ){
+	if( i == j ) continue;
+	Q(i,j) = vec_Q[count];
+	count++;
+      }
+    }
+    // Now fill the diagonal.
+    for( arma::uword i=0; i < size; i++ ){
+      Q(i,i) = -1.0 * sum( Q.row(i) );
+    }
+  }
+
+  return Q;
+}
 
 // [[Rcpp::export]]
 std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uword k, arma::uword p, arma::vec nodes, arma::uword n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, arma::uword n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, arma::uword gen, arma::vec post_seq, int write_header, arma::uword sims_limit){
