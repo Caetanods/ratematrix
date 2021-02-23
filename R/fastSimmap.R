@@ -35,10 +35,12 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
         if( any( !colnames( Q ) %in% x ) ) warning( "Some states in Q are not present among the tips. See Details." )
         if( any(abs(rowSums(Q)) > 1e-8) ) stop( "Rows of Q need to sum to 0." )
         if( is.null( names(x) ) ) stop("Data need to have names matching the tips of the phylogeny.")
-        data.ord <- treedata( phy = tree, data = x, sort = TRUE)
-        tree <- data.ord$phy
-        x <- data.ord$data[,1]
     }
+    
+    ## Always make sure that the tree and the data match:
+    data.ord <- treedata( phy = tree, data = x, sort = TRUE)
+    tree <- data.ord$phy
+    x <- data.ord$data[,1]
 
     ## NEED TO IMPLEMENT THIS:
     if( nsim > 1 ) stop( "Sorry. Multiple simmaps coming soon!" )
