@@ -21,7 +21,6 @@ Imports:
     Rcpp,
     ellipse
 Suggests:
-    microbenchmark,
     knitr,
     rmarkdown,
     phytools
