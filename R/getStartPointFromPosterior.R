@@ -17,14 +17,18 @@
 #' ## Run MCMC. This is just a very short chain.
 #' phy <- mergeSimmap(anoles$phy[[1]], drop.regimes = TRUE) ## Turn simmap into phylo.
 #' traits <- anoles$data[,c(1,2)] ## The continuous traits
-#' pred <- setNames(object = as.character(anoles$data$area), nm = rownames(anoles$data)) ## The predictor data.
-#' handle <- ratematrixJointMCMC(data_BM = traits, data_Mk = pred, phy = phy, gen=1000, dir=tempdir())
+#' ## The predictor data.
+#' pred <- setNames(object = as.character(anoles$data$area), nm = rownames(anoles$data))
+#' handle <- ratematrixJointMCMC(data_BM = traits, data_Mk = pred, phy = phy
+#'                               , gen = 1000, dir = tempdir())
 #' ## Load posterior distribution, make plots and check the log.
 #' posterior <- readMCMC(handle, burn=0.25, thin=1)
 #' plotRatematrix(posterior)
 #' plotRootValue(posterior)
 #' ## Start another MCMC from the last sample of the previous one.
-#' handle_new <- ratematrixJointMCMC(data_BM = traits, data_Mk = pred, phy = phy, start = st_pt, gen=1000, dir=tempdir())
+#' st_pt <- getStartPointFromPosterior(handle = handle)
+#' handle_new <- ratematrixJointMCMC(data_BM = traits, data_Mk = pred, phy = phy
+#'                                   , start = st_pt, gen=1000, dir=tempdir())
 #' post_new <- readMCMC(handle_new, burn=0.25, thin=1)
 #' plotRatematrix(post_new)
 #' plotRootValue(post_new)
