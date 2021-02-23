@@ -12,21 +12,6 @@
 ##' @return A plot similar to 'plotRatematrix'.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @examples
-##' \donttest{
-##' ## Load data
-##' data(centrarchidae)
-##' ## Run MCMC. This is just a very short chain.
-##' handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=1000
-##'                          , dir=tempdir())
-##' ## Load posterior distribution, make plots and check the log.
-##' posterior <- readMCMC(handle, burn=0.25, thin=1)
-##' plotRatematrix(posterior)
-##' plotRootValue(posterior)
-##' plotPrior(handle)
-##' plotPrior(handle, root=TRUE)
-##' logAnalyzer(handle)
-##' }
 plotPrior <- function(handle, n=1000, root=FALSE, color="black", ...){
 
     cat( "Plotting the prior distribution. \n" )

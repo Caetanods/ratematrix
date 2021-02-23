@@ -10,11 +10,6 @@
 ##' @return Function returns a numeric value with the time estimate in hours and prints a message to the screen with the result.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @examples
-##' \donttest{
-##' data(centrarchidae)
-##' estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
-##' }
 estimateTimeMCMC <- function(data, phy, gen, eval.times=5, singlerate=FALSE){
     ## This version of the function does not take into account writing the MCMC to files and making the proposal steps.
     ## A quick check with an overestimation of the process (by running the whole 'ratematrixMCMC' tree pre-processing) increased time estimates by 30 min only. So, the function the way it is seems fine.

@@ -26,12 +26,6 @@ Estimate time minimum time needed to run the MCMC.
 \details{
 Function will estimate the time based on the computation of the log-likelihood, prior density, and the Jacobian of the proposal step. The time estimated is a minimum bound based on the processing power of the current computer. Running the MCMC in different computers might change the time. Other factors, such as writing the posterior samples to large files, can influence the time to run the MCMC.
 }
-\examples{
-\donttest{
-data(centrarchidae)
-estimateTimeMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, gen=10000)
-}
-}
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }

@@ -78,35 +78,6 @@ The plots are divided into three groups. Upper-diagonal plots show histograms wi
 \cr
 Lower-diagonal plots are ideal to visualize the evolutionary correlation and variance between two traits. The orientation of the ellipses show whether there is a positive, negative or lack of correlation (horizontal or vertical orientation) between traits. The shape of the ellipses show the major axis of variation between traits. A 'cigar-shaped' ellipse indicates that one of the traits show faster evolutionary rates than the other, so one axis of variation is much larger than the other whereas a more circular (round) ellipse is a result of comparable rates of evolution between the two traits. A completely circular shape denotes lack of evolutionary correlation between two traits. It might help to understand the meaning of the ellipses lines by imagining each ellipse line marks the spread of the dots in a scatterplot with data generated with a particular covariance value (i.e., the covariance value the ellipse is representing).
 }
-\examples{
-\donttest{
-data( centrarchidae )
-dt.range <- t( apply( centrarchidae$data, 2, range ) )
-## The step size for the root value can be set given the range we need to sample from:
-w_mu <- ( dt.range[,2] - dt.range[,1] ) / 10
-par.sd <- cbind(c(0,0), sqrt( c(1,1) ))
-prior <- makePrior(r=2, p=2, par.mu=dt.range, par.sd=par.sd)
-handle <- ratematrixMCMC(data=centrarchidae$data, phy=centrarchidae$phy.map, prior=prior
-                         , gen=50000, w_mu=w_mu, dir=tempdir())
-posterior <- readMCMC(handle, burn = 0.2, thin = 10)
-plotRatematrix( posterior )
-plotRatematrix( posterior, colors = c("black","red"))
-plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5)
-plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5)
-plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5)
-ref.matrix <- list( rbind(c(0.5,0),c(0,0.5)), rbind(c(0.5,0),c(0,0.5)) )
-plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
-               , point.matrix = ref.matrix)
-plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
-               , point.matrix = ref.matrix, point.color = "orange", point.wd = 3)
-plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
-               , point.matrix = ref.matrix, point.color = "orange", point.wd = 3
-               , alphaEll = 0.05, n.lines = 2000)
-plotRatematrix( posterior, colors = c("black","red"), alphaOff = 0.5, alphaDiag = 0.5
-               , point.matrix = ref.matrix, point.color = "orange", point.wd = 3
-               , alphaEll = 0.5, n.lines = 200, hpd = 90)
-}
-}
 \author{
 Daniel S. Caetano and Luke J. Harmon
 }
