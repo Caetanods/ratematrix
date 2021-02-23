@@ -4,7 +4,7 @@
 ##'
 ##' The prior probabilities at the root can be set to "equal" (i.e., all states have the same probability to be observed at the root) or to "madfitz" (i.e., state probabilities follow the likelihood of the Mk model).
 ##' 
-##' The argument 'max_nshifts' controls the max number of state changes in any given branch of the phylogeny. This sets the size of the "buffer" that records the events that happen on the branches. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch). If the limit is reached the function will print a message and return a value of 0.0 instead of the stochastic map. If that happens, simply increase the number of 'max_nshifts' and run again. Unfortunately, the maximum number of state changes at any branch during an stochastic character mapping analysis depends on many factors and is not easy to estimate.
+##' The argument 'max_nshifts' controls the size of the "memory buffer" that records the number of state changes in any given branch of the phylogeny. It DOES NOT influence the outcome of the stochastic character map simulations. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch). If the limit is reached the function will print a message and return a value of 0.0 instead of the stochastic map. If that happens, simply increase the number of 'max_nshifts' and run again. This is only a limitation of the computer algorithm used to speed up the simulation and DOES NOT affect the results in any way.
 ##' 
 ##' The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
 ##' 
@@ -17,7 +17,7 @@
 ##' @param nsim number of stochastic mappings to be performed conditioned on Q. NOT IMPLEMENTED YET!
 ##' @param mc.cores same as in 'parallel::mclapply'. This is used to make multiple simulations (controlled with the argument 'nsim') by calling 'parallel::mclapply'.
 ##' @param max_nshifts allocate the max number of events in any given branch. See 'Details'.
-##' @param silence if function should stop printing messages. This will also stop checks for data format and some informative errors.
+##' @param silence if function should skip data format checks tests and stop printing messages.
 ##' @return A stochastic mapped phylogeny of class 'simmap' or a value of 0 if 'max_nshifts' is reached. Please see 'Details'.
 ##' @author Daniel Caetano
 ##' @export
@@ -35,15 +35,16 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
         if( any( !colnames( Q ) %in% x ) ) warning( "Some states in Q are not present among the tips. See Details." )
         if( any(abs(rowSums(Q)) > 1e-8) ) stop( "Rows of Q need to sum to 0." )
         if( is.null( names(x) ) ) stop("Data need to have names matching the tips of the phylogeny.")
+        if( !Ntip(tree) == length(x) ) stop("Number of species in the data and the tree must be the same.")
+        if( any( is.na(x) ) ) stop("Data contains NAs.")
     }
     
     ## Always make sure that the tree and the data match:
-    data.ord <- treedata( phy = tree, data = x, sort = TRUE)
-    tree <- data.ord$phy
-    x <- data.ord$data[,1]
+    mm <- match(tree$tip.label, names(x))
+    x <- x[mm]
 
     ## NEED TO IMPLEMENT THIS:
-    if( nsim > 1 ) stop( "Sorry. Multiple simmaps coming soon!" )
+    if( nsim > 1 ) stop( "Multiple simmaps coming soon! Please run this function multiple times to generate a pool of stochastic mappings." )
     
     ## Check for zero length branches:
     zb <- any( tree$edge.length == 0 )
