@@ -32,7 +32,7 @@ Miles, M. C., E. R. Schuppe, and M. J. Fuxjager. 2020. Selection for Rhythm as a
 
 ## Install RCran (released) version
 
-Package is now available on RCran! To install you can just type: `install.packages("ratematrix")`
+To install the current released version use: `install.packages("ratematrix")`
 
 Page for the package on RCran: https://cran.r-project.org/package=ratematrix
 
@@ -52,7 +52,7 @@ options(download.file.method = "wget")
 
 ## News and updates
 
-**Feb-2021 (v 1.2.3): SUBMITTED TO RCran** New functions, improvements on help pages, updates to examples.
+**Feb-2021 (v 1.2.3): SUBMITTED TO RCran** Package now depends on R (>= 3.5.0). This version has new functions, improvements on help pages, and updates to examples.
 
 **Feb-2021 (v 1.2.3):** Adds function 'getStartPointFromPosterior' to extract the last MCMC sample from a previous run to use as the starting point of another MCMC. Adds function 'readMCMC_Mk' to read the posterior distribution of transition matrices estimated using the 'ratematrixJointMCMC' function.
 
