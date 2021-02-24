@@ -1,6 +1,8 @@
-##' Make stochastic map simulations conditioned on a Markov matrix 'Q' and a vector of root probabilities 'pi'.
+##' Make a stochastic map simulation conditioned on a Markov matrix 'Q' and a vector of root probabilities 'pi'.
 ##'
 ##' This function is a simplification of Revell's 'phytools::make.simmap' function. Here the stochastic mapping is performed conditioned on a given Markov matrix and a vector of probabilities for the root node. This allows users to fit the Mk model using any preferred method and use this function to perform the stochastic mapping on the tree.
+##'
+##' The function returns a single stochastic map in the 'simmap' format. In order to get multiple simulations, simply call this function multiple times using 'lapply', see 'Examples'.
 ##'
 ##' The prior probabilities at the root can be set to "equal" (i.e., all states have the same probability to be observed at the root) or to "madfitz" (i.e., state probabilities follow the likelihood of the Mk model).
 ##' 
@@ -14,7 +16,6 @@
 ##' @param x a named vector with the states observed at the tips of the tree.
 ##' @param Q a Markov transition matrix for the Markov Model. This needs to be provided and the user can estimate such matrix from the observed data using any of a multitude of methods.
 ##' @param pi one of 'equal' or 'madfitz'.
-##' @param nsim number of stochastic mappings to be performed conditioned on Q. NOT IMPLEMENTED YET!
 ##' @param mc.cores same as in 'parallel::mclapply'. This is used to make multiple simulations (controlled with the argument 'nsim') by calling 'parallel::mclapply'.
 ##' @param max_nshifts allocate the max number of events in any given branch. See 'Details'.
 ##' @param silence if function should skip data format checks tests and stop printing messages.
@@ -22,9 +23,24 @@
 ##' @author Daniel Caetano
 ##' @export
 ##' @importFrom ape reorder.phylo Nnode Ntip
-##' @importFrom geiger treedata
-##' 
-fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_nshifts = 200, silence = FALSE){
+##' @examples
+##' \donttest{
+##' ## Load data
+##' data(anoles)
+##' area <- setNames(object = as.character(anoles$data$area), nm = rownames(anoles$data))
+##' phy <- mergeSimmap(phy = anoles$phy[[1]], drop.regimes = TRUE)
+##' ## Define a transition matrix. This can be estimated using MLE or MCMC.
+##' ## Building one as an example.
+##' Q <- matrix(0.0007, nrow = 2, ncol = 2)
+##' diag(Q) <- diag(Q) * -1
+##' colnames(Q) <- unique(area)
+##' ## Generate 10 stochastic mappings using lapply:
+##' maps <- lapply(1:10, function(x) fastSimmap(tree = phy, x = area, Q = Q))
+##' ## Now using a simple for loop.
+##' maps <- vector(mode = "list", length = 10)
+##' for( i in 1:10 ) maps[[i]] <- fastSimmap(tree = phy, x = area, Q = Q)
+##' }
+fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200, silence = FALSE){
     if( !silence ){
         ## Make essential tests on the data:
         if( inherits(tree,"multiPhylo") ) stop( "Don't work with 'multiPhylo'. See examples." )
@@ -42,9 +58,6 @@ fastSimmap <- function(tree, x, Q, pi = "equal" , nsim = 1, mc.cores = 1, max_ns
     ## Always make sure that the tree and the data match:
     mm <- match(tree$tip.label, names(x))
     x <- x[mm]
-
-    ## NEED TO IMPLEMENT THIS:
-    if( nsim > 1 ) stop( "Multiple simmaps coming soon! Please run this function multiple times to generate a pool of stochastic mappings." )
     
     ## Check for zero length branches:
     zb <- any( tree$edge.length == 0 )

@@ -9,7 +9,6 @@ fastSimmap(
   x,
   Q,
   pi = "equal",
-  nsim = 1,
   mc.cores = 1,
   max_nshifts = 200,
   silence = FALSE
@@ -24,8 +23,6 @@ fastSimmap(
 
 \item{pi}{one of 'equal' or 'madfitz'.}
 
-\item{nsim}{number of stochastic mappings to be performed conditioned on Q. NOT IMPLEMENTED YET!}
-
 \item{mc.cores}{same as in 'parallel::mclapply'. This is used to make multiple simulations (controlled with the argument 'nsim') by calling 'parallel::mclapply'.}
 
 \item{max_nshifts}{allocate the max number of events in any given branch. See 'Details'.}
@@ -36,10 +33,12 @@ fastSimmap(
 A stochastic mapped phylogeny of class 'simmap' or a value of 0 if 'max_nshifts' is reached. Please see 'Details'.
 }
 \description{
-Make stochastic map simulations conditioned on a Markov matrix 'Q' and a vector of root probabilities 'pi'.
+Make a stochastic map simulation conditioned on a Markov matrix 'Q' and a vector of root probabilities 'pi'.
 }
 \details{
 This function is a simplification of Revell's 'phytools::make.simmap' function. Here the stochastic mapping is performed conditioned on a given Markov matrix and a vector of probabilities for the root node. This allows users to fit the Mk model using any preferred method and use this function to perform the stochastic mapping on the tree.
+
+The function returns a single stochastic map in the 'simmap' format. In order to get multiple simulations, simply call this function multiple times using 'lapply', see 'Examples'.
 
 The prior probabilities at the root can be set to "equal" (i.e., all states have the same probability to be observed at the root) or to "madfitz" (i.e., state probabilities follow the likelihood of the Mk model).
 
@@ -48,6 +47,24 @@ The argument 'max_nshifts' controls the size of the "memory buffer" that records
 The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
 
 If some of the states in the transition matrix "Q" are not present among the observed tips of the phylogeny the function will return some warning messages. The stochastic mapping will work properly however. Please check that ALL states among the tips of the phylogeny are represented on some of the columns (and rows) of the transition matrix "Q".
+}
+\examples{
+\donttest{
+## Load data
+data(anoles)
+area <- setNames(object = as.character(anoles$data$area), nm = rownames(anoles$data))
+phy <- mergeSimmap(phy = anoles$phy[[1]], drop.regimes = TRUE)
+## Define a transition matrix. This can be estimated using MLE or MCMC.
+## Building one as an example.
+Q <- matrix(0.0007, nrow = 2, ncol = 2)
+diag(Q) <- diag(Q) * -1
+colnames(Q) <- unique(area)
+## Generate 10 stochastic mappings using lapply:
+maps <- lapply(1:10, function(x) fastSimmap(tree = phy, x = area, Q = Q))
+## Now using a simple for loop.
+maps <- vector(mode = "list", length = 10)
+for( i in 1:10 ) maps[[i]] <- fastSimmap(tree = phy, x = area, Q = Q)
+}
 }
 \author{
 Daniel Caetano
