@@ -4,11 +4,13 @@ Version: 1.2.3
 Authors@R: c(
     person("Daniel", "Caetano", email = "caetanods1@gmail.com", role = c("aut", "cre")),
     person("Luke", "Harmon", email = "lukeh@uidaho.edu", role = "aut") )
-Description: Estimates the evolutionary rate matrix (R) using Markov chain Monte Carlo (MCMC) as described in Caetano and Harmon (2017) <doi:10.1111/2041-210X.12826>. The package has functions to run MCMC chains, plot results, evaluate convergence, and summarize posterior distributions.
+Description: The Evolutionary Rate Matrix is a variance-covariance matrix which describes both the rates of trait evolution and the evolutionary correlation among multiple traits. This package has functions to estimate these parameters using Bayesian MCMC. It is possible to test if the pattern of evolutionary correlations among traits has changed between predictive regimes painted along the branches of the phylogenetic tree. Regimes can be created a priori or estimated as part of the MCMC under a joint estimation approach. The package has functions to run MCMC chains, plot results, evaluate convergence, and summarize posterior distributions.
 URL: https://github.com/Caetanods/ratematrix
 License: GPL (>= 2.0)
 Encoding: UTF-8
 LazyData: true
+Depends:
+    R (>= 3.5.0)
 Imports:
     ape,
     geiger,
@@ -23,7 +25,8 @@ Imports:
 Suggests:
     knitr,
     rmarkdown,
-    phytools
+    phytools,
+    markdown
 VignetteBuilder:
     knitr
 LinkingTo: 
