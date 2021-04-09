@@ -28,8 +28,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // makeSimmapMaps
-arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int max_nshifts);
-RcppExport SEXP _ratematrix_makeSimmapMaps(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP, SEXP max_nshiftsSEXP) {
+arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type, arma::vec root_pi, int max_nshifts);
+RcppExport SEXP _ratematrix_makeSimmapMaps(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP, SEXP root_piSEXP, SEXP max_nshiftsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -42,9 +42,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type X(XSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
     Rcpp::traits::input_parameter< int >::type root_node(root_nodeSEXP);
-    Rcpp::traits::input_parameter< bool >::type root_type(root_typeSEXP);
+    Rcpp::traits::input_parameter< int >::type root_type(root_typeSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type root_pi(root_piSEXP);
     Rcpp::traits::input_parameter< int >::type max_nshifts(max_nshiftsSEXP);
-    rcpp_result_gen = Rcpp::wrap(makeSimmapMaps(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, max_nshifts));
+    rcpp_result_gen = Rcpp::wrap(makeSimmapMaps(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, root_pi, max_nshifts));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -229,7 +230,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ratematrix_makeSimmapMappedEdge", (DL_FUNC) &_ratematrix_makeSimmapMappedEdge, 11},
-    {"_ratematrix_makeSimmapMaps", (DL_FUNC) &_ratematrix_makeSimmapMaps, 11},
+    {"_ratematrix_makeSimmapMaps", (DL_FUNC) &_ratematrix_makeSimmapMaps, 12},
     {"_ratematrix_logLikMk_C", (DL_FUNC) &_ratematrix_logLikMk_C, 10},
     {"_ratematrix_logLikPrunningMCMC_C", (DL_FUNC) &_ratematrix_logLikPrunningMCMC_C, 10},
     {"_ratematrix_runRatematrixMCMC_C", (DL_FUNC) &_ratematrix_runRatematrixMCMC_C, 28},

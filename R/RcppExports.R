@@ -5,8 +5,8 @@ makeSimmapMappedEdge <- function(n_nodes, n_tips, n_states, edge_len, edge_mat, 
     .Call('_ratematrix_makeSimmapMappedEdge', PACKAGE = 'ratematrix', n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, sims_limit)
 }
 
-makeSimmapMaps <- function(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, max_nshifts) {
-    .Call('_ratematrix_makeSimmapMaps', PACKAGE = 'ratematrix', n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, max_nshifts)
+makeSimmapMaps <- function(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, root_pi, max_nshifts) {
+    .Call('_ratematrix_makeSimmapMaps', PACKAGE = 'ratematrix', n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, root_pi, max_nshifts)
 }
 
 logLikMk_C <- function(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type) {

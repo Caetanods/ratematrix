@@ -47,9 +47,12 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
   arma::umat trans_table_index = umat(n_states, n_states-1); // Take find output.
   arma::mat trans_table_prob = mat(n_states, n_states-1);
   arma::rowvec Q_row = rowvec(n_states);
-  
+  // Creating vector of equal probabilities as a placeholder for 'getReconStates' argument.
+  // In the future this could be used to pass user-defined root probabilities. See "fastSimmap" function.
+  arma::vec root_pi = vec(n_states, fill::ones) / n_states;
+
   // Compute the probability for each state at each internal node given the model parameters. These are the conditional probabilities. Not the marginals.
-  arma::mat recon_states = getReconStates(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type);
+  arma::mat recon_states = getReconStates(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, root_pi);
 
   // Creates a table of transition probabilities given each starting state:
   // These only depend on Q and don't need to be computed more than once.
@@ -65,7 +68,7 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
     Q_row.shed_col(j);
     trans_table_prob.row(j) = Q_row / sum( Q_row );
   }
-  
+
   // Sample the state at the root.
   if( root_type ){ // 'madfitz'
     // Here the vector of probabilities is the same as the estimated under the model.
@@ -84,7 +87,7 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
   // Now we can sample all other states:
   // I will follow the reverse order of the post-order traversal edge matrix. This will make sure we are going from the root to the tips of the tree.
   for(int i=(nrow_mapped_edge-1); i >= 0; i-- ){
-    
+
     exp_Q = expmat(Q * edge_len[i]);
     anc_state = sim_node_states(i,0); // This was already populated.
     des_node = edge_mat(i,1);
@@ -96,15 +99,15 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
       sim_node_states(ii[0],0) = des_state;
       sim_node_states(ii[1],0) = des_state;
     }
-	
+
     // With the start and end of the state we can perform the simulation. Forward simulate from the starting state, compute the changes along the branch, stop when the simulation passed the length of the branch. Then need to check if the arrival state is the same as the selected state for that node. Otherwise need to draw again.
 
     // Declare the dt vector:
     arma::vec dt = vec(n_states, fill::zeros);
-    
+
     // Before simulating, check if any change is expected to happen at this node:
     double change_rate = -1.0 * Q(anc_state,anc_state);
-      
+
     // bool equal_zero = approx_equal(change_rate, 0.0, "absdiff", 1.0e-12);
     if( change_rate < 0.0 || change_rate <= 1.0e-12 ){
       // Nothing will happen at this branch.
@@ -119,14 +122,14 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
       }
     } else{
       // Need to perform the simulation:
-    
+
       // Reset the accept flag:
       bool loop_sims = true; // Set to keep simulating.
       // Set the tolerance for the edge length check:
       double edge_tol = 1.0e-12 * edge_len[i];
       // Track the number of trials. This will be used to break the simulation if necessary.
       int sims_trials = 0;
-      
+
       while( loop_sims ){
 	// The vector 'dt' tracks the 'dwelling time' on each state.
 	// I am not creating the 'maps' history here.
@@ -136,7 +139,7 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
 	curr_state = anc_state;
 
 	while( true ){
-	  
+
 	  // Here we record the number of times to make a valid simulation on the branch.
 	  // We use the argument 'sims_limit' to break the stochastic map if the number of simulations
 	  //    pass this limit. This particular proposal of stochastic map will be rejected by the MCMC.
@@ -148,7 +151,7 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
 	      return bad_maps;
 	    }
 	  }
-	    
+
 	  // Time until the next event:
 	  // Note that this is 1/rate when compared with rexp in R.
 	  time_chunk = R::rexp( 1/change_rate );
@@ -166,7 +169,7 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
 	  sample_index = rMultinom( trans( trans_table_prob.row(curr_state) ) );
 	  curr_state = trans_table_index(curr_state, sample_index);
 	}
-      
+
 	// Check if the simulation is valid, conditioned on the state of the des node.
 	if( curr_state == sim_node_states(i,1) ){
 	  loop_sims = false;
@@ -183,10 +186,10 @@ arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uw
 }
 
 // [[Rcpp::export]]
-arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int max_nshifts) {
+arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, int root_type, arma::vec root_pi, int max_nshifts) {
   // Same as the previous function. But this returns the 'maps' information that allow for reconstruction of the 'phytools' maps element.
   // Function works by assuming that the order of the rows in sim_node_states is the same as in recon_states below. This follows because of the code in 'getReconStates' function.
- 
+
   // Define containers:
   int nrow_mapped_edge = edge_mat.n_rows;
   double time_chunk;
@@ -203,9 +206,9 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
   arma::umat trans_table_index = umat(n_states, n_states-1); // Take find output.
   arma::mat trans_table_prob = mat(n_states, n_states-1);
   arma::rowvec Q_row = rowvec(n_states);
-  
+
   // Compute the probability for each state at each internal node given the model parameters. These are the conditional probabilities. Not the marginals.
-  arma::mat recon_states = getReconStates(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type);
+  arma::mat recon_states = getReconStates(n_nodes, n_tips, n_states, edge_len, edge_mat, parents, X, Q, root_node, root_type, root_pi);
 
   // Creates a table of transition probabilities given each starting state:
   // These only depend on Q and don't need to be computed more than once.
@@ -221,22 +224,26 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
     Q_row.shed_col(j);
     trans_table_prob.row(j) = Q_row / sum( Q_row );
   }
-  
+
   // The C++ code is not very efficient with growing vectors. So here we need to set a maximum number of per branch shifts events to work on the stochastic maps.
   // Rcout << "Max capacity for shifts on branches: " << max_nshifts << "\n";
   arma::umat maps_state = umat(nrow_mapped_edge, max_nshifts);
   maps_state.fill(n_states); // Help distinguish unnused entries.
   arma::mat maps_edge = mat(nrow_mapped_edge, max_nshifts, fill::zeros); // Zero entries are unnused.
-  
+
   // Sample the state at the root.
-  if( root_type ){ // 'madfitz'
-    // Here the vector of probabilities is the same as the estimated under the model.
-    arma::vec pi = trans( recon_states.row( root_node - 1 ) );
-    prob_root = pi % pi;
-  } else{ // root is 'equal'
-    // Here the vector of probabilities is the same for all states.
-    arma::vec pi = vec(n_states, fill::ones) / n_states;
-    prob_root = trans( recon_states.row( root_node - 1 ) ) % pi;
+  // The order of the tests is inverted due to historical reasons. :)
+  if( root_type == 1 ){ // 'madfitz'
+      // Here the vector of probabilities is the same as the estimated under the model.
+      arma::vec pi = trans( recon_states.row( root_node - 1 ) );
+      prob_root = pi % pi;
+  } else if( root_type == 0 ){ // root is 'equal'
+      // Here the vector of probabilities is the same for all states.
+      arma::vec pi = vec(n_states, fill::ones) / n_states;
+      prob_root = trans( recon_states.row( root_node - 1 ) ) % pi;
+  } else{
+      // root_type == 2; the probability vector was provided by the user.
+      prob_root = trans( recon_states.row( root_node - 1 ) ) % root_pi;
   }
   anc_state = rMultinom( prob_root );
   ii = find( root_node == edge_mat.col(0) ); // Return length 2
@@ -246,7 +253,7 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
   // Now we can sample all other states:
   // I will follow the reverse order of the post-order traversal edge matrix. This will make sure we are going from the root to the tips of the tree.
   for(int i=(nrow_mapped_edge-1); i >= 0; i-- ){
-    
+
     exp_Q = expmat(Q * edge_len[i]);
     anc_state = sim_node_states(i,0); // This was already populated.
     des_node = edge_mat(i,1);
@@ -258,9 +265,9 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
       sim_node_states(ii[0],0) = des_state;
       sim_node_states(ii[1],0) = des_state;
     }
-	
+
     // With the start and end of the state we can perform the simulation. Forward simulate from the starting state, compute the changes along the branch, stop when the simulation passed the length of the branch. Then need to check if the arrival state is the same as the selected state for that node. Otherwise need to draw again.
-    
+
     // Reset the accept flag:
     int accept = 0;
     while( accept == 0 ){
@@ -289,13 +296,13 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
 	  time_chunk = edge_len[i] - sum( maps_edge.row(i) ); // The rest of the time.
 	  maps_edge(i,id_shift) = time_chunk;
 	  break;
-	}	   
+	}
 	// Add to the time in the current state.
 	maps_edge(i,id_shift) = time_chunk;
 	// Updates the current state. Take a conditional sample based on Q:
 	sample_index = rMultinom( trans( trans_table_prob.row( curr_state ) ) );
 	curr_state = trans_table_index(curr_state, sample_index);
-	
+
 	// Check if the maximum number of events has been reached. Then return 0.
 	if( id_shift+1 >= maps_state.n_cols ){
 	  Rcout << "\n";
@@ -305,11 +312,11 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
 	  arma::mat return_null = mat(2, 2, fill::zeros);
 	  return return_null;
 	}
-	
+
 	maps_state(i, id_shift+1) = curr_state; // Move to the next shift.
 	id_shift++; // Advance the counter.
       }
-      
+
       // Check if the simulation is valid, conditioned on the state of the des node.
       if( curr_state == sim_node_states(i,1) ){
 	accept = 1;
@@ -319,7 +326,7 @@ arma::mat makeSimmapMaps(arma::uword n_nodes, arma::uword n_tips, arma::uword n_
 
   // Need to consolidate the matrices in order to return.
   arma::mat maps_state_double = conv_to<mat>::from( maps_state ); // Force to double?
-  arma::mat stack_maps = join_vert(maps_state_double, maps_edge);  
+  arma::mat stack_maps = join_vert(maps_state_double, maps_edge);
   return stack_maps;
 }
 
@@ -370,7 +377,7 @@ double logLikMk_C(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states,
       v.col(j) = expmat(Q * edge_len[ ii[j] ]) * trans( liks.row( des ) );
       v_root = v_root % v.col(j);
     }
-	  
+
     if( parents[i] == root_node ){ // The computations at the root
       if( root_type == 0 ){
 	// This is the equal root probability model:
@@ -446,23 +453,23 @@ double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec
   // Loop to traverse the tree.
   // Will visit all the internal nodes including the ROOT.
   for(arma::uword i=0; i < n_nodes; i++) {
-    
+
     // The index for the 'des', 'anc', and 'mapped_edge (lines)'.
     node_id = find( anc == nodes[i] );
     type = names_anc[node_id[0]];
-    
+
     // Next is the contrast calculations.This will be different for each 'type' of ancestral node.
     // In this structure of if...else just a single clause will be evaluated.
     // This can reduce the number of if clauses that need to be tested.
     // Insert the order following the most abundant node types. This will minimize the number of if...else clauses to be evaluated.
-    // 
+    //
     if(type == 1) {
       // Executes for node to tips contrast.
       // Former: NodeToTip function.
       des_node0 = des(node_id[0]) - 1; // des is a vector of indexes from R.
       des_node1 = des(node_id[1]) - 1;
       ss = X.col(des_node0) - X.col(des_node1);
-    
+
       // Multiply each R matrix by the respective branch length (due to the regime) and sum the result. So this is a loop over the number of regimes 'p'.
       // Need to do this for each of the daughter lineages.
       for(arma::uword j = 0; j < p; j++) {
@@ -487,7 +494,7 @@ double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec
       X0.col(i) = ((Rs1.slice(0) * Rinv) * X.col(des_node1)) + ((Rs2.slice(0) * Rinv)  * X.col(des_node0));
 
       V0.slice(i) = inv( inv(Rs1.slice(0)) + inv(Rs2.slice(0)) );
-  
+
     } else if(type == 3) {
       // Executes for node to tip & node contrast.
       // Former NodeToTipNode function.
@@ -532,12 +539,12 @@ double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec
       ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
 
       key[i] = anc(node_id[0]) - 1; // Need to decrease the value of 'anc' by 1. This comes from R.
-  
+
       // Take care with the indexes starting from 0, need to reduce a unit from the length here.
       // Now we need to multiply the tip with the node and the node with the tip. That is why the relationship here is inverted. It is correct!
       X0.col(i) = ((Rs1.slice(0) * Rinv) * X0.col(key_id)) + ((Rs2.slice(0) * Rinv) * X.col(tip));
       V0.slice(i) = inv( inv(Rs1.slice(0)) + inv(Rs2.slice(0)) );
-  
+
     } else {
       // Executes for node to nodes contrast.
       // Former NodeToNode function.
@@ -550,7 +557,7 @@ double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec
       // Using key.head(i) to assure that find is only looking to populated positions in the vector.
       key_id0 = as_scalar( find(key.head(i) == des_node0) );
       key_id1 = as_scalar( find(key.head(i) == des_node1) );
-  
+
       // Compute the contrast for the nodes.
       ss = X0.col(key_id0) - X0.col(key_id1);
       // Multiply each R matrix by the respective branch length (due to the regime) and sum the result. So this is a loop over the number of regimes 'p'.
@@ -570,15 +577,15 @@ double logLikPrunningMCMC_C(arma::mat X, arma::uword k, arma::uword p, arma::vec
       // Here need to add some addicional variance that carries over from the pruning.
       Rs1.slice(0) += V0.slice(key_id0);
       Rs2.slice(0) += V0.slice(key_id1);
-  
+
       Rinv = inv( Rs1.slice(0) + Rs2.slice(0) );
 
       ll = ll + logLikNode_C(ss, Rs1.slice(0) + Rs2.slice(0), Rinv, k);
-      
+
       // ## 'key is for both X0 and V0.
       // Here need to decrease in one unit the value of the 'anc' vector. This is a vector coming from R.
       key[i] = anc(node_id[0]) - 1;
-  
+
       // Take care with the indexes starting from 0, need to reduce a unit from the length here.
       X0.col(i) = ((Rs1.slice(0) * Rinv) * X0.col(key_id1)) + ((Rs2.slice(0) * Rinv) * X0.col(key_id0));
       V0.slice(i) = inv( inv(Rs1.slice(0)) + inv(Rs2.slice(0)) );
@@ -648,7 +655,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
 	}
       }
     }
-  
+
     for( int kk=1; kk < k; kk++ ){
       mcmc_stream << "trait.";
       mcmc_stream << kk;
@@ -663,7 +670,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
   } else{
     // Do nothing.
   }
-  
+
   // Define the containers for the run:
   // The starting point log lik:
   double lik;
@@ -724,15 +731,15 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
     // Print starting point to files:
     log_stream << "1; 0; 0; 1; 1; ";
     log_stream << lik;
-    log_stream << "\n"; 
+    log_stream << "\n";
     writeToMultFile_C(mcmc_stream, p, k, R, mu);
     post_seq_id++; // Updates the counter for the gen to write.
   }
-  
+
   Rcout << "Starting MCMC ... \n";
-  
+
   // Starting the MCMC.
-  
+
   for( int i=0; i < gen; i++ ){
     // Sample between root and matrix. Success here will be the update of the root.
     sample_root = R::rbinom(1, prob_sample_root);
@@ -741,7 +748,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
     // If matrix or variance is updated, which regime?
     Rp = Rcpp::as<int >(Rcpp::sample(p, 1)) - 1; // Need to subtract 1 from the result here.
     // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
-	  
+
     // The 'if...if...else' structure is lazy and will evaluate only the first entry.
     if(sample_root == 1){
       // Update the root state.
@@ -785,7 +792,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
       prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
       prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
       pp = prop_sd_prior - curr_sd_prior;
-  
+
       // Need to rebuild the R matrix to compute the likelihood:
       prop_diag_sd = diagmat( prop_sd.col(Rp) );
       // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
@@ -821,7 +828,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
 	  log_stream << "\n";
 	}
       }
-      
+
     } else{
       // Update the correlation matrix.
       // Draw which regime to update.
@@ -893,7 +900,7 @@ std::string runRatematrixMCMC_C(arma::mat X, int k, int p, arma::vec nodes, arma
       // Finally, we also update the counter.
       post_seq_id++;
     }
-    
+
   }
 
   Rcout << "Closing files... \n";
@@ -949,7 +956,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
 	}
       }
     }
-  
+
     for( int kk=1; kk < k; kk++ ){
       mcmc_stream << "trait.";
       mcmc_stream << kk;
@@ -964,7 +971,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   } else{
     // Do nothing.
   }
-    
+
   // Define the containers for the run:
   // The starting point log lik:
   double lik;
@@ -980,7 +987,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
   int n_trees = mapped_edge.n_slices;
   int curr_phy = 0; // This is the current phy. It starts with the first tree.
   int prop_phy; // Container to store the sampled tree.
-  
+
   int sample_root;
   int sample_sd;
   arma::vec prop_root;
@@ -1026,12 +1033,12 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
 
   // A counter to help control when to write the sample to file.
   arma::uword post_seq_id = 0; // Keep track of the id for the gen seq to write.
-  
+
   if( post_seq[post_seq_id] == 1 ){
     // Print starting point to files:
     log_stream << "1; 0; 0; 1; 1; ";
     log_stream << lik;
-    log_stream << "\n"; 
+    log_stream << "\n";
     writeToMultFile_C(mcmc_stream, p, k, R, mu);
     post_seq_id++;
   }
@@ -1048,7 +1055,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
     // Rp = as_scalar( randi(1, distr_param(0, p-1)) ); // The index!
     // Which tree/regime configuration to use?
     prop_phy = Rcpp::as<int >(Rcpp::sample(n_trees, 1)) - 1; // This is an index too.
-	  
+
     // The 'if...if...else' structure is lazy and will evaluate only the first entry.
     if(sample_root == 1){
       // Update the root state.
@@ -1098,7 +1105,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
       prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
       prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
       pp = prop_sd_prior - curr_sd_prior;
-  
+
       // Need to rebuild the R matrix to compute the likelihood:
       prop_diag_sd = diagmat( prop_sd.col(Rp) );
       // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
@@ -1139,7 +1146,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
 	  log_stream << "\n";
 	}
       }
-      
+
     } else{
       // Update the correlation matrix.
       // Draw which regime to update.
@@ -1216,7 +1223,7 @@ std::string runRatematrixMultiMCMC_C(arma::mat X, int k, int p, arma::mat nodes,
       // Update the index:
       post_seq_id++;
     }
-    
+
   }
 
   Rcout << "Closing files... \n";
@@ -1233,7 +1240,7 @@ arma::mat buildQ(arma::vec vec_Q, arma::uword size, std::string model_Q){
   // February 2021: Function was exported to be able to use it to read in the MCMC.
   // Need to follow the same pattern used to extract the vector.
   arma::mat Q = mat(size, size, fill::zeros);
-  
+
   if( model_Q == "ER" ){
     Q.fill(vec_Q[0]);
     // Now fill the diagonal.
@@ -1280,7 +1287,7 @@ arma::mat buildQ(arma::vec vec_Q, arma::uword size, std::string model_Q){
 std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uword k, arma::uword p, arma::vec nodes, arma::uword n_tips, arma::uvec des, arma::uvec anc, arma::uvec names_anc, arma::mat mapped_edge, arma::mat edge_mat, arma::uword n_nodes, arma::mat Q, double w_Q, std::string model_Q, int root_type, std::string den_Q, arma::vec par_prior_Q, arma::cube R, arma::vec mu, arma::mat sd, arma::cube Rcorr, arma::vec w_mu, arma::mat par_prior_mu, std::string den_mu, arma::mat w_sd, arma::mat par_prior_sd, std::string den_sd, arma::vec nu, arma::cube sigma, arma::vec v, std::string log_file, std::string mcmc_file, std::string Q_mcmc_file, arma::vec par_prob, arma::uword gen, arma::vec post_seq, int write_header, arma::uword sims_limit){
 
   // NOTE: 'sims_limit' is a parameter to reject the stochastic maps if it pass this limit.
-  
+
   // The data parameters:
   // X, k, p, nodes, des, anc, names_anc, mapped_edge, datMk
   // The starting point parameters. These are the objects to carry on the MCMC.
@@ -1313,7 +1320,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
   } else {
     Q_npar = (p * p) - p;
   }
-  
+
   // Write the header for the mcmc file.
   if(write_header == 1){
     for( arma::uword kk=1; kk < p+1; kk++ ){
@@ -1328,7 +1335,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 	}
       }
     }
-  
+
     for( arma::uword kk=1; kk < k; kk++ ){
       mcmc_stream << "trait.";
       mcmc_stream << kk;
@@ -1347,7 +1354,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
     Q_mcmc_stream << "Q.par.";
     Q_mcmc_stream << Q_npar;
     Q_mcmc_stream << "\n";
-    
+
     // Write the header for the log file.
     // Separate the log lik from the mvBM model from the one for the MK model.
   log_stream << "accepted; Q.matrix; stoch.map; smaps.limit; matrix.corr; matrix.sd; root; log.lik.BM; log.lik.MK \n";
@@ -1355,10 +1362,10 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
     // Do nothing.
     // This is the case for a continuing MCMC.
   }
-  
+
   // Define the containers for the run:
   // Try to set the size of the objects for better memory management.
-  
+
   // The starting point log lik for each of the models:
   double lik_mvBM;
   double lik_Mk;
@@ -1367,7 +1374,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
   double curr_sd_prior;
   double Rcorr_curr_prior;
   double curr_Q_prior;
-  
+
   // The jacobian for the MCMC. There are one for each regime.
   // Because need to track the jump separatelly.
   arma::vec curr_jacobian = vec(k, fill::zeros);
@@ -1403,20 +1410,20 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
   arma::vec multi_Q_factor;
   arma::mat prop_mapped_edge = mat(mapped_edge);
   double prop_mapped_edge_lik;
-  
-  
+
+
   // Generate some additional information:
 
   // Set the vector of probabilities for the regimes:
   arma::vec regime_prob = vec(p);
   regime_prob.fill(1.0/p); // Same probability to sample any regime.
-  
+
   // Branch lengths is the sum of the mapped_edges
   arma::vec edge_len = vec(mapped_edge.n_rows);
   for( arma::uword i=0; i < mapped_edge.n_rows; i++ ){
     edge_len[i] = sum( mapped_edge.row(i) );
   }
-  
+
   int root_node = n_tips + 1; // The root node for the phylogeny.
 
   // Get starting priors, likelihood, and jacobian.
@@ -1435,7 +1442,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
   // This will control the multiplier proposals.
   arma::vec w_Q_vec = vec(vec_Q);
   w_Q_vec.fill(w_Q); // Fill with the multiplier factor.
-  
+
   curr_Q_prior = priorQ(vec_Q, par_prior_Q, den_Q); // The prior for the Q matrix.
 
   Rcout << "Starting point Log-likelihood: " << lik_mvBM + lik_Mk << "\n";
@@ -1458,7 +1465,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
     log_stream << lik_mvBM;
     log_stream << ";";
     log_stream << lik_Mk;
-    log_stream << "\n"; 
+    log_stream << "\n";
     writeToMultFile_C(mcmc_stream, p, k, R, mu);
     // Need to make a function to write the Q matrix to file.
     // Note that the length of the vector will change depending on k and model_Q
@@ -1467,7 +1474,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
   }
 
   Rcout << "Starting MCMC ... \n";
-  
+
   // Starting the MCMC.
   for( arma::uword i=0; i < gen; i++ ){
     // Sample between the root, rate matrix, and the Mk matrix.
@@ -1477,7 +1484,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
     // If matrix or variance is updated, which regime?
     Rp = rMultinom(regime_prob);
     // Rp is an arma::uword index.
-	  
+
     // The 'if...if...else' structure is lazy and will evaluate only the first entry.
     if(sample_par == 0){
       // Update the root state.
@@ -1527,7 +1534,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
       prop_sd.col(Rp) = prop_sd.col(Rp) % multi_factor;
       prop_sd_prior = priorSD_C(prop_sd, par_prior_sd, den_sd);
       pp = prop_sd_prior - curr_sd_prior;
-  
+
       // Need to rebuild the R matrix to compute the likelihood:
       prop_diag_sd = diagmat( prop_sd.col(Rp) );
       // The line below reconstructs the covariance matrix from the variance vector and the correlation matrix.
@@ -1567,7 +1574,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 	  log_stream << "\n";
 	}
       }
-      
+
     } else if(sample_par == 2){
       // Update the correlation matrix.
       // Draw which regime to update.
@@ -1646,7 +1653,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
       multi_Q_factor = multiplierProposal_C(vec_Q.n_rows, w_Q_vec);
       prop_vec_Q = vec_Q % multi_Q_factor;
       prop_Q_prior = priorQ(prop_vec_Q, par_prior_Q, den_Q);
-      
+
       // The prior only reflects on the Q matrix. The prior for the stochastic map (conditioned on the Q matrix) is flat.
       pp = prop_Q_prior - curr_Q_prior;
       prop_Q = buildQ(prop_vec_Q, p, model_Q); // Rebuild a matrix from the Q vector. Just to compute the lik and draw the map.
@@ -1674,13 +1681,13 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 
       // Compute the liklihood for the Q matrix
       prop_Q_lik = logLikMk_C(n_nodes, n_tips, p, edge_len, edge_mat, nodes, datMk, prop_Q, root_node, root_type);
-      
+
       // This the mvBM likelihood, just changed the mapped_edge.
       prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
 
       // Here the likelihood ratio need to take into account the whole model.
       ll = (prop_Q_lik + prop_mapped_edge_lik) - (lik_Mk + lik_mvBM);
-      
+
       // Get the ratio i log space. Loglik, log prior and the proposal ratio (for the multiplier!).
       r = ll + pp + accu(multi_Q_factor);
 
@@ -1710,7 +1717,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 	  log_stream << "\n";
 	}
       }
-      
+
     } else{
       // Update the ONLY the stochastic map.
 
@@ -1734,7 +1741,7 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
 	// Break generation.
 	continue;
       }
-      
+
       // This the mvBM likelihood, just changed the mapped_edge.
       prop_mapped_edge_lik = logLikPrunningMCMC_C(X, k, p, nodes, des, anc, names_anc, prop_mapped_edge, R, mu);
 
@@ -1776,11 +1783,11 @@ std::string runRatematrixMCMC_jointMk_C(arma::mat X, arma::mat datMk, arma::uwor
       // Update the counter for writting to file.
       post_seq_id++;
     }
-    
+
   }
 
   Rcout << "Closing files... \n";
-  
+
   mcmc_stream.close();
   log_stream.close();
   Q_mcmc_stream.close();

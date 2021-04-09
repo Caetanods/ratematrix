@@ -21,7 +21,7 @@ fastSimmap(
 
 \item{Q}{a Markov transition matrix for the Markov Model. This needs to be provided and the user can estimate such matrix from the observed data using any of a multitude of methods.}
 
-\item{pi}{one of 'equal' or 'madfitz'.}
+\item{pi}{Should be 'equal' or 'madfitz'. A numeric vector of prior probabilites for each state with length equal to the number of states in the data is also accepted. The order of the vector needs to be the same as the columns of Q.}
 
 \item{mc.cores}{same as in 'parallel::mclapply'. This is used to make multiple simulations (controlled with the argument 'nsim') by calling 'parallel::mclapply'.}
 
@@ -47,6 +47,8 @@ The argument 'max_nshifts' controls the size of the "memory buffer" that records
 The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
 
 If some of the states in the transition matrix "Q" are not present among the observed tips of the phylogeny the function will return some warning messages. The stochastic mapping will work properly however. Please check that ALL states among the tips of the phylogeny are represented on some of the columns (and rows) of the transition matrix "Q".
+
+Note that if root probabilities are set by the user, the element "$logL" of the output list object will be the log-likelihood for the model computed with equal root probabilities for each state. This value is not used in any computation and only displayed as a reference. This issue will likely not be fixed.
 }
 \examples{
 \donttest{

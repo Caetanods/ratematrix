@@ -5,17 +5,19 @@
 ##' The function returns a single stochastic map in the 'simmap' format. In order to get multiple simulations, simply call this function multiple times using 'lapply', see 'Examples'.
 ##'
 ##' The prior probabilities at the root can be set to "equal" (i.e., all states have the same probability to be observed at the root) or to "madfitz" (i.e., state probabilities follow the likelihood of the Mk model).
-##' 
+##'
 ##' The argument 'max_nshifts' controls the size of the "memory buffer" that records the number of state changes in any given branch of the phylogeny. It DOES NOT influence the outcome of the stochastic character map simulations. Set this value to a high enough number (i.e., more changes that can possibly happen at any given branch). If the limit is reached the function will print a message and return a value of 0.0 instead of the stochastic map. If that happens, simply increase the number of 'max_nshifts' and run again. This is only a limitation of the computer algorithm used to speed up the simulation and DOES NOT affect the results in any way.
-##' 
+##'
 ##' The reduced time is accomplished by using compiled code to perfom simulations ( C++ ). All calculations are the same as Revell's original function.
-##' 
+##'
 ##' If some of the states in the transition matrix "Q" are not present among the observed tips of the phylogeny the function will return some warning messages. The stochastic mapping will work properly however. Please check that ALL states among the tips of the phylogeny are represented on some of the columns (and rows) of the transition matrix "Q".
+##'
+##' Note that if root probabilities are set by the user, the element "$logL" of the output list object will be the log-likelihood for the model computed with equal root probabilities for each state. This value is not used in any computation and only displayed as a reference. This issue will likely not be fixed.
 ##' @title Fast implementation of stochastic mapping.
 ##' @param tree a phylogenetic tree of class 'phylo'.
 ##' @param x a named vector with the states observed at the tips of the tree.
 ##' @param Q a Markov transition matrix for the Markov Model. This needs to be provided and the user can estimate such matrix from the observed data using any of a multitude of methods.
-##' @param pi one of 'equal' or 'madfitz'.
+##' @param pi Should be 'equal' or 'madfitz'. A numeric vector of prior probabilites for each state with length equal to the number of states in the data is also accepted. The order of the vector needs to be the same as the columns of Q.
 ##' @param mc.cores same as in 'parallel::mclapply'. This is used to make multiple simulations (controlled with the argument 'nsim') by calling 'parallel::mclapply'.
 ##' @param max_nshifts allocate the max number of events in any given branch. See 'Details'.
 ##' @param silence if function should skip data format checks tests and stop printing messages.
@@ -53,24 +55,34 @@ fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200
         if( is.null( names(x) ) ) stop("Data need to have names matching the tips of the phylogeny.")
         if( !Ntip(tree) == length(x) ) stop("Number of species in the data and the tree must be the same.")
         if( any( is.na(x) ) ) stop("Data contains NAs.")
+        if( is.character(pi) ){
+            pi <- match.arg(pi, choices = c("equal","madfitz"), several.ok = FALSE)
+            pi_prior <- rep(1, times = ncol(Q)) / ncol(Q)
+        } else{
+            if( !is.numeric(pi) ) stop( "pi needs to be a numeric vector or one of 'equal' or 'madfitz'." )
+            if( !length(pi) == ncol(Q) ) stop( "length of pi needs to be the same as the number of columns in Q" )
+            ## Need to create a new value for pi, so we can switch the root_type later.
+            pi_prior <- pi / sum(pi)
+            pi <- "prior"
+        }
     }
-    
+
     ## Always make sure that the tree and the data match:
     mm <- match(tree$tip.label, names(x))
     x <- x[mm]
-    
+
     ## Check for zero length branches:
     zb <- any( tree$edge.length == 0 )
     ## These quantities need to be global variables.
     short_branch <- min( tree$edge.length[tree$edge.length > min(tree$edge.length)] )
     almost_zero <- short_branch / 100000 ## A very small fraction of the shortest branch!
-    
+
     if( zb ){
         ## A fix when the phylogeny includes branch lengths of zero length.
         zero_branches <- tree$edge.length == 0
         tree$edge.length[ tree$edge.length == 0 ] <- almost_zero
     }
-    
+
     ## Compute the elements to use the function:
     prun.tree <- reorder.phylo(x = tree, order = "postorder")
     n_nodes <- Nnode(prun.tree)
@@ -82,13 +94,14 @@ fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200
     ## The order of the columns in X need to be the same as the columns in Q.
     X <- makeDataTips(X = x, states = colnames(Q) )
     root_node <- n_tips + 1
-    root_type <- switch(pi, "equal" = 0, "madfitz" = 1)
+    root_type <- switch(pi, "equal" = 0, "madfitz" = 1, "prior" = 2)
 
     ## Get the maps list:
     get.maps <- makeSimmapMaps(n_nodes=n_nodes, n_tips=n_tips, n_states=n_states
                              , edge_len=edge_len, edge_mat=edge_mat
                              , parents=parents, X=X, Q=Q, root_node=root_node
-                             , root_type=root_type, max_nshifts = max_nshifts)
+                             , root_type=root_type, root_pi = pi_prior
+                             , max_nshifts = max_nshifts)
     if( nrow(get.maps) == 2 ){
         ## Number of maximum events on the branch has been reached.
         ## Will just return a value of 0.
@@ -126,14 +139,17 @@ fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200
     rownames( Q ) <- colnames( Q )
     prun.tree$Q <- Q
     ## Get the log likelihood for the Q. This is an element of the simmap object.
+    ## BUG: If the root was given by the user, then use equal root values.
+    ## Won't fix: The loglik for the MK model is used on many instances in the package. This computation is just a reference and is not used to do any further calculation. Adding the bug information to the help page.
+    if( root_type == 2 ) root_type <- 0
     prun.tree$logL <- logLikMk_C(n_nodes=n_nodes, n_tips=n_tips
                                             , n_states=n_states, edge_len=edge_len
                                             , edge_mat=edge_mat, parents=parents, X=X, Q=Q
                                             , root_node=root_node, root_type=root_type)
-    
+
     ## Cannot append the class here. Strangely the class need to be in this particular order.
     class(prun.tree) <- c("simmap", "phylo")
-    
+
     if( zb ){
         ## Before returning the tree we need to return the zero length branches to their original state.
         prun.tree$edge.length[ prun.tree$edge.length < short_branch ] <- 0.0
