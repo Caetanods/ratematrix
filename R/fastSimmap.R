@@ -55,16 +55,19 @@ fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200
         if( is.null( names(x) ) ) stop("Data need to have names matching the tips of the phylogeny.")
         if( !Ntip(tree) == length(x) ) stop("Number of species in the data and the tree must be the same.")
         if( any( is.na(x) ) ) stop("Data contains NAs.")
-        if( is.character(pi) ){
-            pi <- match.arg(pi, choices = c("equal","madfitz"), several.ok = FALSE)
-            pi_prior <- rep(1, times = ncol(Q)) / ncol(Q)
-        } else{
-            if( !is.numeric(pi) ) stop( "pi needs to be a numeric vector or one of 'equal' or 'madfitz'." )
-            if( !length(pi) == ncol(Q) ) stop( "length of pi needs to be the same as the number of columns in Q" )
-            ## Need to create a new value for pi, so we can switch the root_type later.
-            pi_prior <- pi / sum(pi)
-            pi <- "prior"
-        }
+        ## Check the format for the pi argument.
+        if( !is.numeric(pi) ) stop( "pi needs to be a numeric vector or one of 'equal' or 'madfitz'." )
+        if( !length(pi) == ncol(Q) ) stop( "length of pi needs to be the same as the number of columns in Q" )
+    }
+
+    ## Check and transform the pi argument.
+    if( is.character(pi) ){
+        pi <- match.arg(pi, choices = c("equal","madfitz"), several.ok = FALSE)
+        pi_prior <- rep(1, times = ncol(Q)) / ncol(Q)
+    } else{
+        ## Need to create a new value for pi, so we can switch the root_type later.
+        pi_prior <- pi / sum(pi)
+        pi <- "prior"
     }
 
     ## Always make sure that the tree and the data match:
