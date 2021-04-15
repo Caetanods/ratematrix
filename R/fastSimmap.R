@@ -48,7 +48,7 @@ fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200
         if( inherits(tree,"multiPhylo") ) stop( "Don't work with 'multiPhylo'. See examples." )
         if( !inherits(tree,"phylo") ) stop("Tree should be object of class \"phylo\".")
         if( is.null( colnames( Q ) ) ) stop( "Q needs colnames equal to the states in the data." )
-        if( any( !unique(x) %in% colnames(Q) ) ) stop("All states in the data need to ne present in Q." )
+        if( any( !unique(x) %in% colnames(Q) ) ) stop("All states in the data need to be present in Q." )
         ## if( any( !colnames( Q ) %in% x ) ) stop(" colnames of Q need to be the states in the data." )
         if( any( !colnames( Q ) %in% x ) ) warning( "Some states in Q are not present among the tips. See Details." )
         if( any(abs(rowSums(Q)) > 1e-8) ) stop( "Rows of Q need to sum to 0." )
