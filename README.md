@@ -52,6 +52,8 @@ options(download.file.method = "wget")
 
 ## News and updates
 
+**June-2022 (v 1.2.4):** First commit as a faculty! Yey! Fix issue with "fastSimmap" checking arguments. Fix formatting issues with RCran submission. Updates to version 1.2.4
+
 **September-2021 (v 1.2.3):** Removed the "Wiki" page from this repository. Please check the package Vignettes and/or the help pages for examples of usage.
 
 **April-2021 (v 1.2.3):** Function "fastSimmap" now accepts a vector of root probabilities given by the user.
