@@ -52,6 +52,8 @@ options(download.file.method = "wget")
 
 ## News and updates
 
+**September-2021 (v 1.2.3):** Removed the "Wiki" page from this repository. Please check the package Vignettes and/or the help pages for examples of usage.
+
 **April-2021 (v 1.2.3):** Function "fastSimmap" now accepts a vector of root probabilities given by the user.
 
 **Feb-2021 (v 1.2.3): SUBMITTED TO RCran** Package now depends on R (>= 3.5.0). This version has new functions, improvements on help pages, and updates to examples.
