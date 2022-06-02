@@ -9,10 +9,7 @@
 ##' @return Returns a matrix with each trait values for the tips. Traits are distributed in the rows and tips are distributed in the columns.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
-##' @references
-##' \describe{
-##'   \item{}{Revell, L. J. 2012. phytools: an R package for phylogenetic comparative biology (and other things). Methods in Ecology and Evolution 3:217–223.}
-##' }
+##' @references Revell, L. J. 2012. phytools: an R package for phylogenetic comparative biology (and other things). Methods in Ecology and Evolution 3:217–223.
 simRatematrix <- function(tree, vcv, anc = NULL, internal = FALSE){
     if (!inherits(tree, "phylo")) 
         stop("tree should be an object of class \"phylo\".")

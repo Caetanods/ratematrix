@@ -37,10 +37,10 @@
 ##' diag(Q) <- diag(Q) * -1
 ##' colnames(Q) <- unique(area)
 ##' ## Generate 10 stochastic mappings using lapply:
-##' maps <- lapply(1:10, function(x) fastSimmap(tree = phy, x = area, Q = Q))
+##' maps <- lapply(1:10, function(x) fastSimmap(tree = phy, x = area, pi = "equal", Q = Q))
 ##' ## Now using a simple for loop.
 ##' maps <- vector(mode = "list", length = 10)
-##' for( i in 1:10 ) maps[[i]] <- fastSimmap(tree = phy, x = area, Q = Q)
+##' for( i in 1:10 ) maps[[i]] <- fastSimmap(tree = phy, x = area, pi = "equal", Q = Q)
 ##' }
 fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200, silence = FALSE){
     if( !silence ){
@@ -55,9 +55,15 @@ fastSimmap <- function(tree, x, Q, pi = "equal", mc.cores = 1, max_nshifts = 200
         if( is.null( names(x) ) ) stop("Data need to have names matching the tips of the phylogeny.")
         if( !Ntip(tree) == length(x) ) stop("Number of species in the data and the tree must be the same.")
         if( any( is.na(x) ) ) stop("Data contains NAs.")
-        ## Check the format for the pi argument.
-        if( !is.numeric(pi) ) stop( "pi needs to be a numeric vector or one of 'equal' or 'madfitz'." )
-        if( !length(pi) == ncol(Q) ) stop( "length of pi needs to be the same as the number of columns in Q" )
+        ## Check for pi. This can either be a character or a numeric vector.
+        if( is.character(pi) ){
+          pi <- match.arg(pi, choices = c("equal","madfitz"), several.ok = FALSE)
+          pi_prior <- rep(1, times = ncol(Q)) / ncol(Q)
+        } else{
+          ## Then pi needs to be a numeric vector.
+          if( !is.numeric(pi) ) stop( "pi needs to be a numeric vector or one of 'equal' or 'madfitz'." )
+          if( !length(pi) == ncol(Q) ) stop( "length of pi needs to be the same as the number of columns in Q" )
+        }
     }
 
     ## Check and transform the pi argument.

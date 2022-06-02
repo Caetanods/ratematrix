@@ -38,9 +38,7 @@ likelihoodFunction(data = centrarchidae$data, phy = phy.single, root = root, R =
 }
 }
 \references{
-\describe{
-  \item{}{Ho, L. S. T. and Ané, C. (2014). "A linear-time algorithm for Gaussian and non-Gaussian trait evolution models". Systematic Biology *63*(3):397-408.}
-}
+Ho, L. S. T. and Ané, C. (2014). "A linear-time algorithm for Gaussian and non-Gaussian trait evolution models". Systematic Biology *63*(3):397-408.
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

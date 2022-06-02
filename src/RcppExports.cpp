@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // makeSimmapMappedEdge
 arma::mat makeSimmapMappedEdge(arma::uword n_nodes, arma::uword n_tips, arma::uword n_states, arma::vec edge_len, arma::mat edge_mat, arma::vec parents, arma::mat X, arma::mat Q, int root_node, bool root_type, int sims_limit);
 RcppExport SEXP _ratematrix_makeSimmapMappedEdge(SEXP n_nodesSEXP, SEXP n_tipsSEXP, SEXP n_statesSEXP, SEXP edge_lenSEXP, SEXP edge_matSEXP, SEXP parentsSEXP, SEXP XSEXP, SEXP QSEXP, SEXP root_nodeSEXP, SEXP root_typeSEXP, SEXP sims_limitSEXP) {

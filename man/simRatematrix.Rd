@@ -25,9 +25,7 @@ Simulates correlated traits under a multivariate Brownian motion model. The func
 This is a function derived from 'sim.corrs' in the package 'phytools'. This version has some edits to make the simulations more efficient for this particular use. For all other applications please refer to the original implementation of 'sim.corrs' in the package 'phytools' wrote by Liam Revell.
 }
 \references{
-\describe{
-  \item{}{Revell, L. J. 2012. phytools: an R package for phylogenetic comparative biology (and other things). Methods in Ecology and Evolution 3:217–223.}
-}
+Revell, L. J. 2012. phytools: an R package for phylogenetic comparative biology (and other things). Methods in Ecology and Evolution 3:217–223.
 }
 \author{
 Daniel S. Caetano and Luke J. Harmon

@@ -62,10 +62,10 @@ Q <- matrix(0.0007, nrow = 2, ncol = 2)
 diag(Q) <- diag(Q) * -1
 colnames(Q) <- unique(area)
 ## Generate 10 stochastic mappings using lapply:
-maps <- lapply(1:10, function(x) fastSimmap(tree = phy, x = area, Q = Q))
+maps <- lapply(1:10, function(x) fastSimmap(tree = phy, x = area, pi = "equal", Q = Q))
 ## Now using a simple for loop.
 maps <- vector(mode = "list", length = 10)
-for( i in 1:10 ) maps[[i]] <- fastSimmap(tree = phy, x = area, Q = Q)
+for( i in 1:10 ) maps[[i]] <- fastSimmap(tree = phy, x = area, pi = "equal", Q = Q)
 }
 }
 \author{

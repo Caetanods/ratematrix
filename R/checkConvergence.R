@@ -10,6 +10,8 @@
 ##' @return The format of the output depends of the type of test performed. The Gelman's R test will return a list with two elements. The first element is a list with the results for the potential scale reduction factor for the root values and the evolutionary rate matrices. The test for the R matrices is performed element by element, the names of the columns show the number of the row and column for each element. The length of this list will depend on the number of rate regimes fitted to the phylogenetic tree. The Heidelberger test also returns a list with two elements, the first element is a table with one column for the root values and each evolutionary rate matrix regime fitted to the tree. The colnames show the type of diagnostic used, the values are whether the test passed or not. The second element of the list, independent of the type of convergence test, is a estimate of the Effective Sample Size for each parameter of the model.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
+##' @references Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, Statistical Science, 7, 457-511.
+##' @references Heidelberger, P and Welch, PD (1983) Simulation run length control in the presence of an initial transient. Opns. Res., 31, 1109-44.
 ##' @importFrom coda mcmc effectiveSize mcmc.list gelman.diag
 ##' @examples
 ##' \donttest{
@@ -23,11 +25,6 @@
 ##' ## Note that these are short chains used here as example only.
 ##' ## A convergence test using 'Gelman's R' calculated from two independent MCMC chains.
 ##' checkConvergence(posterior1, posterior2)
-##' }
-##' @references
-##' \describe{
-##'   \item{}{Gelman, A and Rubin, DB (1992) Inference from iterative simulation using multiple sequences, Statistical Science, 7, 457-511.}
-##'   \item{}{Heidelberger, P and Welch, PD (1983) Simulation run length control in the presence of an initial transient. Opns. Res., 31, 1109-44.}
 ##' }
 checkConvergence <- function(...){
 

@@ -9,6 +9,7 @@
 ##' @return The log likelihood for the multivariate Brownian motion model.
 ##' @export
 ##' @author Daniel S. Caetano and Luke J. Harmon
+##' @references Ho, L. S. T. and Ané, C. (2014). "A linear-time algorithm for Gaussian and non-Gaussian trait evolution models". Systematic Biology *63*(3):397-408.
 ##' @examples
 ##' \donttest{
 ##' data( centrarchidae )
@@ -20,10 +21,6 @@
 ##' phy.single <- mergeSimmap(phy = centrarchidae$phy.map, drop.regimes = TRUE)
 ##' Rsingle <- rbind(c(0.5, 0.1),c(0.1,0.5))
 ##' likelihoodFunction(data = centrarchidae$data, phy = phy.single, root = root, R = Rsingle)
-##' }
-##' @references
-##' \describe{
-##'   \item{}{Ho, L. S. T. and Ané, C. (2014). "A linear-time algorithm for Gaussian and non-Gaussian trait evolution models". Systematic Biology *63*(3):397-408.}
 ##' }
 likelihoodFunction <- function(data, phy, root, R){
 
