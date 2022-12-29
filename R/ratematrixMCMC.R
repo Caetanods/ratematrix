@@ -106,7 +106,9 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     if( phy_type ){ ## Is a list of phylogenies.
         ## check if the trees are binary.
         binary_tree <- sapply(phy, is.binary)
+        root_tree <- sapply(phy, is.rooted)
         if( !all(binary_tree) ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
+        if( !all(root_tree) ) stop("Phylogenetic tree is not rooted. Try using 'ape::root' function.")
         ## Check if the tree is ultrametric, also rescale the tree if needed.
         ultra <- sapply(phy, is.ultrametric)
         if( !all(ultra) ) warning("Some (or all) phylogenetic tree are not ultrametric. Continuing analysis. Please check 'details'.")
@@ -132,6 +134,8 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
         data <- data[mm,]
         
     } else{ ## Is a single phylogeny.
+        if( !is.binary(phy) ) stop("Phylogeny need to be fully resolved. Try using 'multi2di' function.")
+        if( !is.rooted(phy) ) stop("Phylogenetic tree is not rooted. Try using 'ape::root' function.")
         ## Check if the tree is ultrametric, also rescale the tree if needed.
         if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
         ## Check if the phylogeny is of 'simmap' class.

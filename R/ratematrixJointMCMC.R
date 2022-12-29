@@ -105,7 +105,9 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     ## Check if the tree is ultrametric, also rescale the tree if needed.
     if( !is.ultrametric(phy) ) warning("Phylogenetic tree is not ultrametric. Continuing analysis. Please check 'details'.")
     ## Check if the tree is fully resolved.
-    if( !is.binary(phy) ) stop("Phylogenetic tree has polytomies. Try using 'multi2di' function.")
+    if( !is.binary(phy) ) stop("Phylogenetic tree has polytomies. Try using 'ape::multi2di' function.")
+    ## Check if the tree is rooted.
+    if( !is.rooted(phy) ) stop("Phylogenetic tree is not rooted. Try using 'ape::root' function.")
     
     ## Check the data for the Mk model:
     equaln <- Ntip( phy ) == length( data_Mk )
@@ -261,6 +263,8 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
             class( start_Q ) <- c("matrix", "array")
             mle.fit.simmap <- fastSimmap(tree = phy, x = data_Mk, Q = start_Q, pi = root_Mk, max_nshifts = smap_limit)
             mle.fit <- mvBM(tree=mle.fit.simmap, data=data_BM, model="BMM", method="rpf", echo=FALSE, diagnostic=FALSE)
+            ## Adding a garbage collection step.
+            gc(verbose = FALSE, full = TRUE)
             cat( "\n")
             decomp.r <- list()
             decomp.sd <- list()
