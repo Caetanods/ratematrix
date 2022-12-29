@@ -360,6 +360,18 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
         if( !is.matrix(Q) ) stop( "Provided Q for the starting state need to be a matrix" )
         if( ncol(Q) != nrow(Q) | ncol(Q) != p ) stop( "Wrong number of dimensions for Q matrix." )
     }
+    
+    ## In case of starting from the mle, we need to adjust the Q matrix.
+    ## geiger will produce a non-standard matrix object.
+    if( start == "mle"){
+      Q_tmp <- matrix(nrow = p, ncol = p)
+      for( i in 1:p){
+        Q_tmp[i,] <- Q[i,]
+      }
+      start_Q <- Q_tmp
+      Q <- Q_tmp
+      rm(Q_tmp)
+    }
 
     ## Make a stochastic map draw for the starting state of the mapped_edge matrix
     ## Need to reformat the 'data_Mk' object first to be able to work with this.
