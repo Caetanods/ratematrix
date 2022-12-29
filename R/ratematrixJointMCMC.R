@@ -258,7 +258,7 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
             mle.fit.mk <- fitDiscrete(phy = phy, dat = data_Mk, model = Mk_model)
             ## Here we change the value for "start_Q"
             start_Q <- as.Qmatrix.gfit(mle.fit.mk)
-            class( start_Q ) <- "matrix"
+            class( start_Q ) <- c("matrix", "array")
             mle.fit.simmap <- fastSimmap(tree = phy, x = data_Mk, Q = start_Q, pi = root_Mk, max_nshifts = smap_limit)
             mle.fit <- mvBM(tree=mle.fit.simmap, data=data_BM, model="BMM", method="rpf", echo=FALSE, diagnostic=FALSE)
             cat( "\n")
