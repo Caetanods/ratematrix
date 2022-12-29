@@ -270,7 +270,7 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
                 decomp.sd[[i]] <- as.numeric( sqrt(decomp.R$v) )
             }
             start_run <- list()
-            start_run$mu <- as.numeric( mle.fit$theta )
+            start_run$root <- as.numeric( mle.fit$theta )
             start_run$matrix <- decomp.r
             start_run$sd <- decomp.sd
         }
