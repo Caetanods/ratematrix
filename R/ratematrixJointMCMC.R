@@ -26,7 +26,7 @@
 ##' @param root_Mk the root type for the Mk model for the predictor regimes. Can be one of "madfitz" (default) or "equal".
 ##' @param smap_limit the maximum number of times that a stochastic map for a given branch can be attempted. If the simulation is not finished by this number of trials then the stochastic map is rejected. If set to '0' then there is no limit. The default value is 1e6.
 ##' @param start the starting state for the MCMC chain. Must be one of "prior_sample" (the default), "mle", or a sample from the prior generated with the "samplePrior" functions.
-##' @param start_Q A matrix with the starting state for the Q matrix. Default is 'NULL' and the Q matrix is sampled from its prior distribution.
+##' @param start_Q A matrix with the starting state for the Q matrix. Default is 'NULL' and the Q matrix is sampled from its prior distribution. If the parameter "start" is set to "mle" then start_Q will be the MLE for the Q matrix.
 ##' @param gen number of generations for the chain.
 ##' @param burn the fraction of the chain for the burnin (not written to file). A numeric value between 0 and 1 (i.e., 0 means no burnin). The final number of posterior samples is equal to "(gen*burn)/thin".
 ##' @param thin the number of generations to be skipped between each sample of the posterior. The final number of posterior samples is equal to "(gen*burn)/thin".
@@ -52,6 +52,8 @@
 ##' @importFrom ape Ntip
 ##' @importFrom ape is.binary
 ##' @importFrom geiger fitContinuous
+##' @importFrom geiger fitDiscrete
+##' @importFrom geiger as.Qmatrix.gfit
 ##' @importFrom stats coef rexp
 ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled", prior_Mk="uniform", par_prior_Mk=c(0, 100), Mk_model = "SYM", root_Mk = "madfitz", smap_limit=1e6, start="prior_sample", start_Q = NULL, gen=1000000, burn=0.25, thin=100, v=50, w_sd=0.2, w_q=0.2, w_mu=0.5, prop=c(0.05, 0.3, 0.3, 0.175, 0.175), dir=NULL, outname="ratematrixJointMCMC", IDlen=5, save.handle=TRUE){
 
@@ -249,9 +251,16 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
             cat( "Taking sample from prior as starting point. \n" )
             start_run <- samplePrior(n=1, prior=prior_run)
         }
-        if(start == "mle"){ ## Need to deal with the list of matrices here.
+        if(start == "mle"){ 
+            ## Need to deal with the list of matrices here.
+            ## Need to make mle estimate of both BM and MK models.
             cat( "Optimizing likelihood for the starting value of the MCMC.\n")
-            mle.fit <- mvBM(tree=phy, data=data_BM, model="BMM", method="rpf", echo=FALSE, diagnostic=FALSE)
+            mle.fit.mk <- fitDiscrete(phy = phy, dat = data_Mk, model = Mk_model)
+            ## Here we change the value for "start_Q"
+            start_Q <- as.Qmatrix.gfit(mle.fit.mk)
+            class( start_Q ) <- "matrix"
+            mle.fit.simmap <- fastSimmap(tree = phy, x = data_Mk, Q = start_Q, pi = root_Mk, max_nshifts = smap_limit)
+            mle.fit <- mvBM(tree=mle.fit.simmap, data=data_BM, model="BMM", method="rpf", echo=FALSE, diagnostic=FALSE)
             cat( "\n")
             decomp.r <- list()
             decomp.sd <- list()
