@@ -51,7 +51,7 @@ ratematrixJointMCMC(
 
 \item{start}{the starting state for the MCMC chain. Must be one of "prior_sample" (the default), "mle", or a sample from the prior generated with the "samplePrior" functions.}
 
-\item{start_Q}{A matrix with the starting state for the Q matrix. Default is 'NULL' and the Q matrix is sampled from its prior distribution.}
+\item{start_Q}{A matrix with the starting state for the Q matrix. Default is 'NULL' and the Q matrix is sampled from its prior distribution. If the parameter "start" is set to "mle" then start_Q will be the MLE for the Q matrix.}
 
 \item{gen}{number of generations for the chain.}
 

@@ -51,6 +51,7 @@
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape Ntip
 ##' @importFrom ape is.binary
+##' @importFrom ape is.rooted
 ##' @importFrom geiger fitContinuous
 ##' @importFrom geiger fitDiscrete
 ##' @importFrom geiger as.Qmatrix.gfit
@@ -75,9 +76,13 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     cat("\n")
 
     ## Inform that default options are being used:
-    if( inherits(prior_BM, what="character") && prior_BM == "empirical_mean" ) cat("Using old default prior. \n")
-    if( inherits(prior_BM, what="character") && prior_BM == "uniform_scaled" ) cat("Using new default prior. \n")
-    if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
+    if( inherits(prior_BM, what="character") ){
+      if( prior_BM == "empirical_mean" ) cat("Using old default prior. \n")
+      if( prior_BM == "uniform_scaled" ) cat("Using new default prior. \n")
+    }
+    if( inherits(start, what="character") ){
+      if( start == "prior_sample" ) cat("Using default starting point. \n")
+    }
     if( v == 50 && w_sd == 0.2 && w_q == 0.2 && w_mu == 0.5 && prop[1] == 0.05 && prop[2] == 0.3 && prop[3] == 0.3 && prop[4] == 0.175) cat("Using default proposal settings. \n")
 
     ## Check if the proposal frequency vector is good:
@@ -367,14 +372,16 @@ ratematrixJointMCMC <- function(data_BM, data_Mk, phy, prior_BM="uniform_scaled"
     
     ## In case of starting from the mle, we need to adjust the Q matrix.
     ## geiger will produce a non-standard matrix object.
-    if( start == "mle"){
-      Q_tmp <- matrix(nrow = p, ncol = p)
-      for( i in 1:p){
-        Q_tmp[i,] <- Q[i,]
+    if( inherits(start, what="character") ){
+      if( start == "mle"){
+        Q_tmp <- matrix(nrow = p, ncol = p)
+        for( i in 1:p){
+          Q_tmp[i,] <- Q[i,]
+        }
+        start_Q <- Q_tmp
+        Q <- Q_tmp
+        rm(Q_tmp)
       }
-      start_Q <- Q_tmp
-      Q <- Q_tmp
-      rm(Q_tmp)
     }
 
     ## Make a stochastic map draw for the starting state of the mapped_edge matrix

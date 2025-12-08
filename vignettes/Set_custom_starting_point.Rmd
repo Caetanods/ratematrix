@@ -3,10 +3,10 @@ title: "Set custom starting point with 'ratematrix'"
 author: "Daniel S. Caetano"
 output: 
   pdf_document:
-    fig_caption: yes
+    fig_caption: true
 vignette: >
   %\VignetteIndexEntry{Set custom starting point}
-  %\VignetteEngine{knitr::knitr}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 

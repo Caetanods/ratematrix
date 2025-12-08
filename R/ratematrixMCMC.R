@@ -43,6 +43,7 @@
 ##' @importFrom ape is.ultrametric
 ##' @importFrom ape is.binary
 ##' @importFrom ape Ntip
+##' @importFrom ape is.rooted
 ##' @importFrom geiger fitContinuous
 ##' @importFrom stats coef
 ##' @examples
@@ -83,9 +84,13 @@ ratematrixMCMC <- function(data, phy, prior="uniform_scaled", start="prior_sampl
     cat("\n")
 
     ## Inform that default options are being used:
-    if( inherits(prior, what="character") && prior == "empirical_mean" ) cat("Using old default prior. \n")
-    if( inherits(prior, what="character") && prior == "uniform_scaled" ) cat("Using new default prior. \n")
-    if( inherits(start, what="character") && start == "prior_sample" ) cat("Using default starting point. \n")
+    if( inherits(prior, what = "character") ){
+      if( prior == "empirical_mean" ) cat("Using old default prior. \n")
+      if( prior == "uniform_scaled" ) cat("Using new default prior. \n")
+    }
+    if( inherits(start, what = "character") ){
+      if( start == "prior_sample" ) cat("Using default starting point. \n")
+    } 
     if( v == 50 && w_sd == 0.2 && w_mu == 0.5 && prop[1] == 0.05 && prop[2] == 0.475 ) cat("Using default proposal settings. \n")
 
     ## Check if provided prior has the correct dimension:

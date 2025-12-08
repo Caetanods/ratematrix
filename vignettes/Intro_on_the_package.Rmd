@@ -3,10 +3,10 @@ title: "Introduction to using the 'ratematrix' package"
 author: "Daniel S. Caetano"
 output: 
   pdf_document:
-    fig_caption: yes
+    fig_caption: true
 vignette: >
   %\VignetteIndexEntry{Introdution to ratematrix}
-  %\VignetteEngine{knitr::knitr}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 

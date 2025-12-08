@@ -3,10 +3,10 @@ title: "Using prior distributions with 'ratematrix'"
 author: "Daniel S. Caetano"
 output: 
   pdf_document:
-    fig_caption: yes
+    fig_caption: true
 vignette: >
   %\VignetteIndexEntry{Using prior distributions}
-  %\VignetteEngine{knitr::knitr}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
