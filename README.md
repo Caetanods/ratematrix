@@ -52,6 +52,8 @@ options(download.file.method = "wget")
 
 ## News and updates
 
+**December-2025 (v 1.2.5):** Minor bug fixes and maintenance improvements. Fix issue with compilation requiring C++11. Updates to version 1.2.5 and new version sent to CRAN.
+
 **June-2022 (v 1.2.4):** First commit as a faculty! Yey! Fix issue with "fastSimmap" checking arguments. Fix formatting issues with RCran submission. Updates to version 1.2.4
 
 **September-2021 (v 1.2.3):** Removed the "Wiki" page from this repository. Please check the package Vignettes and/or the help pages for examples of usage.
